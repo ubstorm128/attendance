@@ -105,8 +105,44 @@ const server = http.createServer(async (req: import("http").IncomingMessage, res
     // --- student profile + attendance ---
     if (req.method === 'POST' && pathname === '/api/register') {
         const { name, enrollment, section } = await readBody(req);
-        if (!name || !enrollment || !section) return send(res, 400, { error: 'missing fields' });
-        db.students[enrollment] = { name, enrollment, section };
+
+        // --- Normalize inputs ---
+        const normalizedName       = (name       || '').trim();
+        const normalizedEnrollment = (enrollment || '').trim().toUpperCase();
+        const normalizedSection    = (section    || '').trim().toUpperCase();
+
+        // --- Required-field check ---
+        if (!normalizedName)       return send(res, 400, { error: 'Name is required' });
+        if (!normalizedEnrollment) return send(res, 400, { error: 'Enrollment ID is required' });
+        if (!normalizedSection)    return send(res, 400, { error: 'Section is required' });
+
+        // --- Name: letters and single spaces only, max 100 chars ---
+        const nameRegex = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
+        if (normalizedName.length > 100)
+            return send(res, 400, { error: 'Name must not exceed 100 characters' });
+        if (!nameRegex.test(normalizedName))
+            return send(res, 400, { error: 'Name must contain letters and spaces only' });
+
+        // --- Enrollment ID: ADTU/N/YYYY-YY/DEPT/N structure ---
+        const enrollmentRegex = /^ADTU\/\d+\/\d{4}-\d{2,4}\/[A-Z0-9]+\/\d+$/;
+        if (!enrollmentRegex.test(normalizedEnrollment))
+            return send(res, 400, { error: 'Invalid enrollment ID format. Expected format: ADTU/1/2023-26/BCAO/012' });
+
+        // --- Section: single alphabetic character ---
+        const sectionRegex = /^[A-Z]$/;
+        if (!sectionRegex.test(normalizedSection))
+            return send(res, 400, { error: 'Section must be a single letter (e.g. A, B, C)' });
+
+        // --- Duplicate enrollment check ---
+        if (db.students[normalizedEnrollment])
+            return send(res, 409, { error: 'Student with this enrollment ID is already registered' });
+
+        // --- All checks passed — persist normalized values ---
+        db.students[normalizedEnrollment] = {
+            name: normalizedName,
+            enrollment: normalizedEnrollment,
+            section: normalizedSection
+        };
         save();
         return send(res, 200, { ok: true });
     }

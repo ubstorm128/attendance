@@ -115,6 +115,14 @@
             font-size: 14px
         }
 
+        .field-error {
+            color: var(--bad);
+            font-size: 11.5px;
+            margin: 4px 0 0;
+            display: none;
+            letter-spacing: .4px
+        }
+
         .who {
             color: var(--muted);
             margin-bottom: 18px;
@@ -222,9 +230,12 @@
         <div id="regForm">
             <h1>Student Register</h1>
             <p class="sub">One-time profile setup</p>
-            <label>Full name</label><input id="name">
-            <label>Enrolment ID</label><input id="enrollment">
-            <label>Section</label><input id="section">
+            <label>Full name</label><input id="name" autocomplete="off">
+            <p class="field-error" id="nameErr"></p>
+            <label>Enrolment ID</label><input id="enrollment" autocomplete="off" placeholder="e.g. ADTU/1/2023-26/BCAO/012">
+            <p class="field-error" id="enrollmentErr"></p>
+            <label>Section</label><input id="section" autocomplete="off" placeholder="e.g. A">
+            <p class="field-error" id="sectionErr"></p>
             <button onclick="register()">Continue</button>
         </div>
 
@@ -246,13 +257,84 @@
         let scanning = false;
         if (saved) showOtp(saved);
 
+        // ── Validation helpers ──────────────────────────────────────────────
+        const NAME_REGEX       = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
+        const ENROLLMENT_REGEX = /^ADTU\/\d+\/\d{4}-\d{2,4}\/[A-Z0-9]+\/\d+$/;
+        const SECTION_REGEX    = /^[A-Z]$/;
+
+        function showFieldError(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.style.display = msg ? 'block' : 'none';
+        }
+        function clearErrors() {
+            ['nameErr', 'enrollmentErr', 'sectionErr'].forEach(id => showFieldError(id, ''));
+        }
+
         async function register() {
-            const name = document.getElementById('name').value.trim();
-            const enrollment = document.getElementById('enrollment').value.trim();
-            const section = document.getElementById('section').value.trim();
-            if (!name || !enrollment || !section) return alert('fill all fields');
-            const r = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, enrollment, section }) });
-            if (!r.ok) return alert('registration failed');
+            clearErrors();
+
+            // Normalize
+            const name               = document.getElementById('name').value.trim();
+            const enrollmentRaw      = document.getElementById('enrollment').value.trim();
+            const enrollment         = enrollmentRaw.toUpperCase();
+            const sectionRaw         = document.getElementById('section').value.trim();
+            const section            = sectionRaw.toUpperCase();
+
+            // Per-field validation
+            let hasError = false;
+
+            if (!name) {
+                showFieldError('nameErr', 'Full name is required.');
+                hasError = true;
+            } else if (name.length > 100) {
+                showFieldError('nameErr', 'Name must not exceed 100 characters.');
+                hasError = true;
+            } else if (!NAME_REGEX.test(name)) {
+                showFieldError('nameErr', 'Name must contain letters and spaces only.');
+                hasError = true;
+            }
+
+            if (!enrollment) {
+                showFieldError('enrollmentErr', 'Enrollment ID is required.');
+                hasError = true;
+            } else if (!ENROLLMENT_REGEX.test(enrollment)) {
+                showFieldError('enrollmentErr', 'Enter a valid enrollment ID, e.g. ADTU/1/2023-26/BCAO/012.');
+                hasError = true;
+            }
+
+            if (!section) {
+                showFieldError('sectionErr', 'Section is required.');
+                hasError = true;
+            } else if (!SECTION_REGEX.test(section)) {
+                showFieldError('sectionErr', 'Section must be a single letter such as A, B, C, or D.');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            // Submit to backend
+            const r = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, enrollment, section })
+            });
+            const data = await r.json();
+
+            if (!r.ok) {
+                // Map backend error messages back to the correct field
+                const msg = data.error || 'Registration failed.';
+                if (msg.toLowerCase().includes('name'))
+                    showFieldError('nameErr', msg);
+                else if (msg.toLowerCase().includes('enrollment'))
+                    showFieldError('enrollmentErr', msg);
+                else if (msg.toLowerCase().includes('section'))
+                    showFieldError('sectionErr', msg);
+                else
+                    showFieldError('nameErr', msg); // fallback: show at top
+                return;
+            }
+
             const profile = { name, enrollment, section };
             localStorage.setItem('profile', JSON.stringify(profile));
             showOtp(profile);
