@@ -4,252 +4,324 @@
 <head>
     <meta charset="utf-8">
     <title>Attendance Register</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
-        rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
-            --paper: #faedcd;
-            --card: #fffdf7;
-            --ink: #432818;
-            --rule: #d4a373;
-            --stamp: #606c38;
-            --bad: #bc4749;
-            --muted: #8a7968
+            --bg-0: #EEF1F6;
+            --ink: #0B0B0F;
+            --ink-2: #57596B;
+            --ink-3: #8A8C9B;
+            --blue: #0A6CFF;
+            --blue-press: #0857D1;
+            --red: #FF3B30;
+            --green: #30C36B;
+            --hair: rgba(60, 60, 67, .16);
+            --glass: rgba(255, 255, 255, .72);
+            --glass-strong: rgba(255, 255, 255, .9);
         }
 
-        * {
-            box-sizing: border-box
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; }
 
         body {
-            font-family: 'IBM Plex Mono', monospace;
-            background: var(--paper);
-            background-image: repeating-linear-gradient(to bottom, transparent, transparent 31px, var(--rule) 32px);
-            min-height: 100vh;
             margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+            color: var(--ink);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--ink)
+            padding: 32px 18px;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-0);
         }
+
+        .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55; z-index: 0; }
+        .blob.a { width: 360px; height: 360px; background: #B9CCFF; top: -120px; left: -100px; }
+        .blob.b { width: 320px; height: 320px; background: #CDE7FF; bottom: -140px; right: -90px; }
+        .blob.c { width: 260px; height: 260px; background: #E3D8FF; bottom: 20%; left: 60%; }
 
         .card {
-            background: var(--card);
-            padding: 40px 36px;
-            border-radius: 4px;
-            box-shadow: 0 4px 0 var(--rule), 0 6px 20px rgba(67, 40, 24, .15);
+            position: relative;
+            z-index: 1;
             width: 100%;
             max-width: 380px;
-            position: relative
+            background: var(--glass);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border-radius: 22px;
+            border: .5px solid rgba(255, 255, 255, .6);
+            box-shadow: 0 1px 2px rgba(20, 20, 40, .04), 0 20px 45px -18px rgba(20, 20, 40, .28);
+            padding: 30px 24px 26px;
+            animation: materialize 460ms cubic-bezier(.22, 1, .36, 1) both;
         }
+        @keyframes materialize {
+            from { opacity: 0; transform: scale(.94) translateY(6px); backdrop-filter: blur(0px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); backdrop-filter: blur(28px) saturate(180%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .card { animation: fadeonly 220ms ease both; }
+        }
+        @keyframes fadeonly { from { opacity: 0; } to { opacity: 1; } }
+        @media (prefers-reduced-transparency: reduce) {
+            .card { background: var(--glass-strong); backdrop-filter: none; -webkit-backdrop-filter: none; }
+        }
+
+        .icon-badge {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(160deg, #3E8BFF, #0A6CFF);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 6px 14px -6px rgba(10, 108, 255, .55);
+        }
+        .icon-badge svg { width: 26px; height: 26px; }
 
         h1 {
-            font-family: 'Fraunces', serif;
-            font-weight: 800;
+            text-align: center;
             font-size: 22px;
-            margin: 0 0 2px;
-            letter-spacing: .3px
+            font-weight: 600;
+            letter-spacing: -.01em;
+            margin: 0 0 4px;
         }
-
         .sub {
-            color: var(--muted);
-            margin: 0 0 22px;
-            font-size: 12.5px;
-            text-transform: uppercase;
-            letter-spacing: 1.2px
+            text-align: center;
+            font-size: 14px;
+            color: var(--ink-2);
+            margin: 0 0 24px;
         }
 
-        label {
+        .group {
+            background: rgba(255, 255, 255, .55);
+            border-radius: 14px;
+            overflow: hidden;
+            border: .5px solid rgba(255, 255, 255, .7);
+        }
+        .row {
+            position: relative;
+            padding: 9px 14px;
+            border-bottom: .5px solid var(--hair);
+            transition: background 120ms ease-out;
+        }
+        .row:last-child { border-bottom: none; }
+        .row.focused { background: rgba(10, 108, 255, .06); }
+        .row.shake { animation: shake 380ms cubic-bezier(.36, .07, .19, .97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+        @media (prefers-reduced-motion: reduce) { .row.shake { animation: none; } }
+
+        .row label {
             display: block;
             font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--muted);
-            margin: 14px 0 4px
+            font-weight: 500;
+            color: var(--ink-3);
+            margin-bottom: 1px;
+            transition: color 120ms ease-out;
         }
+        .row.focused label { color: var(--blue); }
+        .row.invalid label { color: var(--red); }
 
         input {
-            display: block;
             width: 100%;
-            padding: 11px 12px;
-            font-size: 15px;
-            border-radius: 3px;
-            border: 1px solid var(--rule);
-            background: #fff;
-            color: var(--ink);
-            font-family: inherit
-        }
-
-        input:focus {
+            border: none;
             outline: none;
-            border-color: var(--stamp)
+            background: transparent;
+            font-family: inherit;
+            font-size: 16px;
+            color: var(--ink);
+            padding: 2px 24px 2px 0;
         }
+        input::placeholder { color: var(--ink-3); }
+
+        .status-icon {
+            position: absolute;
+            right: 14px; top: 28px;
+            width: 18px; height: 18px;
+            opacity: 0;
+            transition: opacity 150ms ease-out, transform 260ms cubic-bezier(.34, 1.56, .64, 1);
+        }
+        .row.valid .status-icon.ok { opacity: 1; transform: scale(1); }
+        .row.invalid .status-icon.err { opacity: 1; transform: scale(1); }
+        .status-icon.ok { transform: scale(.6); }
+        .status-icon.err { transform: scale(.6); }
+
+        .field-error {
+            font-size: 12px;
+            color: var(--red);
+            margin: 8px 2px 0;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 180ms ease-out, opacity 150ms ease-out, margin 180ms ease-out;
+        }
+        .field-error.show { max-height: 32px; opacity: 1; }
+        .group + .field-error { margin: 8px 2px 0; }
 
         button {
             width: 100%;
-            padding: 13px;
             margin-top: 20px;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 14px;
             border: none;
-            border-radius: 3px;
-            background: var(--ink);
-            color: var(--paper);
+            border-radius: 14px;
+            background: var(--blue);
+            color: #fff;
+            font-family: inherit;
+            font-size: 16px;
             font-weight: 600;
+            letter-spacing: -.01em;
             cursor: pointer;
-            font-family: 'IBM Plex Mono', monospace
+            transform: scale(1);
+            transition: transform 100ms ease-out, background 100ms ease-out;
         }
-
-        button:hover {
-            background: var(--stamp)
-        }
-
-        #msg {
-            margin-top: 16px;
-            font-weight: 600;
-            text-align: center;
-            font-size: 14px
-        }
-
-        .field-error {
-            color: var(--bad);
-            font-size: 11.5px;
-            margin: 4px 0 0;
-            display: none;
-            letter-spacing: .4px
-        }
-
-        .who {
-            color: var(--muted);
-            margin-bottom: 18px;
-            text-align: center;
-            font-size: 13px
-        }
-
-        .otp-stub {
-            position: relative;
-            border: 2px dashed var(--rule);
-            border-radius: 6px;
-            padding: 22px 18px;
-            margin: 10px 0;
-            text-align: center;
-            background:
-                radial-gradient(circle 7px at 0 50%, var(--paper) 7px, transparent 7.5px),
-                radial-gradient(circle 7px at 100% 50%, var(--paper) 7px, transparent 7.5px);
-        }
-
-        #scanStatus {
-            font-size: 14px;
-            color: var(--muted)
-        }
-
-        .stamp {
-            display: inline-block;
-            border: 3px solid var(--stamp);
-            color: var(--stamp);
-            font-family: 'Fraunces', serif;
-            font-weight: 800;
-            text-transform: uppercase;
-            padding: 3px 12px;
-            border-radius: 6px;
-            transform: rotate(-7deg);
-            font-size: 13px;
-            letter-spacing: 1px
-        }
-
-        @keyframes stampIn {
-            0% {
-                opacity: 0;
-                transform: rotate(-7deg) scale(2.4)
-            }
-
-            60% {
-                opacity: 1;
-                transform: rotate(-7deg) scale(.9)
-            }
-
-            100% {
-                opacity: 1;
-                transform: rotate(-7deg) scale(1)
-            }
-        }
-
-        .stamp.animate {
-            animation: stampIn .4s ease forwards
-        }
+        button.pressed { transform: scale(.97); background: var(--blue-press); }
+        button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 
         .scan-btn {
-            width: 100%;
-            padding: 13px;
-            margin-top: 14px;
+            background: rgba(10, 108, 255, .1);
+            color: var(--blue);
+            box-shadow: none;
+        }
+        .scan-btn.pressed { background: rgba(10, 108, 255, .18); }
+        .scan-btn.stopping { background: rgba(255, 59, 48, .1); color: var(--red); }
+
+        .who {
+            text-align: center;
             font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 2px solid var(--ink);
-            border-radius: 3px;
-            background: transparent;
-            color: var(--ink);
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'IBM Plex Mono', monospace
+            color: var(--ink-2);
+            margin: 0 0 20px;
         }
 
-        .scan-btn:hover {
-            background: var(--ink);
-            color: var(--paper)
+        .scan-status {
+            text-align: center;
+            font-size: 13px;
+            color: var(--ink-2);
+            background: rgba(255, 255, 255, .55);
+            border: .5px solid rgba(255, 255, 255, .7);
+            border-radius: 12px;
+            padding: 16px;
         }
 
         #qrReader {
             width: 100%;
             margin-top: 14px;
-            border-radius: 6px;
+            border-radius: 14px;
             overflow: hidden;
             display: none;
         }
-
-        #qrReader video {
-            border-radius: 6px;
-        }
+        #qrReader video { border-radius: 14px; }
 
         #camError {
-            color: var(--bad);
+            color: var(--red);
             font-size: 12.5px;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 12px;
             display: none;
+        }
+
+        .switch-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--ink-3);
+            text-decoration: none;
+        }
+
+        #msg { margin-top: 4px; text-align: center; }
+        .result-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0 2px;
+        }
+        .result-icon {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transform: scale(.4);
+            opacity: 0;
+            animation: pop 420ms cubic-bezier(.34, 1.56, .64, 1) 40ms forwards;
+        }
+        .result-icon.present { background: var(--green); }
+        .result-icon.already { background: var(--ink-3); }
+        @keyframes pop { to { transform: scale(1); opacity: 1; } }
+        @media (prefers-reduced-motion: reduce) { .result-icon { animation: none; transform: scale(1); opacity: 1; } }
+        .result-label {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -.01em;
+        }
+
+        @media (prefers-contrast: more) {
+            .card { background: #fff; backdrop-filter: none; border: 1.5px solid var(--ink); }
+            .group { background: #fff; border: 1px solid var(--ink); }
+            .row { border-bottom-color: #ccc; }
         }
     </style>
 </head>
 
 <body>
+    <div class="blob a"></div>
+    <div class="blob b"></div>
+    <div class="blob c"></div>
+
     <div class="card">
         <div id="regForm">
+            <div class="icon-badge">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12Zm0 2.5c-3.6 0-9 1.8-9 5.4v1.9h18v-1.9c0-3.6-5.4-5.4-9-5.4Z" fill="white"/></svg>
+            </div>
             <h1>Student Register</h1>
             <p class="sub">One-time profile setup</p>
-            <label>Full name</label><input id="name" autocomplete="off">
+
+            <div class="group">
+                <div class="row" id="nameRow">
+                    <label>Full name</label>
+                    <input id="name" autocomplete="off">
+                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#30C36B"/><path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#FF3B30"/><path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="row" id="enrollmentRow">
+                    <label>Enrolment ID</label>
+                    <input id="enrollment" autocomplete="off" placeholder="e.g. ADTU/1/2023-26/BCAO/012">
+                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#30C36B"/><path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#FF3B30"/><path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="row" id="sectionRow">
+                    <label>Section</label>
+                    <input id="section" autocomplete="off" placeholder="e.g. A">
+                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#30C36B"/><path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#FF3B30"/><path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+            </div>
             <p class="field-error" id="nameErr"></p>
-            <label>Enrolment ID</label><input id="enrollment" autocomplete="off" placeholder="e.g. ADTU/1/2023-26/BCAO/012">
             <p class="field-error" id="enrollmentErr"></p>
-            <label>Section</label><input id="section" autocomplete="off" placeholder="e.g. A">
             <p class="field-error" id="sectionErr"></p>
-            <button onclick="register()">Continue</button>
+
+            <button id="registerBtn">Continue</button>
         </div>
 
         <div id="otpForm" style="display:none">
+            <div class="icon-badge">
+                <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/><path d="M14 14h3v3M20 17v4M17 20h4" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
             <h1>Mark Attendance</h1>
             <p class="who" id="who"></p>
-            <div class="otp-stub"><span id="scanStatus">Scan the QR code shown by your teacher.</span></div>
-            <button class="scan-btn" id="scanToggleBtn" onclick="toggleScan()">Open Camera to Scan</button>
+
+            <div class="scan-status"><span id="scanStatus">Scan the QR code shown by your teacher.</span></div>
+            <button class="scan-btn" id="scanToggleBtn">Open Camera to Scan</button>
             <div id="qrReader"></div>
             <div id="camError"></div>
-            <p style="text-align:center;margin-top:14px"><a href="#" onclick="switchProfile();return false" style="color:var(--muted);font-size:12px">Not you? Switch profile</a></p>
+
+            <a href="#" class="switch-link" id="switchLink">Not you? Switch profile</a>
         </div>
         <div id="msg"></div>
     </div>
+
     <script>
         let token = new URLSearchParams(location.search).get('token');
         const saved = JSON.parse(localStorage.getItem('profile') || 'null');
@@ -262,24 +334,56 @@
         const ENROLLMENT_REGEX = /^ADTU\/\d+\/\d{4}-\d{2,4}\/[A-Z0-9]+\/\d+$/;
         const SECTION_REGEX    = /^[A-Z]$/;
 
+        const ROW_BY_ERR = { nameErr: 'nameRow', enrollmentErr: 'enrollmentRow', sectionErr: 'sectionRow' };
+
         function showFieldError(id, msg) {
             const el = document.getElementById(id);
+            const row = document.getElementById(ROW_BY_ERR[id]);
             el.textContent = msg;
-            el.style.display = msg ? 'block' : 'none';
+            el.classList.toggle('show', !!msg);
+            if (msg) {
+                row.classList.remove('valid');
+                row.classList.add('invalid');
+                row.classList.remove('shake');
+                void row.offsetWidth;
+                row.classList.add('shake');
+            } else {
+                row.classList.remove('invalid');
+            }
         }
         function clearErrors() {
             ['nameErr', 'enrollmentErr', 'sectionErr'].forEach(id => showFieldError(id, ''));
         }
 
+        // Live focus/blur feedback on the grouped rows (visual only, doesn't change validation logic)
+        Object.entries(ROW_BY_ERR).forEach(([, rowId]) => {
+            const row = document.getElementById(rowId);
+            const input = row.querySelector('input');
+            input.addEventListener('focus', () => row.classList.add('focused'));
+            input.addEventListener('blur', () => row.classList.remove('focused'));
+            input.addEventListener('input', () => row.classList.remove('invalid', 'valid'));
+        });
+
+        // Press feedback on buttons (respond on pointerdown, not release)
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('pointerdown', () => btn.classList.add('pressed'));
+            ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
+                btn.addEventListener(ev, () => btn.classList.remove('pressed')));
+        });
+
+        document.getElementById('registerBtn').addEventListener('click', register);
+        document.getElementById('scanToggleBtn').addEventListener('click', toggleScan);
+        document.getElementById('switchLink').addEventListener('click', (e) => { e.preventDefault(); switchProfile(); });
+
         async function register() {
             clearErrors();
 
             // Normalize
-            const name               = document.getElementById('name').value.trim();
-            const enrollmentRaw      = document.getElementById('enrollment').value.trim();
-            const enrollment         = enrollmentRaw.toUpperCase();
-            const sectionRaw         = document.getElementById('section').value.trim();
-            const section            = sectionRaw.toUpperCase();
+            const name          = document.getElementById('name').value.trim();
+            const enrollmentRaw = document.getElementById('enrollment').value.trim();
+            const enrollment    = enrollmentRaw.toUpperCase();
+            const sectionRaw    = document.getElementById('section').value.trim();
+            const section       = sectionRaw.toUpperCase();
 
             // Per-field validation
             let hasError = false;
@@ -293,6 +397,8 @@
             } else if (!NAME_REGEX.test(name)) {
                 showFieldError('nameErr', 'Name must contain letters and spaces only.');
                 hasError = true;
+            } else {
+                document.getElementById('nameRow').classList.add('valid');
             }
 
             if (!enrollment) {
@@ -301,6 +407,8 @@
             } else if (!ENROLLMENT_REGEX.test(enrollment)) {
                 showFieldError('enrollmentErr', 'Enter a valid enrollment ID, e.g. ADTU/1/2023-26/BCAO/012.');
                 hasError = true;
+            } else {
+                document.getElementById('enrollmentRow').classList.add('valid');
             }
 
             if (!section) {
@@ -309,6 +417,8 @@
             } else if (!SECTION_REGEX.test(section)) {
                 showFieldError('sectionErr', 'Section must be a single letter such as A, B, C, or D.');
                 hasError = true;
+            } else {
+                document.getElementById('sectionRow').classList.add('valid');
             }
 
             if (hasError) return;
@@ -360,10 +470,16 @@
             if (r.ok) {
                 document.getElementById('scanStatus').textContent = '';
                 document.getElementById('scanToggleBtn').style.display = 'none';
-                msg.innerHTML = `<span class="stamp animate">${data.already ? 'Already Marked' : 'Present'}</span>`;
+                const cls = data.already ? 'already' : 'present';
+                const label = data.already ? 'Already Marked' : 'Present';
+                msg.innerHTML = `<div class="result-badge">
+                    <div class="result-icon ${cls}">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M6 12.5l4 4L18 8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="result-label">${label}</div>
+                </div>`;
             } else {
-                msg.style.color = 'var(--bad)';
-                msg.textContent = data.error;
+                msg.innerHTML = `<p style="color:var(--red);font-size:13px;margin:6px 0 0">${data.error}</p>`;
                 document.getElementById('scanStatus').textContent = 'Ask your teacher to show a fresh QR code, then scan again.';
             }
         }
@@ -407,7 +523,9 @@
 
             const readerEl = document.getElementById('qrReader');
             readerEl.style.display = 'block';
-            document.getElementById('scanToggleBtn').textContent = 'Stop Camera';
+            const scanBtn = document.getElementById('scanToggleBtn');
+            scanBtn.textContent = 'Stop Camera';
+            scanBtn.classList.add('stopping');
             document.getElementById('scanStatus').textContent = 'Point your camera at the QR code…';
 
             html5QrCode = new Html5Qrcode('qrReader');
@@ -427,7 +545,8 @@
                 scanning = true;
             } catch (err) {
                 readerEl.style.display = 'none';
-                document.getElementById('scanToggleBtn').textContent = 'Open Camera to Scan';
+                scanBtn.textContent = 'Open Camera to Scan';
+                scanBtn.classList.remove('stopping');
                 if (err && err.name === 'NotAllowedError') {
                     camError.textContent = 'Camera permission denied. Enable it in your browser/site settings and try again.';
                 } else if (err && err.name === 'NotFoundError') {
@@ -448,7 +567,9 @@
             }
             scanning = false;
             document.getElementById('qrReader').style.display = 'none';
-            document.getElementById('scanToggleBtn').textContent = 'Open Camera to Scan';
+            const scanBtn = document.getElementById('scanToggleBtn');
+            scanBtn.textContent = 'Open Camera to Scan';
+            scanBtn.classList.remove('stopping');
         }
     </script>
 </body>
