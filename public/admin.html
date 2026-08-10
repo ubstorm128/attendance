@@ -940,6 +940,13 @@
                 el.appendChild(div);
             });
         }
+
+        async function deleteSession(sessionId) {
+            if (!confirm('Delete this session? This will permanently remove all attendance records for it.')) return;
+            await fetch('/api/delete-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teacherId, sessionId }) });
+            loadHistory();
+            refreshStats();
+        }
     </script>
 </body>
 

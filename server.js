@@ -229,6 +229,19 @@ const server = http.createServer(async (req, res) => {
             return send(res, 200, { ok: true });
         }
 
+        // --- delete session (and its attendance) ---
+        if (req.method === 'POST' && pathname === '/api/delete-session') {
+            const { teacherId, sessionId } = await readBody(req);
+            const sessionR = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
+            const session = sessionR.rows[0];
+            if (!session) return send(res, 404, { error: 'not found' });
+            if (session.teacher_id !== teacherId) return send(res, 403, { error: 'not your session' });
+
+            await pool.query('DELETE FROM attendance WHERE session_id = $1', [sessionId]);
+            await pool.query('DELETE FROM sessions WHERE id = $1', [sessionId]);
+            return send(res, 200, { ok: true });
+        }
+
         // --- SSE stream ---
         if (req.method === 'GET' && pathname === '/api/stream') {
             const teacherId = searchParams.get('teacherId') || '';
