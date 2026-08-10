@@ -935,8 +935,9 @@
                 const div = document.createElement('div');
                 div.className = 'hist-row';
                 div.innerHTML = `<div><strong>${s.subject || 'No subject'}</strong><br><span class="muted">${new Date(s.createdAt).toLocaleString()} · ${s.count} present</span></div>
-      <div style="display:flex;align-items:center;gap:10px"><span class="badge ${s.active ? '' : 'closed'}">${s.active ? 'active' : 'closed'}</span>
-      <button class="secondary" onclick="location.href='/api/export?id=${s.id}'">Export</button></div>`;
+        <div style="display:flex;align-items:center;gap:10px"><span class="badge ${s.active ? '' : 'closed'}">${s.active ? 'active' : 'closed'}</span>
+        <button class="secondary" onclick="location.href='/api/export?id=${s.id}'">Export</button>
+        <button class="danger" onclick="deleteSession(${s.id})">Delete</button></div>`;
                 el.appendChild(div);
             });
         }
