@@ -20,8 +20,15 @@
             --glass-strong: rgba(255, 255, 255, .9);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { height: 100%; }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
 
         body {
             margin: 0;
@@ -36,10 +43,37 @@
             background: var(--bg-0);
         }
 
-        .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55; z-index: 0; }
-        .blob.a { width: 360px; height: 360px; background: #B9CCFF; top: -120px; left: -100px; }
-        .blob.b { width: 320px; height: 320px; background: #CDE7FF; bottom: -140px; right: -90px; }
-        .blob.c { width: 260px; height: 260px; background: #E3D8FF; bottom: 20%; left: 60%; }
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: .55;
+            z-index: 0;
+        }
+
+        .blob.a {
+            width: 360px;
+            height: 360px;
+            background: #B9CCFF;
+            top: -120px;
+            left: -100px;
+        }
+
+        .blob.b {
+            width: 320px;
+            height: 320px;
+            background: #CDE7FF;
+            bottom: -140px;
+            right: -90px;
+        }
+
+        .blob.c {
+            width: 260px;
+            height: 260px;
+            background: #E3D8FF;
+            bottom: 20%;
+            left: 60%;
+        }
 
         .card {
             position: relative;
@@ -55,27 +89,61 @@
             padding: 30px 24px 26px;
             animation: materialize 460ms cubic-bezier(.22, 1, .36, 1) both;
         }
+
         @keyframes materialize {
-            from { opacity: 0; transform: scale(.94) translateY(6px); backdrop-filter: blur(0px); }
-            to   { opacity: 1; transform: scale(1) translateY(0); backdrop-filter: blur(28px) saturate(180%); }
+            from {
+                opacity: 0;
+                transform: scale(.94) translateY(6px);
+                backdrop-filter: blur(0px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                backdrop-filter: blur(28px) saturate(180%);
+            }
         }
+
         @media (prefers-reduced-motion: reduce) {
-            .card { animation: fadeonly 220ms ease both; }
+            .card {
+                animation: fadeonly 220ms ease both;
+            }
         }
-        @keyframes fadeonly { from { opacity: 0; } to { opacity: 1; } }
+
+        @keyframes fadeonly {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
         @media (prefers-reduced-transparency: reduce) {
-            .card { background: var(--glass-strong); backdrop-filter: none; -webkit-backdrop-filter: none; }
+            .card {
+                background: var(--glass-strong);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
         }
 
         .icon-badge {
-            width: 52px; height: 52px;
+            width: 52px;
+            height: 52px;
             border-radius: 14px;
             background: linear-gradient(160deg, #3E8BFF, #0A6CFF);
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin: 0 auto 16px;
             box-shadow: 0 6px 14px -6px rgba(10, 108, 255, .55);
         }
-        .icon-badge svg { width: 26px; height: 26px; }
+
+        .icon-badge svg {
+            width: 26px;
+            height: 26px;
+        }
 
         h1 {
             text-align: center;
@@ -84,6 +152,7 @@
             letter-spacing: -.01em;
             margin: 0 0 4px;
         }
+
         .sub {
             text-align: center;
             font-size: 14px;
@@ -97,22 +166,55 @@
             overflow: hidden;
             border: .5px solid rgba(255, 255, 255, .7);
         }
+
         .row {
             position: relative;
             padding: 9px 14px;
             border-bottom: .5px solid var(--hair);
             transition: background 120ms ease-out;
         }
-        .row:last-child { border-bottom: none; }
-        .row.focused { background: rgba(10, 108, 255, .06); }
-        .row.shake { animation: shake 380ms cubic-bezier(.36, .07, .19, .97) both; }
-        @keyframes shake {
-            10%, 90% { transform: translateX(-1px); }
-            20%, 80% { transform: translateX(2px); }
-            30%, 50%, 70% { transform: translateX(-4px); }
-            40%, 60% { transform: translateX(4px); }
+
+        .row:last-child {
+            border-bottom: none;
         }
-        @media (prefers-reduced-motion: reduce) { .row.shake { animation: none; } }
+
+        .row.focused {
+            background: rgba(10, 108, 255, .06);
+        }
+
+        .row.shake {
+            animation: shake 380ms cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translateX(-1px);
+            }
+
+            20%,
+            80% {
+                transform: translateX(2px);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translateX(-4px);
+            }
+
+            40%,
+            60% {
+                transform: translateX(4px);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .row.shake {
+                animation: none;
+            }
+        }
 
         .row label {
             display: block;
@@ -122,8 +224,14 @@
             margin-bottom: 1px;
             transition: color 120ms ease-out;
         }
-        .row.focused label { color: var(--blue); }
-        .row.invalid label { color: var(--red); }
+
+        .row.focused label {
+            color: var(--blue);
+        }
+
+        .row.invalid label {
+            color: var(--red);
+        }
 
         input {
             width: 100%;
@@ -135,19 +243,38 @@
             color: var(--ink);
             padding: 2px 24px 2px 0;
         }
-        input::placeholder { color: var(--ink-3); }
+
+        input::placeholder {
+            color: var(--ink-3);
+        }
 
         .status-icon {
             position: absolute;
-            right: 14px; top: 28px;
-            width: 18px; height: 18px;
+            right: 14px;
+            top: 28px;
+            width: 18px;
+            height: 18px;
             opacity: 0;
             transition: opacity 150ms ease-out, transform 260ms cubic-bezier(.34, 1.56, .64, 1);
         }
-        .row.valid .status-icon.ok { opacity: 1; transform: scale(1); }
-        .row.invalid .status-icon.err { opacity: 1; transform: scale(1); }
-        .status-icon.ok { transform: scale(.6); }
-        .status-icon.err { transform: scale(.6); }
+
+        .row.valid .status-icon.ok {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .row.invalid .status-icon.err {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .status-icon.ok {
+            transform: scale(.6);
+        }
+
+        .status-icon.err {
+            transform: scale(.6);
+        }
 
         .field-error {
             font-size: 12px;
@@ -158,8 +285,15 @@
             opacity: 0;
             transition: max-height 180ms ease-out, opacity 150ms ease-out, margin 180ms ease-out;
         }
-        .field-error.show { max-height: 32px; opacity: 1; }
-        .group + .field-error { margin: 8px 2px 0; }
+
+        .field-error.show {
+            max-height: 32px;
+            opacity: 1;
+        }
+
+        .group+.field-error {
+            margin: 8px 2px 0;
+        }
 
         button {
             width: 100%;
@@ -177,16 +311,31 @@
             transform: scale(1);
             transition: transform 100ms ease-out, background 100ms ease-out;
         }
-        button.pressed { transform: scale(.97); background: var(--blue-press); }
-        button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+
+        button.pressed {
+            transform: scale(.97);
+            background: var(--blue-press);
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--blue);
+            outline-offset: 3px;
+        }
 
         .scan-btn {
             background: rgba(10, 108, 255, .1);
             color: var(--blue);
             box-shadow: none;
         }
-        .scan-btn.pressed { background: rgba(10, 108, 255, .18); }
-        .scan-btn.stopping { background: rgba(255, 59, 48, .1); color: var(--red); }
+
+        .scan-btn.pressed {
+            background: rgba(10, 108, 255, .18);
+        }
+
+        .scan-btn.stopping {
+            background: rgba(255, 59, 48, .1);
+            color: var(--red);
+        }
 
         .who {
             text-align: center;
@@ -212,7 +361,10 @@
             overflow: hidden;
             display: none;
         }
-        #qrReader video { border-radius: 14px; }
+
+        #qrReader video {
+            border-radius: 14px;
+        }
 
         #camError {
             color: var(--red);
@@ -231,7 +383,11 @@
             text-decoration: none;
         }
 
-        #msg { margin-top: 4px; text-align: center; }
+        #msg {
+            margin-top: 4px;
+            text-align: center;
+        }
+
         .result-badge {
             display: flex;
             flex-direction: column;
@@ -239,18 +395,42 @@
             gap: 10px;
             padding: 6px 0 2px;
         }
+
         .result-icon {
-            width: 56px; height: 56px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transform: scale(.4);
             opacity: 0;
             animation: pop 420ms cubic-bezier(.34, 1.56, .64, 1) 40ms forwards;
         }
-        .result-icon.present { background: var(--green); }
-        .result-icon.already { background: var(--ink-3); }
-        @keyframes pop { to { transform: scale(1); opacity: 1; } }
-        @media (prefers-reduced-motion: reduce) { .result-icon { animation: none; transform: scale(1); opacity: 1; } }
+
+        .result-icon.present {
+            background: var(--green);
+        }
+
+        .result-icon.already {
+            background: var(--ink-3);
+        }
+
+        @keyframes pop {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .result-icon {
+                animation: none;
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
         .result-label {
             font-size: 15px;
             font-weight: 600;
@@ -258,9 +438,20 @@
         }
 
         @media (prefers-contrast: more) {
-            .card { background: #fff; backdrop-filter: none; border: 1.5px solid var(--ink); }
-            .group { background: #fff; border: 1px solid var(--ink); }
-            .row { border-bottom-color: #ccc; }
+            .card {
+                background: #fff;
+                backdrop-filter: none;
+                border: 1.5px solid var(--ink);
+            }
+
+            .group {
+                background: #fff;
+                border: 1px solid var(--ink);
+            }
+
+            .row {
+                border-bottom-color: #ccc;
+            }
         }
     </style>
 </head>
@@ -273,7 +464,11 @@
     <div class="card">
         <div id="regForm">
             <div class="icon-badge">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12Zm0 2.5c-3.6 0-9 1.8-9 5.4v1.9h18v-1.9c0-3.6-5.4-5.4-9-5.4Z" fill="white"/></svg>
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12Zm0 2.5c-3.6 0-9 1.8-9 5.4v1.9h18v-1.9c0-3.6-5.4-5.4-9-5.4Z"
+                        fill="white" />
+                </svg>
             </div>
             <h1>Student Register</h1>
             <p class="sub">One-time profile setup</p>
@@ -282,20 +477,41 @@
                 <div class="row" id="nameRow">
                     <label>Full name</label>
                     <input id="name" autocomplete="off">
-                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#30C36B"/><path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#FF3B30"/><path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#30C36B" />
+                        <path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#FF3B30" />
+                        <path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round" />
+                    </svg>
                 </div>
                 <div class="row" id="enrollmentRow">
                     <label>Enrolment ID</label>
                     <input id="enrollment" autocomplete="off" placeholder="e.g. ADTU/1/2023-26/BCAO/012">
-                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#30C36B"/><path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#FF3B30"/><path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#30C36B" />
+                        <path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#FF3B30" />
+                        <path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round" />
+                    </svg>
                 </div>
                 <div class="row" id="sectionRow">
                     <label>Section</label>
                     <input id="section" autocomplete="off" placeholder="e.g. A">
-                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#30C36B"/><path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#FF3B30"/><path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                    <svg class="status-icon ok" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#30C36B" />
+                        <path d="M8 12.5l2.5 2.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <svg class="status-icon err" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#FF3B30" />
+                        <path d="M12 7v6M12 16.5v.01" stroke="white" stroke-width="2" stroke-linecap="round" />
+                    </svg>
                 </div>
             </div>
             <p class="field-error" id="nameErr"></p>
@@ -307,7 +523,12 @@
 
         <div id="otpForm" style="display:none">
             <div class="icon-badge">
-                <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/><path d="M14 14h3v3M20 17v4M17 20h4" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="white" stroke-width="2" />
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="white" stroke-width="2" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="white" stroke-width="2" />
+                    <path d="M14 14h3v3M20 17v4M17 20h4" stroke="white" stroke-width="2" stroke-linecap="round" />
+                </svg>
             </div>
             <h1>Mark Attendance</h1>
             <p class="who" id="who"></p>
@@ -330,9 +551,9 @@
         if (saved) showOtp(saved);
 
         // ── Validation helpers ──────────────────────────────────────────────
-        const NAME_REGEX       = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
+        const NAME_REGEX = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
         const ENROLLMENT_REGEX = /^ADTU\/\d+\/\d{4}-\d{2,4}\/[A-Z0-9]+\/\d+$/;
-        const SECTION_REGEX    = /^[A-Z]$/;
+        const SECTION_REGEX = /^[A-Z]$/;
 
         const ROW_BY_ERR = { nameErr: 'nameRow', enrollmentErr: 'enrollmentRow', sectionErr: 'sectionRow' };
 
@@ -379,11 +600,11 @@
             clearErrors();
 
             // Normalize
-            const name          = document.getElementById('name').value.trim();
+            const name = document.getElementById('name').value.trim();
             const enrollmentRaw = document.getElementById('enrollment').value.trim();
-            const enrollment    = enrollmentRaw.toUpperCase();
-            const sectionRaw    = document.getElementById('section').value.trim();
-            const section       = sectionRaw.toUpperCase();
+            const enrollment = enrollmentRaw.toUpperCase();
+            const sectionRaw = document.getElementById('section').value.trim();
+            const section = sectionRaw.toUpperCase();
 
             // Per-field validation
             let hasError = false;
@@ -431,8 +652,19 @@
             });
             const data = await r.json();
 
+            const profile = { name, enrollment, section };
+
             if (!r.ok) {
-                // Map backend error messages back to the correct field
+                // Already registered (409) just means this student has a profile already —
+                // that's not a real error from the student's point of view, so continue
+                // straight to attendance marking instead of blocking them.
+                if (r.status === 409) {
+                    localStorage.setItem('profile', JSON.stringify(profile));
+                    showOtp(profile);
+                    return;
+                }
+
+                // Map other backend error messages back to the correct field
                 const msg = data.error || 'Registration failed.';
                 if (msg.toLowerCase().includes('name'))
                     showFieldError('nameErr', msg);
@@ -445,7 +677,6 @@
                 return;
             }
 
-            const profile = { name, enrollment, section };
             localStorage.setItem('profile', JSON.stringify(profile));
             showOtp(profile);
         }
