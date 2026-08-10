@@ -4,150 +4,220 @@
 <head>
     <meta charset="utf-8">
     <title>Register Admin</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
-        rel="stylesheet">
     <style>
         :root {
-            --paper: #faedcd;
-            --card: #fffdf7;
-            --ink: #432818;
-            --rule: #d4a373;
-            --stamp: #606c38;
-            --bad: #bc4749;
-            --muted: #8a7968
+            --bg-0: #EEF1F6;
+            --ink: #0B0B0F;
+            --ink-2: #57596B;
+            --ink-3: #8A8C9B;
+            --blue: #0A6CFF;
+            --blue-press: #0857D1;
+            --bad: #E5484D;
+            --bad-press: #C93A3E;
+            --hair: rgba(60, 60, 67, 0.14);
+            --glass: rgba(255, 255, 255, 0.72);
+            --rail: rgba(20, 20, 30, 0.78);
         }
 
-        * {
-            box-sizing: border-box
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; }
 
         body {
-            font-family: 'IBM Plex Mono', monospace;
-            background: var(--paper);
-            background-image: repeating-linear-gradient(to bottom, transparent, transparent 31px, var(--rule) 32px);
-            min-height: 100vh;
             margin: 0;
-            color: var(--ink)
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+            color: var(--ink);
+            background: var(--bg-0);
+            position: relative;
+            overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        .wrap {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 44px 20px
-        }
+        .blob { position: fixed; border-radius: 50%; filter: blur(70px); opacity: .5; z-index: 0; pointer-events: none; }
+        .blob.a { width: 420px; height: 420px; background: #B9CCFF; top: -160px; left: 10%; }
+        .blob.b { width: 380px; height: 380px; background: #CDE7FF; bottom: -160px; right: -60px; }
+        .blob.c { width: 300px; height: 300px; background: #E3D8FF; top: 30%; right: 30%; }
 
-        .center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh
-        }
+        .center { display: flex; align-items: center; justify-content: center; min-height: 100vh; width: 100%; position: relative; z-index: 1; }
 
         .card {
-            background: var(--card);
+            background: var(--glass);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: .5px solid rgba(255, 255, 255, .6);
+            border-radius: 20px;
             padding: 32px;
-            border-radius: 4px;
-            box-shadow: 0 4px 0 var(--rule), 0 6px 20px rgba(67, 40, 24, .12)
+            box-shadow: 0 1px 2px rgba(20, 20, 40, .03), 0 16px 36px -18px rgba(20, 20, 40, .2);
+            animation: materialize 460ms cubic-bezier(.22, 1, .36, 1) both;
         }
+        @keyframes materialize {
+            from { opacity: 0; transform: translateY(8px) scale(.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) { .card, .panel, .row { animation: none !important; } }
 
-        h1 {
-            font-family: 'Fraunces', serif;
-            font-weight: 800;
-            margin: 0 0 20px;
-            font-size: 22px
-        }
+        h1 { font-size: 22px; font-weight: 600; letter-spacing: -.015em; margin: 0 0 20px; }
 
         label {
-            display: block;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--muted);
-            margin: 12px 0 4px
+            display: block; font-size: 11px; font-weight: 600; letter-spacing: .05em;
+            text-transform: uppercase; color: var(--ink-3); margin: 14px 0 7px;
         }
 
         input {
-            display: block;
-            width: 100%;
-            padding: 11px 12px;
-            font-size: 15px;
-            border-radius: 3px;
-            border: 1px solid var(--rule);
-            background: #fff;
-            color: var(--ink);
-            font-family: inherit
+            display: block; width: 100%;
+            padding: 11px 14px;
+            font-family: inherit; font-size: 15px; color: var(--ink);
+            background: rgba(255, 255, 255, .6);
+            border: .5px solid rgba(255, 255, 255, .8);
+            border-radius: 12px;
+            outline: none;
+            transition: background 120ms ease-out, box-shadow 120ms ease-out;
         }
+        input:focus { background: rgba(255, 255, 255, .9); box-shadow: 0 0 0 3px rgba(10, 108, 255, .14); }
 
         button {
-            padding: 11px 18px;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: .8px;
-            border: none;
-            border-radius: 3px;
-            background: var(--ink);
-            color: var(--paper);
-            font-weight: 600;
+            padding: 12px 20px;
+            border: none; border-radius: 12px;
+            background: var(--blue); color: #fff;
+            font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.005em;
             cursor: pointer;
-            margin-top: 16px;
-            font-family: inherit
+            transition: transform 100ms ease-out, background 100ms ease-out;
+            white-space: nowrap;
+        }
+        button:hover { background: var(--blue-press); }
+        button:active { transform: scale(.96); }
+
+        #loginMsg { color: var(--bad); font-size: 13px; min-height: 16px; margin-top: 10px; }
+
+        /* ── Ribbon ── */
+        .ribbon {
+            position: sticky; top: 0; z-index: 3;
+            display: flex; align-items: center; gap: 22px;
+            padding: 12px 28px;
+            background: var(--rail);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+        }
+        .brand {
+            display: flex; align-items: center; gap: 9px;
+            color: #fff; font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+        }
+        .brand .mark {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: linear-gradient(160deg, #3E8BFF, #0A6CFF);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px -4px rgba(10, 108, 255, .6);
+            flex: none;
+        }
+        .brand .mark svg { width: 15px; height: 15px; }
+        .ribbon-spacer { flex: 1; }
+        .logout {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 14px; border-radius: 9px;
+            background: transparent;
+            color: #FF6961; font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: background 140ms ease-out, transform 100ms ease-out;
+        }
+        .logout:hover { background: rgba(255, 105, 97, .12); }
+        .logout:active { transform: scale(.97); }
+
+        /* ── Main ── */
+        main { position: relative; z-index: 1; padding: 34px 40px 60px; max-width: 640px; margin: 0 auto; width: 100%; }
+
+        .panel {
+            background: var(--glass);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: .5px solid rgba(255, 255, 255, .6);
+            border-radius: 20px;
+            padding: 26px 26px 22px;
+            box-shadow: 0 1px 2px rgba(20, 20, 40, .03), 0 16px 36px -18px rgba(20, 20, 40, .2);
+            animation: materialize 460ms cubic-bezier(.22, 1, .36, 1) 100ms both;
         }
 
-        button:hover {
-            background: var(--stamp)
+        .panel h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+        .panel .sub { font-size: 12.5px; color: var(--ink-3); margin: 0 0 4px; }
+
+        .add-btn { width: 100%; margin-top: 18px; }
+
+        .list-heading {
+            font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+            color: var(--ink-3); margin: 30px 0 12px;
         }
 
         .row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             padding: 14px 16px;
-            background: var(--paper);
-            border: 1px solid var(--rule);
-            border-radius: 4px;
-            margin-bottom: 8px
+            background: rgba(255, 255, 255, .5);
+            border: .5px solid rgba(255, 255, 255, .7);
+            border-radius: 14px;
+            margin-bottom: 8px;
+            animation: materialize 300ms cubic-bezier(.22, 1, .36, 1) both;
         }
+        .row strong { font-weight: 600; font-size: 14px; }
+        .row .handle { color: var(--ink-3); font-size: 12px; }
+
+        .empty { color: var(--ink-3); font-size: 13px; padding: 8px 2px; }
 
         .danger {
-            background: var(--bad);
-            color: #fff;
-            padding: 6px 12px;
-            font-size: 12px;
-            margin-top: 0
+            background: var(--bad); color: #fff;
+            padding: 7px 14px; font-size: 12.5px;
         }
+        .danger:hover { background: var(--bad-press); }
 
-        .logout {
-            float: right;
-            background: var(--paper);
-            color: var(--ink);
-            border: 1px solid var(--rule);
-            margin-top: 0
+        @media (prefers-contrast: more) {
+            .panel, .card, .row { background: #fff; backdrop-filter: none; border: 1.5px solid var(--ink); }
+            .ribbon { background: #000; }
+        }
+        @media (max-width: 640px) {
+            .ribbon { padding: 12px 16px; }
+            main { padding: 26px 18px 50px; }
         }
     </style>
 </head>
 
 <body>
+
+    <div class="blob a"></div>
+    <div class="blob b"></div>
+    <div class="blob c"></div>
+
     <div id="loginBox" class="center">
         <div class="card" style="width:320px">
             <h1>Admin Login</h1>
             <label>Username</label><input id="user">
             <label>Password</label><input id="pass" type="password">
             <button onclick="login()" style="width:100%">Login</button>
-            <p id="loginMsg" style="color:var(--bad);font-size:13px"></p>
+            <p id="loginMsg"></p>
         </div>
     </div>
 
-    <div id="dash" style="display:none" class="wrap">
-        <div class="card">
-            <h1>Manage Teachers <button class="logout" onclick="logout()">Logout</button></h1>
-            <label>Full name</label><input id="name">
-            <label>Username</label><input id="username">
-            <label>Password</label><input id="password">
-            <button onclick="addTeacher()">Add Teacher</button>
-            <div id="list" style="margin-top:22px"></div>
+    <div id="dash" style="display:none">
+        <div class="ribbon">
+            <div class="brand">
+                <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="white" stroke-width="2" stroke-linejoin="round" /><path d="M8 9h6M8 13h8" stroke="white" stroke-width="2" stroke-linecap="round" /></svg></div>
+                Register Admin
+            </div>
+            <div class="ribbon-spacer"></div>
+            <div class="logout" onclick="logout()">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                Logout
+            </div>
         </div>
+
+        <main>
+            <div class="panel">
+                <h2>Manage Teachers</h2>
+                <p class="sub">Add or remove teacher accounts for the register.</p>
+
+                <label>Full name</label><input id="name">
+                <label>Username</label><input id="username">
+                <label>Password</label><input id="password">
+                <button class="add-btn" onclick="addTeacher()">Add Teacher</button>
+
+                <div class="list-heading">Teachers</div>
+                <div id="list"></div>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -185,11 +255,11 @@
             const r = await fetch('/api/admin/teachers');
             const list = await r.json();
             const el = document.getElementById('list');
-            el.innerHTML = list.length ? '' : '<p style="color:var(--muted)">No teachers yet.</p>';
+            el.innerHTML = list.length ? '' : '<p class="empty">No teachers yet.</p>';
             list.forEach(t => {
                 const div = document.createElement('div');
                 div.className = 'row';
-                div.innerHTML = `<div><strong>${t.name}</strong><br><span style="color:var(--muted);font-size:12px">@${t.username}</span></div>
+                div.innerHTML = `<div><strong>${t.name}</strong><br><span class="handle">@${t.username}</span></div>
       <button class="danger" onclick="removeTeacher('${t.id}')">Remove</button>`;
                 el.appendChild(div);
             });
