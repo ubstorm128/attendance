@@ -9,7 +9,7 @@ const DEFAULT_PORT = Number(process.env.PORT) || 3000;
 const MAX_PORT_ATTEMPTS = 10;
 let currentPort = DEFAULT_PORT;
 const SUPERADMIN_USER = process.env.SUPERADMIN_USER || 'admin';
-const SUPERADMIN_PASS = process.env.SUPERADMIN_PASS || 'changeme';
+const SUPERADMIN_PASS = process.env.SUPERADMIN_PASS || 'admin123';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
