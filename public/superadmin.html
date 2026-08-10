@@ -88,6 +88,65 @@
 
         #loginMsg { color: var(--bad); font-size: 13px; min-height: 16px; margin-top: 10px; }
 
+        .password-wrap {
+            position: relative;
+        }
+
+        .password-wrap input {
+            padding-right: 38px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 0;
+            right: 8px;
+            bottom: 0;
+            width: 38px;
+            border: none;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--ink-3);
+            padding: 0;
+            font-size: 15px;
+            cursor: pointer;
+            line-height: 1;
+            transition: background 160ms ease-out, color 160ms ease-out;
+        }
+
+        .password-toggle svg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 23px;
+            height: 23px;
+            transform: translate(-50%, -50%);
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 2;
+            transition: opacity 180ms ease-out;
+        }
+
+        .password-toggle .eye-slashed {
+            opacity: 0;
+        }
+
+        .password-toggle[aria-pressed="true"] .eye-open {
+            opacity: 0;
+        }
+
+        .password-toggle[aria-pressed="true"] .eye-slashed {
+            opacity: 1;
+        }
+
+        .password-toggle:hover,
+        .password-toggle:focus {
+            background: rgba(10, 108, 255, .08);
+            color: var(--blue);
+            outline: none;
+        }
+
         /* ── Ribbon ── */
         .ribbon {
             position: sticky; top: 0; z-index: 3;
@@ -185,7 +244,21 @@
         <div class="card" style="width:320px">
             <h1>Admin Login</h1>
             <label>Username</label><input id="user">
-            <label>Password</label><input id="pass" type="password">
+            <label>Password</label>
+            <div class="password-wrap">
+                <input id="pass" type="password">
+                <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" data-password-toggle>
+                    <svg class="eye-open" viewBox="0 0 24 24">
+                        <path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg class="eye-slashed" viewBox="0 0 24 24">
+                        <path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z" />
+                        <path d="M3 3l18 18" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                </button>
+            </div>
             <button onclick="login()" style="width:100%">Login</button>
             <p id="loginMsg"></p>
         </div>
@@ -221,6 +294,21 @@
     </div>
 
     <script>
+        function setupPasswordToggles() {
+            const toggles = document.querySelectorAll('[data-password-toggle]');
+            toggles.forEach((toggle) => {
+                toggle.addEventListener('click', () => {
+                    const input = toggle.closest('.password-wrap').querySelector('input');
+                    const isHidden = input.type === 'password';
+                    input.type = isHidden ? 'text' : 'password';
+                    toggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+                    toggle.setAttribute('aria-pressed', String(isHidden));
+                });
+            });
+        }
+
+        setupPasswordToggles();
+
         if (sessionStorage.getItem('superAdmin')) enterDash();
 
         async function login() {
