@@ -91,6 +91,25 @@ function safeFilename(teacherName, subject, sessionId) {
     return base.replace(/[^a-zA-Z0-9 \-_.]/g, '').trim().replace(/\s+/g, '-') + '.csv';
 }
 
+// --- Validation helpers (shared with registration + edit) ---
+const NAME_REGEX = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
+const ENROLLMENT_REGEX = /^ADTU\/\d+\/\d{4}-\d{2,4}\/[A-Z0-9]+\/\d+$/;
+const SECTION_REGEX = /^[A-Z]$/;
+
+function validateStudentFields(name, enrollment, section) {
+    const n = (name || '').trim();
+    const e = (enrollment || '').trim().toUpperCase();
+    const s = (section || '').trim().toUpperCase();
+    if (!n) return { error: 'Name is required' };
+    if (n.length > 100) return { error: 'Name must not exceed 100 characters' };
+    if (!NAME_REGEX.test(n)) return { error: 'Name must contain letters and spaces only' };
+    if (!e) return { error: 'Enrollment ID is required' };
+    if (!ENROLLMENT_REGEX.test(e)) return { error: 'Invalid enrollment ID format. Expected format: ADTU/1/2023-26/BCAO/012' };
+    if (!s) return { error: 'Section is required' };
+    if (!SECTION_REGEX.test(s)) return { error: 'Section must be a single letter (e.g. A, B, C)' };
+    return { name: n, enrollment: e, section: s };
+}
+
 // --- DB helpers ---
 async function getTeacherById(id) {
     if (!id) return null;
@@ -138,31 +157,14 @@ const server = http.createServer(async (req, res) => {
 
         // --- student registration ---
         if (req.method === 'POST' && pathname === '/api/register') {
-            const { name, enrollment, section } = await readBody(req);
+            const body = await readBody(req);
+            const v = validateStudentFields(body.name, body.enrollment, body.section);
+            if (v.error) return send(res, 400, { error: v.error });
 
-            const normalizedName = (name || '').trim();
-            const normalizedEnrollment = (enrollment || '').trim().toUpperCase();
-            const normalizedSection = (section || '').trim().toUpperCase();
-
-            if (!normalizedName) return send(res, 400, { error: 'Name is required' });
-            if (!normalizedEnrollment) return send(res, 400, { error: 'Enrollment ID is required' });
-            if (!normalizedSection) return send(res, 400, { error: 'Section is required' });
-
-            const nameRegex = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
-            if (normalizedName.length > 100) return send(res, 400, { error: 'Name must not exceed 100 characters' });
-            if (!nameRegex.test(normalizedName)) return send(res, 400, { error: 'Name must contain letters and spaces only' });
-
-            const enrollmentRegex = /^ADTU\/\d+\/\d{4}-\d{2,4}\/[A-Z0-9]+\/\d+$/;
-            if (!enrollmentRegex.test(normalizedEnrollment))
-                return send(res, 400, { error: 'Invalid enrollment ID format. Expected format: ADTU/1/2023-26/BCAO/012' });
-
-            const sectionRegex = /^[A-Z]$/;
-            if (!sectionRegex.test(normalizedSection)) return send(res, 400, { error: 'Section must be a single letter (e.g. A, B, C)' });
-
-            const existing = await pool.query('SELECT 1 FROM students WHERE enrollment = $1', [normalizedEnrollment]);
+            const existing = await pool.query('SELECT 1 FROM students WHERE enrollment = $1', [v.enrollment]);
             if (existing.rows.length) return send(res, 409, { error: 'Student with this enrollment ID is already registered' });
 
-            await pool.query('INSERT INTO students (enrollment, name, section) VALUES ($1, $2, $3)', [normalizedEnrollment, normalizedName, normalizedSection]);
+            await pool.query('INSERT INTO students (enrollment, name, section) VALUES ($1, $2, $3)', [v.enrollment, v.name, v.section]);
             return send(res, 200, { ok: true });
         }
 
@@ -319,6 +321,112 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'POST' && pathname === '/api/admin/teachers/delete') {
             const { id } = await readBody(req);
             await pool.query('DELETE FROM teachers WHERE id = $1', [id]);
+            return send(res, 200, { ok: true });
+        }
+
+        // --- edit student attendance ---
+        if (req.method === 'POST' && /^\/api\/session\/\d+\/student\/edit$/.test(pathname)) {
+            const sessionId = Number(pathname.split('/')[3]);
+            const { teacherId: reqTeacherId, oldEnrollment, name, enrollment, section } = await readBody(req);
+
+            // Auth checks
+            const teacher = await getTeacherById(reqTeacherId);
+            if (!teacher) return send(res, 401, { error: 'Not authenticated' });
+            const sessionR = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
+            const session = sessionR.rows[0];
+            if (!session) return send(res, 404, { error: 'Session not found' });
+            if (session.teacher_id !== teacher.id) return send(res, 403, { error: 'Not authorized to modify this session' });
+
+            // Validate input
+            const v = validateStudentFields(name, enrollment, section);
+            if (v.error) return send(res, 400, { error: v.error });
+            const normalizedOld = (oldEnrollment || '').trim().toUpperCase();
+            if (!normalizedOld) return send(res, 400, { error: 'Old enrollment ID is required' });
+
+            // Check attendance record exists
+            const attR = await pool.query('SELECT * FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedOld]);
+            if (!attR.rows.length) return send(res, 404, { error: 'Attendance record not found in this session' });
+            const originalTime = attR.rows[0].time;
+
+            // If enrollment is changing, check for conflict
+            const enrollmentChanged = normalizedOld !== v.enrollment;
+            if (enrollmentChanged) {
+                const conflict = await pool.query('SELECT 1 FROM students WHERE enrollment = $1', [v.enrollment]);
+                if (conflict.rows.length) return send(res, 409, { error: 'This enrollment ID is already registered' });
+            }
+
+            // Perform atomic updates using a transaction
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+
+                // Update student profile
+                await client.query('UPDATE students SET enrollment = $1, name = $2, section = $3 WHERE enrollment = $4',
+                    [v.enrollment, v.name, v.section, normalizedOld]);
+
+                // Update attendance record (preserve original time)
+                if (enrollmentChanged) {
+                    // Delete old, insert new to satisfy UNIQUE constraint
+                    await client.query('DELETE FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedOld]);
+                    await client.query('INSERT INTO attendance (session_id, enrollment, name, section, time) VALUES ($1, $2, $3, $4, $5)',
+                        [sessionId, v.enrollment, v.name, v.section, originalTime]);
+                } else {
+                    await client.query('UPDATE attendance SET name = $1, section = $2 WHERE session_id = $3 AND enrollment = $4',
+                        [v.name, v.section, sessionId, v.enrollment]);
+                }
+
+                // Also update any other attendance records for this student in other sessions
+                if (enrollmentChanged) {
+                    await client.query('UPDATE attendance SET enrollment = $1, name = $2, section = $3 WHERE enrollment = $4',
+                        [v.enrollment, v.name, v.section, normalizedOld]);
+                } else {
+                    await client.query('UPDATE attendance SET name = $1, section = $2 WHERE enrollment = $3',
+                        [v.name, v.section, v.enrollment]);
+                }
+
+                await client.query('COMMIT');
+            } catch (txErr) {
+                await client.query('ROLLBACK');
+                throw txErr;
+            } finally {
+                client.release();
+            }
+
+            broadcastTo(teacher.id, {
+                type: 'student-updated',
+                oldEnrollment: normalizedOld,
+                student: { name: v.name, enrollment: v.enrollment, section: v.section, time: originalTime.toISOString() }
+            });
+            return send(res, 200, { ok: true });
+        }
+
+        // --- delete student attendance ---
+        if (req.method === 'POST' && /^\/api\/session\/\d+\/student\/delete$/.test(pathname)) {
+            const sessionId = Number(pathname.split('/')[3]);
+            const { teacherId: reqTeacherId, enrollment } = await readBody(req);
+
+            // Auth checks
+            const teacher = await getTeacherById(reqTeacherId);
+            if (!teacher) return send(res, 401, { error: 'Not authenticated' });
+            const sessionR = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
+            const session = sessionR.rows[0];
+            if (!session) return send(res, 404, { error: 'Session not found' });
+            if (session.teacher_id !== teacher.id) return send(res, 403, { error: 'Not authorized to modify this session' });
+
+            const normalizedEnrollment = (enrollment || '').trim().toUpperCase();
+            if (!normalizedEnrollment) return send(res, 400, { error: 'Enrollment ID is required' });
+
+            // Check attendance exists
+            const attR = await pool.query('SELECT 1 FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedEnrollment]);
+            if (!attR.rows.length) return send(res, 404, { error: 'Attendance record not found in this session' });
+
+            // Remove attendance only (NOT the student profile)
+            await pool.query('DELETE FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedEnrollment]);
+
+            broadcastTo(teacher.id, {
+                type: 'student-deleted',
+                enrollment: normalizedEnrollment
+            });
             return send(res, 200, { ok: true });
         }
 
