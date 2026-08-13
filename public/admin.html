@@ -910,6 +910,7 @@
         setupPasswordToggles();
 
         let teacherId = null, teacherName = null;
+        let presentList = [];
         const savedAuth = JSON.parse(localStorage.getItem('teacherAuth') || 'null');
         if (savedAuth) { teacherId = savedAuth.teacherId; teacherName = savedAuth.teacherName; enterDash(); }
 
@@ -968,7 +969,8 @@
             const r = await fetch('/api/start-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teacherId, subject }) });
             const data = await r.json();
             renderQr(data.qrToken);
-            document.getElementById('rows').innerHTML = '';
+            presentList = [];
+            renderRows();
             document.getElementById('closeBtn').style.display = 'inline-block';
             document.getElementById('statSubject').textContent = subject || '–';
             refreshStats();
@@ -983,7 +985,8 @@
             es.onmessage = (e) => {
                 const data = JSON.parse(e.data);
                 if (data.type === 'new-session') {
-                    document.getElementById('rows').innerHTML = '';
+                    presentList = [];
+                    renderRows();
                     renderQr(data.session.qrToken);
                     document.getElementById('closeBtn').style.display = 'inline-block';
                 }
@@ -996,15 +999,29 @@
                     renderQr(data.session.active ? data.session.qrToken : null);
                     document.getElementById('closeBtn').style.display = data.session.active ? 'inline-block' : 'none';
                     document.getElementById('statSubject').textContent = data.session.subject || '–';
-                    Object.values(data.session.present).forEach(s => addRow(s, false));
-                    document.getElementById('statPresent').textContent = Object.keys(data.session.present).length;
+                    presentList = Object.values(data.session.present);
+                    renderRows();
+                    document.getElementById('statPresent').textContent = presentList.length;
                 }
             };
         }
+        function renderRows(animateEnrollment) {
+            const tbody = document.getElementById('rows');
+            tbody.innerHTML = '';
+            presentList
+                .slice()
+                .sort((a, b) => a.enrollment.localeCompare(b.enrollment, undefined, { numeric: true, sensitivity: 'base' }))
+                .forEach(s => {
+                    const tr = document.createElement('tr');
+                    const animate = s.enrollment === animateEnrollment;
+                    tr.innerHTML = `<td>${s.name}</td><td>${s.enrollment}</td><td>${s.section}</td><td>${new Date(s.time).toLocaleTimeString()}</td><td><span class="stamp${animate ? ' animate' : ''}">Present</span></td>`;
+                    tbody.appendChild(tr);
+                });
+        }
+
         function addRow(s, animate) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${s.name}</td><td>${s.enrollment}</td><td>${s.section}</td><td>${new Date(s.time).toLocaleTimeString()}</td><td><span class="stamp${animate ? ' animate' : ''}">Present</span></td>`;
-            document.getElementById('rows').appendChild(tr);
+            presentList.push(s);
+            renderRows(animate ? s.enrollment : null);
         }
         function bumpPresent() {
             const el = document.getElementById('statPresent');
