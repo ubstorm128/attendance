@@ -1035,6 +1035,23 @@
 
         let teacherId = null, teacherName = null;
         let currentSessionId = null;
+        let presentList = [];
+
+        // --- Enrollment sorting helpers ---
+        function getEnrollmentNumber(enrollment) {
+            if (!enrollment) return Infinity;
+            const parts = enrollment.split('/');
+            const num = Number(parts[parts.length - 1]);
+            return isNaN(num) ? Infinity : num;
+        }
+        function sortStudentsByEnrollment(students) {
+            return [...students].sort((a, b) => getEnrollmentNumber(a.enrollment) - getEnrollmentNumber(b.enrollment));
+        }
+        function renderRows() {
+            const tbody = document.getElementById('rows');
+            tbody.innerHTML = '';
+            sortStudentsByEnrollment(presentList).forEach(s => addRow(s, false));
+        }
         const savedAuth = JSON.parse(localStorage.getItem('teacherAuth') || 'null');
         if (savedAuth) { teacherId = savedAuth.teacherId; teacherName = savedAuth.teacherName; enterDash(); }
 
@@ -1119,7 +1136,14 @@
                     renderQr(null);
                     document.getElementById('closeBtn').style.display = 'none';
                 }
-                if (data.type === 'mark') { addRow(data.student, true); bumpPresent(); }
+                if (data.type === 'mark') {
+                    presentList.push(data.student);
+                    renderRows();
+                    // Re-animate the newly inserted row
+                    const newTr = document.getElementById('rows').querySelector(`tr[data-enrollment="${CSS.escape(data.student.enrollment)}"]`);
+                    if (newTr) { const stamp = newTr.querySelector('.stamp'); if (stamp) stamp.classList.add('animate'); }
+                    bumpPresent();
+                }
                 if (data.type === 'init' && data.session) {
                     currentSessionId = data.session.id;
                     renderQr(data.session.active ? data.session.qrToken : null);
@@ -1130,36 +1154,21 @@
                     document.getElementById('statPresent').textContent = presentList.length;
                 }
                 if (data.type === 'student-updated') {
-                    const rows = document.getElementById('rows');
                     const oldEnr = data.oldEnrollment;
                     const s = data.student;
-                    const tr = rows.querySelector(`tr[data-enrollment="${CSS.escape(oldEnr)}"]`);
-                    if (tr) {
-                        tr.setAttribute('data-enrollment', s.enrollment);
-                        tr.querySelector('.cell-name').textContent = s.name;
-                        tr.querySelector('.cell-enrollment').textContent = s.enrollment;
-                        tr.querySelector('.cell-section').textContent = s.section;
-                        // Update button data attributes
-                        const editBtn = tr.querySelector('.action-btn.edit');
-                        const delBtn = tr.querySelector('.action-btn.del');
-                        if (editBtn) {
-                            editBtn.setAttribute('data-name', s.name);
-                            editBtn.setAttribute('data-enrollment', s.enrollment);
-                            editBtn.setAttribute('data-section', s.section);
-                        }
-                        if (delBtn) {
-                            delBtn.setAttribute('data-enrollment', s.enrollment);
-                        }
+                    // Update presentList entry and re-sort
+                    const idx = presentList.findIndex(p => p.enrollment === oldEnr);
+                    if (idx !== -1) {
+                        presentList[idx] = { name: s.name, enrollment: s.enrollment, section: s.section, time: s.time };
+                        renderRows();
                     }
                 }
                 if (data.type === 'student-deleted') {
-                    const rows = document.getElementById('rows');
-                    const tr = rows.querySelector(`tr[data-enrollment="${CSS.escape(data.enrollment)}"]`);
-                    if (tr) tr.remove();
+                    presentList = presentList.filter(p => p.enrollment !== data.enrollment);
+                    renderRows();
                     // Update present count
                     const el = document.getElementById('statPresent');
-                    const cur = Number(el.textContent);
-                    if (cur > 0) el.textContent = cur - 1;
+                    el.textContent = presentList.length;
                 }
             };
         }

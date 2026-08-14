@@ -91,6 +91,20 @@ function safeFilename(teacherName, subject, sessionId) {
     return base.replace(/[^a-zA-Z0-9 \-_.]/g, '').trim().replace(/\s+/g, '-') + '.csv';
 }
 
+// --- Enrollment sorting helpers ---
+function getEnrollmentNumber(enrollment) {
+    if (!enrollment) return Infinity;
+    const parts = enrollment.split('/');
+    const num = Number(parts[parts.length - 1]);
+    return isNaN(num) ? Infinity : num;
+}
+
+function sortStudentsByEnrollment(students) {
+    return [...students].sort((a, b) =>
+        getEnrollmentNumber(a.enrollment) - getEnrollmentNumber(b.enrollment)
+    );
+}
+
 // --- Validation helpers (shared with registration + edit) ---
 const NAME_REGEX = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
 const ENROLLMENT_REGEX = /^ADTU\/\d+\/\d{4}-\d{2,4}\/[A-Z0-9]+\/\d+$/;
@@ -122,9 +136,13 @@ async function getActiveSession(teacherId) {
 }
 async function getPresentMap(sessionId) {
     const r = await pool.query('SELECT enrollment, name, section, time FROM attendance WHERE session_id = $1 ORDER BY time', [sessionId]);
+    const students = r.rows.map(row => ({
+        name: row.name, enrollment: row.enrollment, section: row.section, time: row.time.toISOString()
+    }));
+    const sorted = sortStudentsByEnrollment(students);
     const present = {};
-    for (const row of r.rows) {
-        present[row.enrollment] = { name: row.name, enrollment: row.enrollment, section: row.section, time: row.time.toISOString() };
+    for (const s of sorted) {
+        present[s.enrollment] = s;
     }
     return present;
 }
@@ -289,12 +307,13 @@ const server = http.createServer(async (req, res) => {
             const sessionR = await pool.query('SELECT * FROM sessions WHERE id = $1', [id]);
             const session = sessionR.rows[0];
             if (!session) return send(res, 404, { error: 'not found' });
-            const rowsR = await pool.query('SELECT * FROM attendance WHERE session_id = $1 ORDER BY time', [id]);
+            const rowsR = await pool.query('SELECT * FROM attendance WHERE session_id = $1', [id]);
+            const sortedRows = sortStudentsByEnrollment(rowsR.rows);
             res.writeHead(200, {
                 'Content-Type': 'text/csv',
                 'Content-Disposition': `attachment; filename="${safeFilename(session.teacher_name, session.subject, session.id)}"`
             });
-            return res.end(toCsv(session.subject, rowsR.rows));
+            return res.end(toCsv(session.subject, sortedRows));
         }
 
         // --- super-admin ---
