@@ -745,6 +745,129 @@
                 text-align: center;
             }
         }
+        /* ── Action buttons (table) ── */
+        .action-btn {
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: transform 100ms ease-out, background 100ms ease-out, opacity 150ms ease-out;
+            white-space: nowrap;
+        }
+
+        .action-btn:active {
+            transform: scale(.95);
+        }
+
+        .action-btn.edit {
+            background: rgba(10, 108, 255, .10);
+            color: var(--blue);
+        }
+
+        .action-btn.edit:hover {
+            background: rgba(10, 108, 255, .18);
+        }
+
+        .action-btn.del {
+            background: rgba(229, 72, 77, .10);
+            color: var(--bad);
+            margin-left: 6px;
+        }
+
+        .action-btn.del:hover {
+            background: rgba(229, 72, 77, .18);
+        }
+
+        .action-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(11, 11, 15, .35);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 180ms ease-out both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-card {
+            background: var(--glass-strong);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: .5px solid rgba(255, 255, 255, .6);
+            border-radius: 20px;
+            padding: 28px 30px;
+            box-shadow: 0 1px 2px rgba(20, 20, 40, .03), 0 24px 48px -16px rgba(20, 20, 40, .28);
+            width: 380px;
+            max-width: calc(100vw - 32px);
+            animation: materialize 320ms cubic-bezier(.22, 1, .36, 1) both;
+        }
+
+        .modal-card h2 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -.01em;
+            margin: 0 0 4px;
+        }
+
+        .modal-card .sub {
+            margin-bottom: 16px;
+        }
+
+        .modal-card label {
+            margin-top: 10px;
+        }
+
+        .modal-card input {
+            margin-bottom: 2px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            font-size: 13.5px;
+        }
+
+        .modal-error {
+            color: var(--bad);
+            font-size: 12.5px;
+            min-height: 16px;
+            margin-top: 6px;
+        }
+
+        button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        /* Confirm modal (delete) */
+        .confirm-body {
+            font-size: 14px;
+            color: var(--ink-2);
+            margin: 8px 0 0;
+            line-height: 1.5;
+        }
     </style>
 </head>
 
@@ -880,6 +1003,7 @@
                                 <th>Section</th>
                                 <th>Time</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="rows"></tbody>
@@ -910,7 +1034,7 @@
         setupPasswordToggles();
 
         let teacherId = null, teacherName = null;
-        let presentList = [];
+        let currentSessionId = null;
         const savedAuth = JSON.parse(localStorage.getItem('teacherAuth') || 'null');
         if (savedAuth) { teacherId = savedAuth.teacherId; teacherName = savedAuth.teacherName; enterDash(); }
 
@@ -969,8 +1093,8 @@
             const r = await fetch('/api/start-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teacherId, subject }) });
             const data = await r.json();
             renderQr(data.qrToken);
-            presentList = [];
-            renderRows();
+            currentSessionId = data.sessionId;
+            document.getElementById('rows').innerHTML = '';
             document.getElementById('closeBtn').style.display = 'inline-block';
             document.getElementById('statSubject').textContent = subject || '–';
             refreshStats();
@@ -988,6 +1112,7 @@
                     presentList = [];
                     renderRows();
                     renderQr(data.session.qrToken);
+                    currentSessionId = data.session.id;
                     document.getElementById('closeBtn').style.display = 'inline-block';
                 }
                 if (data.type === 'closed') {
@@ -996,6 +1121,7 @@
                 }
                 if (data.type === 'mark') { addRow(data.student, true); bumpPresent(); }
                 if (data.type === 'init' && data.session) {
+                    currentSessionId = data.session.id;
                     renderQr(data.session.active ? data.session.qrToken : null);
                     document.getElementById('closeBtn').style.display = data.session.active ? 'inline-block' : 'none';
                     document.getElementById('statSubject').textContent = data.session.subject || '–';
@@ -1003,25 +1129,46 @@
                     renderRows();
                     document.getElementById('statPresent').textContent = presentList.length;
                 }
+                if (data.type === 'student-updated') {
+                    const rows = document.getElementById('rows');
+                    const oldEnr = data.oldEnrollment;
+                    const s = data.student;
+                    const tr = rows.querySelector(`tr[data-enrollment="${CSS.escape(oldEnr)}"]`);
+                    if (tr) {
+                        tr.setAttribute('data-enrollment', s.enrollment);
+                        tr.querySelector('.cell-name').textContent = s.name;
+                        tr.querySelector('.cell-enrollment').textContent = s.enrollment;
+                        tr.querySelector('.cell-section').textContent = s.section;
+                        // Update button data attributes
+                        const editBtn = tr.querySelector('.action-btn.edit');
+                        const delBtn = tr.querySelector('.action-btn.del');
+                        if (editBtn) {
+                            editBtn.setAttribute('data-name', s.name);
+                            editBtn.setAttribute('data-enrollment', s.enrollment);
+                            editBtn.setAttribute('data-section', s.section);
+                        }
+                        if (delBtn) {
+                            delBtn.setAttribute('data-enrollment', s.enrollment);
+                        }
+                    }
+                }
+                if (data.type === 'student-deleted') {
+                    const rows = document.getElementById('rows');
+                    const tr = rows.querySelector(`tr[data-enrollment="${CSS.escape(data.enrollment)}"]`);
+                    if (tr) tr.remove();
+                    // Update present count
+                    const el = document.getElementById('statPresent');
+                    const cur = Number(el.textContent);
+                    if (cur > 0) el.textContent = cur - 1;
+                }
             };
         }
-        function renderRows(animateEnrollment) {
-            const tbody = document.getElementById('rows');
-            tbody.innerHTML = '';
-            presentList
-                .slice()
-                .sort((a, b) => a.enrollment.localeCompare(b.enrollment, undefined, { numeric: true, sensitivity: 'base' }))
-                .forEach(s => {
-                    const tr = document.createElement('tr');
-                    const animate = s.enrollment === animateEnrollment;
-                    tr.innerHTML = `<td>${s.name}</td><td>${s.enrollment}</td><td>${s.section}</td><td>${new Date(s.time).toLocaleTimeString()}</td><td><span class="stamp${animate ? ' animate' : ''}">Present</span></td>`;
-                    tbody.appendChild(tr);
-                });
-        }
-
+        function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
         function addRow(s, animate) {
-            presentList.push(s);
-            renderRows(animate ? s.enrollment : null);
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-enrollment', s.enrollment);
+            tr.innerHTML = `<td class="cell-name">${esc(s.name)}</td><td class="cell-enrollment">${esc(s.enrollment)}</td><td class="cell-section">${esc(s.section)}</td><td>${new Date(s.time).toLocaleTimeString()}</td><td><span class="stamp${animate ? ' animate' : ''}">Present</span></td><td><button class="action-btn edit" data-name="${esc(s.name)}" data-enrollment="${esc(s.enrollment)}" data-section="${esc(s.section)}" onclick="openEditModal(this)">Edit</button><button class="action-btn del" data-enrollment="${esc(s.enrollment)}" onclick="openDeleteModal(this)">Delete</button></td>`;
+            document.getElementById('rows').appendChild(tr);
         }
         function bumpPresent() {
             const el = document.getElementById('statPresent');
@@ -1053,6 +1200,135 @@
             await fetch('/api/delete-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teacherId, sessionId }) });
             loadHistory();
             refreshStats();
+        }
+
+        /* ── Modal helpers ── */
+        function closeModal() {
+            const overlay = document.querySelector('.modal-overlay');
+            if (overlay) overlay.remove();
+        }
+
+        function openEditModal(btn) {
+            const name = btn.getAttribute('data-name');
+            const enrollment = btn.getAttribute('data-enrollment');
+            const section = btn.getAttribute('data-section');
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+            overlay.innerHTML = `
+                <div class="modal-card">
+                    <h2>Edit Student</h2>
+                    <p class="sub">Update attendance details for this student</p>
+                    <label>Full Name</label>
+                    <input id="editName" value="${esc(name)}">
+                    <label>Enrollment ID</label>
+                    <input id="editEnrollment" value="${esc(enrollment)}">
+                    <label>Section</label>
+                    <input id="editSection" value="${esc(section)}" maxlength="1">
+                    <p class="modal-error" id="editError"></p>
+                    <div class="modal-actions">
+                        <button class="secondary" onclick="closeModal()">Cancel</button>
+                        <button id="editSubmitBtn" onclick="submitEdit('${esc(enrollment)}')">Save Changes</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            document.getElementById('editName').focus();
+        }
+
+        async function submitEdit(oldEnrollment) {
+            const btn = document.getElementById('editSubmitBtn');
+            const errEl = document.getElementById('editError');
+            errEl.textContent = '';
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+
+            const name = document.getElementById('editName').value;
+            const enrollment = document.getElementById('editEnrollment').value;
+            const section = document.getElementById('editSection').value;
+
+            if (!currentSessionId) {
+                errEl.textContent = 'No active session found';
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+                return;
+            }
+
+            try {
+                const r = await fetch(`/api/session/${currentSessionId}/student/edit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teacherId, oldEnrollment, name, enrollment, section })
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    errEl.textContent = data.error || 'Failed to update student';
+                    btn.disabled = false;
+                    btn.textContent = 'Save Changes';
+                    return;
+                }
+                closeModal();
+            } catch (e) {
+                errEl.textContent = 'Network error. Please try again.';
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        }
+
+        function openDeleteModal(btn) {
+            const enrollment = btn.getAttribute('data-enrollment');
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+            overlay.innerHTML = `
+                <div class="modal-card">
+                    <h2>Remove Attendance</h2>
+                    <p class="confirm-body">Are you sure you want to remove this student's attendance from the current session?<br><br>This will <strong>not</strong> delete the student's profile.</p>
+                    <p class="modal-error" id="deleteError"></p>
+                    <div class="modal-actions">
+                        <button class="secondary" onclick="closeModal()">Cancel</button>
+                        <button class="danger" id="deleteConfirmBtn" onclick="confirmDelete('${esc(enrollment)}')">Delete</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        async function confirmDelete(enrollment) {
+            const btn = document.getElementById('deleteConfirmBtn');
+            const errEl = document.getElementById('deleteError');
+            errEl.textContent = '';
+            btn.disabled = true;
+            btn.textContent = 'Deleting…';
+
+            if (!currentSessionId) {
+                errEl.textContent = 'No active session found';
+                btn.disabled = false;
+                btn.textContent = 'Delete';
+                return;
+            }
+
+            try {
+                const r = await fetch(`/api/session/${currentSessionId}/student/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teacherId, enrollment })
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    errEl.textContent = data.error || 'Failed to remove attendance';
+                    btn.disabled = false;
+                    btn.textContent = 'Delete';
+                    return;
+                }
+                closeModal();
+            } catch (e) {
+                errEl.textContent = 'Network error. Please try again.';
+                btn.disabled = false;
+                btn.textContent = 'Delete';
+            }
         }
     </script>
 </body>
