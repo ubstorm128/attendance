@@ -213,6 +213,53 @@ const server = http.createServer(async (req, res) => {
             return send(res, 200, { ok: true });
         }
 
+        // --- student: my attendance summary (per-subject + overall) ---
+        if (req.method === 'GET' && pathname === '/api/my-attendance') {
+            const enrollment = (searchParams.get('enrollment') || '').trim().toUpperCase();
+            if (!enrollment) return send(res, 400, { error: 'enrollment is required' });
+
+            const studentR = await pool.query('SELECT 1 FROM students WHERE enrollment = $1', [enrollment]);
+            if (!studentR.rows.length) return send(res, 404, { error: 'Student not registered' });
+
+            // Every subject/teacher that has ever held a session, with how many of
+            // those sessions this student attended — powers the per-subject and
+            // overall percentages on the student dashboard.
+            const bySubjectR = await pool.query(`
+                SELECT
+                    COALESCE(s.subject, 'No subject') AS subject,
+                    s.teacher_name AS "teacherName",
+                    COUNT(DISTINCT s.id) AS "totalSessions",
+                    COUNT(DISTINCT a.session_id) AS "presentSessions"
+                FROM sessions s
+                LEFT JOIN attendance a ON a.session_id = s.id AND a.enrollment = $1
+                GROUP BY COALESCE(s.subject, 'No subject'), s.teacher_name
+                ORDER BY COALESCE(s.subject, 'No subject')
+            `, [enrollment]);
+
+            const recentR = await pool.query(`
+                SELECT s.subject, s.teacher_name AS "teacherName", a.time
+                FROM attendance a
+                JOIN sessions s ON s.id = a.session_id
+                WHERE a.enrollment = $1
+                ORDER BY a.time DESC
+                LIMIT 15
+            `, [enrollment]);
+
+            return send(res, 200, {
+                bySubject: bySubjectR.rows.map(r => ({
+                    subject: r.subject,
+                    teacherName: r.teacherName,
+                    totalSessions: Number(r.totalSessions),
+                    presentSessions: Number(r.presentSessions)
+                })),
+                recent: recentR.rows.map(r => ({
+                    subject: r.subject,
+                    teacherName: r.teacherName,
+                    time: r.time.toISOString()
+                }))
+            });
+        }
+
         // --- teacher auth ---
         if (req.method === 'POST' && pathname === '/api/login') {
             const { username, password } = await readBody(req);
