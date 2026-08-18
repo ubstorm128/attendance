@@ -1384,6 +1384,21 @@
             }
         }
 
+        function checkForNewToken() {
+            if (!profile) return;
+            const t = new URLSearchParams(location.search).get('token');
+            if (t && t !== token) {
+                token = t;
+                document.querySelector('.scan-status').style.display = '';
+                document.getElementById('scanToggleBtn').style.display = '';
+                document.getElementById('msg').innerHTML = '';
+                document.getElementById('scanStatus').textContent = 'QR code detected — marking attendance…';
+                markAttendance(t);
+            }
+        }
+        window.addEventListener('pageshow', checkForNewToken);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForNewToken(); });
+
         function esc(str) {
             const d = document.createElement('div');
             d.textContent = str == null ? '' : str;

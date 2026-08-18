@@ -169,7 +169,9 @@ const server = http.createServer(async (req, res) => {
         // --- static pages ---
         if (req.method === 'GET' && ['/', '/student.html', '/admin.html', '/superadmin.html'].includes(pathname)) {
             const file = pathname === '/' ? 'student.html' : pathname.slice(1);
-            res.writeHead(200, { 'Content-Type': 'text/html' });
+            const headers = { 'Content-Type': 'text/html' };
+            if (file === 'student.html') headers['Cache-Control'] = 'no-store';
+            res.writeHead(200, headers);
             return res.end(fs.readFileSync(path.join(__dirname, 'public', file)));
         }
 
