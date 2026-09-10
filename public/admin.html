@@ -579,6 +579,19 @@
             margin-left: 6px;
         }
 
+        .section-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(118, 118, 128, 0.12);
+            color: var(--ink-2);
+            letter-spacing: 0.02em;
+            margin-left: 6px;
+        }
+
         .subject-card-title {
             font-size: 18px;
             font-weight: 600;
@@ -1839,6 +1852,7 @@
                         <div class="subject-card-header">
                             <div>
                                 <span class="dept-pill">${esc(s.department || 'GENERAL')}</span>
+                                ${s.section ? `<span class="section-pill">Sec ${esc(s.section)}</span>` : ''}
                                 <span class="code-tag">${esc(s.code || '')}</span>
                             </div>
                             <div style="display:flex; gap:4px;">
@@ -1874,9 +1888,10 @@
 
         function selectSubject(subject) {
             currentSelectedSubject = subject;
-            document.getElementById('subject').value = `${subject.code ? subject.code + ' ' : ''}${subject.name}`;
+            const fullTitle = `${subject.code ? subject.code + ' ' : ''}${subject.name}${subject.section ? ' (Sec ' + subject.section + ')' : ''}`;
+            document.getElementById('subject').value = fullTitle;
             document.getElementById('crumbSubjectName').textContent = subject.name;
-            document.getElementById('crumbSubjectDept').textContent = subject.department || 'GENERAL';
+            document.getElementById('crumbSubjectDept').textContent = `${subject.department || 'GENERAL'}${subject.section ? ' · Sec ' + subject.section : ''}`;
             document.getElementById('subjectBanner').style.display = 'flex';
             showTab('live');
         }
@@ -1896,6 +1911,8 @@
                     <input id="newSubjCode" placeholder="e.g. CS-204">
                     <label>Department / Stream</label>
                     <input id="newSubjDept" placeholder="e.g. CSE, IT, BCA">
+                    <label>Section / Batch</label>
+                    <input id="newSubjSection" placeholder="e.g. A, B, Sec-1">
                     <p class="modal-error" id="newSubjError"></p>
                     <div class="modal-actions">
                         <button class="secondary" onclick="closeModal()">Cancel</button>
@@ -1915,6 +1932,7 @@
             const name = document.getElementById('newSubjName').value.trim();
             const code = document.getElementById('newSubjCode').value.trim();
             const department = document.getElementById('newSubjDept').value.trim();
+            const section = document.getElementById('newSubjSection').value.trim();
 
             if (!name) {
                 errEl.textContent = 'Please enter a subject name';
@@ -1928,7 +1946,7 @@
                 const r = await fetch('/api/teacher/subjects', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ teacherId, name, code, department })
+                    body: JSON.stringify({ teacherId, name, code, department, section })
                 });
                 const data = await r.json();
                 if (!r.ok) {
@@ -1963,6 +1981,8 @@
                     <input id="editSubjCode" value="${esc(subj.code || '')}">
                     <label>Department / Stream</label>
                     <input id="editSubjDept" value="${esc(subj.department || '')}">
+                    <label>Section / Batch</label>
+                    <input id="editSubjSection" value="${esc(subj.section || '')}" placeholder="e.g. A, B, Sec-1">
                     <p class="modal-error" id="editSubjError"></p>
                     <div class="modal-actions">
                         <button class="secondary" onclick="closeModal()">Cancel</button>
@@ -1982,6 +2002,7 @@
             const name = document.getElementById('editSubjName').value.trim();
             const code = document.getElementById('editSubjCode').value.trim();
             const department = document.getElementById('editSubjDept').value.trim();
+            const section = document.getElementById('editSubjSection').value.trim();
 
             if (!name) {
                 errEl.textContent = 'Please enter a subject name';
@@ -1995,7 +2016,7 @@
                 const r = await fetch('/api/teacher/subjects/edit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ teacherId, subjectId, name, code, department })
+                    body: JSON.stringify({ teacherId, subjectId, name, code, department, section })
                 });
                 const data = await r.json();
                 if (!r.ok) {
@@ -2297,7 +2318,8 @@
             teacherSubjects.forEach(s => {
                 const btn = document.createElement('button');
                 btn.className = `filter-chip ${activeHistorySubjectFilter === s.id ? 'active' : ''}`;
-                btn.textContent = `${s.code ? s.code + ' ' : ''}${s.name}`;
+                const secLabel = s.section ? ` (Sec ${s.section})` : '';
+                btn.textContent = `${s.code ? s.code + ' ' : ''}${s.name}${secLabel}`;
                 btn.onclick = () => {
                     activeHistorySubjectFilter = s.id;
                     loadHistory();

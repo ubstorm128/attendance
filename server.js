@@ -45,9 +45,9 @@ function loadData() {
             username: 'WanraplangNongbri',
             password: 'teacher001',
             subjects: [
-                { id: 'subj-1', name: 'Data Structures & Algorithms', code: 'CS-204', department: 'CSE', createdAt: new Date().toISOString() },
-                { id: 'subj-2', name: 'Database Management Systems', code: 'CS-301', department: 'CSE', createdAt: new Date().toISOString() },
-                { id: 'subj-3', name: 'Web Technology & Design', code: 'IT-102', department: 'IT', createdAt: new Date().toISOString() }
+                { id: 'subj-1', name: 'Data Structures & Algorithms', code: 'CS-204', department: 'CSE', section: 'A', createdAt: new Date().toISOString() },
+                { id: 'subj-2', name: 'Database Management Systems', code: 'CS-301', department: 'CSE', section: 'B', createdAt: new Date().toISOString() },
+                { id: 'subj-3', name: 'Web Technology & Design', code: 'IT-102', department: 'IT', section: 'A', createdAt: new Date().toISOString() }
             ]
         };
         saveData();
@@ -56,9 +56,9 @@ function loadData() {
         for (const t of Object.values(db.teachers)) {
             if (!t.subjects || t.subjects.length === 0) {
                 t.subjects = [
-                    { id: 'subj-1', name: 'Data Structures & Algorithms', code: 'CS-204', department: 'CSE', createdAt: new Date().toISOString() },
-                    { id: 'subj-2', name: 'Database Management Systems', code: 'CS-301', department: 'CSE', createdAt: new Date().toISOString() },
-                    { id: 'subj-3', name: 'Web Technology & Design', code: 'IT-102', department: 'IT', createdAt: new Date().toISOString() }
+                    { id: 'subj-1', name: 'Data Structures & Algorithms', code: 'CS-204', department: 'CSE', section: 'A', createdAt: new Date().toISOString() },
+                    { id: 'subj-2', name: 'Database Management Systems', code: 'CS-301', department: 'CSE', section: 'B', createdAt: new Date().toISOString() },
+                    { id: 'subj-3', name: 'Web Technology & Design', code: 'IT-102', department: 'IT', section: 'A', createdAt: new Date().toISOString() }
                 ];
                 modified = true;
             }
@@ -324,13 +324,14 @@ const server = http.createServer(async (req, res) => {
 
         // --- teacher subjects: create ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects') {
-            const { teacherId, name, code, department } = await readBody(req);
+            const { teacherId, name, code, department, section } = await readBody(req);
             const teacher = db.teachers[teacherId];
             if (!teacher) return send(res, 401, { error: 'not logged in' });
 
             const sName = (name || '').trim();
             const sCode = (code || '').trim().toUpperCase();
             const sDept = (department || '').trim().toUpperCase();
+            const sSection = (section || '').trim().toUpperCase();
             if (!sName) return send(res, 400, { error: 'Subject name is required' });
 
             if (!teacher.subjects) teacher.subjects = [];
@@ -340,6 +341,7 @@ const server = http.createServer(async (req, res) => {
                 name: sName,
                 code: sCode || 'GEN',
                 department: sDept || 'GENERAL',
+                section: sSection || '',
                 createdAt: new Date().toISOString()
             };
             teacher.subjects.push(newSubj);
@@ -349,7 +351,7 @@ const server = http.createServer(async (req, res) => {
 
         // --- teacher subjects: edit ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects/edit') {
-            const { teacherId, subjectId, name, code, department } = await readBody(req);
+            const { teacherId, subjectId, name, code, department, section } = await readBody(req);
             const teacher = db.teachers[teacherId];
             if (!teacher) return send(res, 401, { error: 'not logged in' });
 
@@ -359,6 +361,7 @@ const server = http.createServer(async (req, res) => {
             if (name && name.trim()) subj.name = name.trim();
             if (code && code.trim()) subj.code = code.trim().toUpperCase();
             if (department && department.trim()) subj.department = department.trim().toUpperCase();
+            if (section !== undefined) subj.section = (section || '').trim().toUpperCase();
             saveData();
             return send(res, 200, { ok: true, subject: subj });
         }

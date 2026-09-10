@@ -8,10 +8,11 @@
       "subjects": [
         {
           "id": "subj-1",
-          "name": "Data Structures & Algorithms",
-          "code": "CS-204",
-          "department": "CSE",
-          "createdAt": "2026-09-10T18:24:02.246Z"
+          "name": "Advance Application Development",
+          "code": "24BCAO3101R",
+          "department": "BCA",
+          "createdAt": "2026-09-10T18:24:02.246Z",
+          "section": "C"
         },
         {
           "id": "subj-2",
