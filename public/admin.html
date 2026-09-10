@@ -123,6 +123,7 @@
             .card,
             .stat,
             .panel,
+            .subject-card,
             .qr-shell,
             .tab-pill,
             .stamp {
@@ -173,7 +174,7 @@
         input:focus {
             background: #FFFFFF;
             border-color: var(--blue);
-            box-shadow: 0 0 0 3.5px rgba(0, 113, 227, 0.16);
+            box-shadow: 0 0 0 3.5px rgba(0, 102, 204, 0.16);
         }
 
         input::placeholder {
@@ -203,7 +204,7 @@
         button:hover {
             background: var(--blue-hover);
             transform: translateY(-0.5px);
-            box-shadow: 0 3px 8px rgba(0, 113, 227, 0.22);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
 
         button:active {
@@ -228,12 +229,12 @@
         button.danger {
             background: var(--bad);
             color: #fff;
-            box-shadow: 0 1px 2px rgba(255, 59, 48, 0.2);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
         }
 
         button.danger:hover {
             background: var(--bad-hover);
-            box-shadow: 0 3px 8px rgba(255, 59, 48, 0.28);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
 
         #loginMsg {
@@ -329,11 +330,11 @@
             width: 28px;
             height: 28px;
             border-radius: 8px;
-            background: linear-gradient(145deg, #2F88FF, #0071E3);
+            background: linear-gradient(145deg, #2F88FF, #0066CC);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 6px rgba(0, 113, 227, 0.35);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
             color: #fff;
         }
 
@@ -342,7 +343,7 @@
             height: 15px;
         }
 
-        /* Cupertino Segmented Control */
+        /* Cupertino Segmented Control (3 items) */
         .tabs {
             position: relative;
             display: inline-flex;
@@ -357,7 +358,7 @@
             top: 2.5px;
             bottom: 2.5px;
             left: 2.5px;
-            width: 124px;
+            width: 118px;
             background: #FFFFFF;
             border-radius: var(--radius-pill);
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 0.5px 1px rgba(0, 0, 0, 0.06);
@@ -372,22 +373,25 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
-            width: 124px;
-            padding: 6px 14px;
+            width: 118px;
+            padding: 6px 12px;
             border-radius: var(--radius-pill);
             color: var(--ink-2);
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 500;
             letter-spacing: -.01em;
             cursor: pointer;
             transition: color 150ms ease-out;
             user-select: none;
+            white-space: nowrap;
         }
 
         .nav-item svg {
             width: 14px;
             height: 14px;
             opacity: 0.75;
+            stroke: currentColor;
+            flex: none;
         }
 
         .nav-item.active {
@@ -452,9 +456,9 @@
         }
 
         .logout:hover {
-            background: rgba(255, 59, 48, 0.08);
+            background: var(--bad-tint);
             color: var(--bad);
-            border-color: rgba(255, 59, 48, 0.2);
+            border-color: rgba(215, 0, 21, 0.2);
         }
 
         .logout svg {
@@ -492,6 +496,209 @@
             margin: 0;
             font-size: 13.5px;
             color: var(--ink-2);
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -.015em;
+            color: var(--ink);
+            margin: 0 0 4px;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: var(--ink-2);
+            margin: 0;
+        }
+
+        /* ── Subjects Hub View ── */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 18px;
+            margin-top: 14px;
+        }
+
+        .subject-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-card);
+            padding: 22px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 195px;
+            transition: all 160ms cubic-bezier(.22, 1, .36, 1);
+        }
+
+        .subject-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+            border-color: rgba(0, 102, 204, 0.25);
+        }
+
+        .subject-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .dept-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(0, 85, 179, 0.10);
+            color: #004D99;
+            letter-spacing: 0.02em;
+        }
+
+        .code-tag {
+            font-family: ui-monospace, monospace;
+            font-size: 12px;
+            color: var(--ink-2);
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .subject-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -.015em;
+            color: var(--ink);
+            margin: 0 0 6px;
+            line-height: 1.35;
+        }
+
+        .subject-card-meta {
+            font-size: 12.5px;
+            color: var(--ink-2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .subject-card-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.04);
+            border: 0.5px solid rgba(0, 0, 0, 0.06);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--ink-2);
+            cursor: pointer;
+            padding: 0;
+            transition: all 120ms ease;
+            box-shadow: none;
+        }
+
+        .card-action-btn:hover {
+            background: rgba(0, 0, 0, 0.08);
+            color: var(--ink);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .card-action-btn.delete-btn:hover {
+            background: var(--bad-tint);
+            color: var(--bad);
+        }
+
+        .card-action-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .live-session-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2.5px 8px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--green-tint);
+            color: var(--green-text);
+        }
+
+        /* ── Subject Breadcrumb Banner (Inside Live Tab) ── */
+        .subject-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: #FFFFFF;
+            border: 0.5px solid var(--hair-strong);
+            border-radius: 12px;
+            margin-bottom: 18px;
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .subject-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            padding: 6px 10px;
+            font-size: 12.5px;
+            background: transparent;
+            border: none;
+            color: var(--blue);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+            box-shadow: none;
+            border-radius: 8px;
+        }
+
+        .back-btn:hover {
+            background: var(--blue-tint);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .subject-crumb-divider {
+            color: var(--ink-3);
+            font-size: 13px;
+        }
+
+        .subject-crumb-title {
+            font-weight: 600;
+            font-size: 13.5px;
+            color: var(--ink);
         }
 
         /* ── Stats Metric Cards ── */
@@ -649,7 +856,7 @@
         }
 
         .qr-shell {
-            border: 1px dashed rgba(0, 113, 227, 0.25);
+            border: 1px dashed rgba(0, 102, 204, 0.25);
             border-radius: var(--radius-card);
             min-height: 290px;
             display: flex;
@@ -670,7 +877,7 @@
 
         .qr-placeholder {
             text-align: center;
-            color: var(--ink-3);
+            color: var(--ink-2);
             font-size: 13px;
             max-width: 220px;
             line-height: 1.4;
@@ -721,7 +928,7 @@
 
         .qr-meta .expiry {
             font-size: 12px;
-            color: var(--ink-2);
+            color: var(--green-text);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -730,7 +937,6 @@
             padding: 4px 10px;
             background: var(--green-tint);
             border-radius: var(--radius-pill);
-            color: var(--green-text);
             font-weight: 500;
         }
 
@@ -775,7 +981,7 @@
             font-size: 11px;
             font-weight: 600;
             letter-spacing: .03em;
-            color: var(--ink-3);
+            color: var(--ink-2);
             text-transform: uppercase;
             padding: 12px 14px;
             background: rgba(0, 0, 0, 0.02);
@@ -794,7 +1000,7 @@
         }
 
         tbody tr:hover {
-            background: rgba(0, 113, 227, 0.03);
+            background: rgba(0, 102, 204, 0.03);
         }
 
         tbody tr:last-child td {
@@ -827,7 +1033,7 @@
         }
 
         .cell-enrollment {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-family: ui-monospace, monospace;
             font-size: 12.5px;
             color: var(--ink-2);
         }
@@ -910,7 +1116,7 @@
         }
 
         .action-btn.edit:hover {
-            background: rgba(0, 113, 227, 0.16);
+            background: rgba(0, 102, 204, 0.16);
         }
 
         .action-btn.del {
@@ -920,17 +1126,52 @@
         }
 
         .action-btn.del:hover {
-            background: rgba(255, 59, 48, 0.18);
+            background: rgba(215, 0, 21, 0.18);
         }
 
         .empty-roster {
             text-align: center;
             padding: 48px 24px;
-            color: var(--ink-3);
+            color: var(--ink-2);
             font-size: 13px;
         }
 
-        /* ── History Tab ── */
+        /* ── History Tab & Filters ── */
+        .filter-chips {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 18px;
+        }
+
+        .filter-chip {
+            padding: 5px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--ink-2);
+            border: 0.5px solid rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 120ms ease;
+            box-shadow: none;
+        }
+
+        .filter-chip:hover {
+            background: rgba(0, 0, 0, 0.08);
+            color: var(--ink);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .filter-chip.active {
+            background: #1D1D1F;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+
         .hist-list {
             display: flex;
             flex-direction: column;
@@ -961,7 +1202,7 @@
         }
 
         .hist-row .muted {
-            color: var(--ink-3);
+            color: var(--ink-2);
             font-size: 12.5px;
             margin-top: 3px;
             display: inline-block;
@@ -1013,7 +1254,7 @@
             border-radius: var(--radius-outer);
             padding: 30px;
             box-shadow: var(--shadow-pop);
-            width: 400px;
+            width: 420px;
             max-width: 100%;
             animation: materialize 320ms cubic-bezier(.22, 1, .36, 1) both;
         }
@@ -1144,7 +1385,7 @@
             }
             .tab-pill,
             .nav-item {
-                width: 50%;
+                width: 33.333%;
             }
         }
     </style>
@@ -1159,7 +1400,7 @@
     <div id="loginBox" class="center">
         <div class="card" style="width: 360px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom: 12px;">
-                <div class="brand-mark" style="width:32px; height:32px; border-radius:10px; background:linear-gradient(145deg, #2F88FF, #0071E3); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 3px 8px rgba(0,113,227,0.35);">
+                <div class="brand-mark" style="width:32px; height:32px; border-radius:10px; background:linear-gradient(145deg, #2F88FF, #0066CC); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
                         <path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" />
                         <path d="M8 9h6M8 13h8" stroke-linecap="round" />
@@ -1209,9 +1450,17 @@
                 Teacher Admin View
             </div>
 
+            <!-- 3-Segment Cupertino Pill Control -->
             <nav class="tabs" id="tabs" aria-label="Navigation">
                 <div class="tab-pill" id="tabPill"></div>
-                <div class="nav-item active" id="tabLive" data-tab="live" onclick="showTab('live')">
+                <div class="nav-item active" id="tabSubj" data-tab="subjects" onclick="showTab('subjects')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                    My Subjects
+                </div>
+                <div class="nav-item" id="tabLive" data-tab="live" onclick="showTab('live')">
                     <svg viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
                         <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -1248,8 +1497,37 @@
                 </div>
             </div>
 
-            <!-- Live Session View -->
-            <div id="liveTab">
+            <!-- Tab 1: Subjects Hub View -->
+            <div id="subjectsTab">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Your Courses & Subjects</h2>
+                        <p class="section-subtitle">Select a subject to launch its attendance register, or manage courses across departments.</p>
+                    </div>
+                    <button onclick="openAddSubjectModal()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Subject
+                    </button>
+                </div>
+                <div class="subjects-grid" id="subjectsGrid"></div>
+            </div>
+
+            <!-- Tab 2: Live Session View -->
+            <div id="liveTab" style="display: none;">
+                <!-- Breadcrumb Banner -->
+                <div class="subject-banner" id="subjectBanner">
+                    <div class="subject-banner-left">
+                        <button class="back-btn" onclick="showTab('subjects')">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                            All Subjects
+                        </button>
+                        <span class="subject-crumb-divider">/</span>
+                        <span class="subject-crumb-title" id="crumbSubjectName">General Session</span>
+                        <span class="dept-pill" id="crumbSubjectDept">CSE</span>
+                    </div>
+                    <button class="secondary" style="padding: 5px 11px; font-size: 12px;" onclick="showTab('subjects')">Switch Subject</button>
+                </div>
+
                 <!-- Three Metric Summary Cards -->
                 <div class="stats">
                     <div class="stat">
@@ -1263,7 +1541,7 @@
                     <div class="stat">
                         <div class="stat-top">
                             <div class="label">Current Subject</div>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                         </div>
                         <div class="val" id="statSubject" style="font-size: 20px; font-weight: 600;">–</div>
                     </div>
@@ -1364,7 +1642,7 @@
                 </div>
             </div>
 
-            <!-- History View Tab -->
+            <!-- Tab 3: History View Tab -->
             <div id="historyTab" style="display: none;" class="panel">
                 <div class="panel-header">
                     <h2 class="panel-title">
@@ -1372,6 +1650,8 @@
                         Previous Class Sessions
                     </h2>
                 </div>
+                <!-- Subject Filter Chips -->
+                <div class="filter-chips" id="historyFilters"></div>
                 <div id="histList" class="hist-list"></div>
             </div>
         </main>
@@ -1410,6 +1690,9 @@
 
         let teacherId = null, teacherName = null;
         let currentSessionId = null;
+        let currentSelectedSubject = null;
+        let teacherSubjects = [];
+        let activeHistorySubjectFilter = '';
         let presentList = [];
         let sessionTimerInterval = null;
         let sessionStartTime = null;
@@ -1495,22 +1778,282 @@
             });
             connectStream();
             refreshStats();
+            loadSubjects();
+            showTab('subjects');
         }
 
         function showTab(tab) {
+            document.getElementById('subjectsTab').style.display = tab === 'subjects' ? 'block' : 'none';
             document.getElementById('liveTab').style.display = tab === 'live' ? 'block' : 'none';
             document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
+            
+            document.getElementById('tabSubj').classList.toggle('active', tab === 'subjects');
             document.getElementById('tabLive').classList.toggle('active', tab === 'live');
             document.getElementById('tabHist').classList.toggle('active', tab === 'history');
             
             const pill = document.getElementById('tabPill');
+            const tabs = ['subjects', 'live', 'history'];
+            const idx = tabs.indexOf(tab);
             const isMobile = window.innerWidth <= 640;
-            const offset = isMobile ? (tab === 'live' ? 0 : pill.parentElement.clientWidth / 2) : (tab === 'live' ? 0 : 124);
+            const itemWidth = 118;
+            const offset = isMobile ? (idx * (pill.parentElement.clientWidth / 3)) : (idx * itemWidth);
             pill.style.transform = `translateX(${offset}px)`;
             
+            if (tab === 'subjects') loadSubjects();
             if (tab === 'history') loadHistory();
         }
 
+        /* ── Subjects Management ── */
+        async function loadSubjects() {
+            try {
+                const r = await fetch(`/api/teacher/subjects?teacherId=${teacherId}`);
+                teacherSubjects = await r.json();
+                renderSubjectsGrid();
+                renderHistoryFilters();
+            } catch (e) {
+                console.error('Failed to load subjects:', e);
+            }
+        }
+
+        function renderSubjectsGrid() {
+            const grid = document.getElementById('subjectsGrid');
+            grid.innerHTML = '';
+
+            if (!teacherSubjects || teacherSubjects.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 48px 24px; background: #fff; border: 0.5px solid var(--hair); border-radius: var(--radius-card);">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="1.8" style="margin-bottom:12px; opacity:0.6;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        <h3 style="margin:0 0 6px; font-size:16px;">No subjects added yet</h3>
+                        <p style="color:var(--ink-2); font-size:13px; margin:0 0 18px;">Add your first course subject to start taking classroom attendance.</p>
+                        <button onclick="openAddSubjectModal()">+ Add Your First Subject</button>
+                    </div>
+                `;
+                return;
+            }
+
+            teacherSubjects.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'subject-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="subject-card-header">
+                            <div>
+                                <span class="dept-pill">${esc(s.department || 'GENERAL')}</span>
+                                <span class="code-tag">${esc(s.code || '')}</span>
+                            </div>
+                            <div style="display:flex; gap:4px;">
+                                <button class="card-action-btn" title="Edit Subject" onclick="openEditSubjectModal('${esc(s.id)}')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <button class="card-action-btn delete-btn" title="Remove Subject" onclick="openDeleteSubjectModal('${esc(s.id)}')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <h3 class="subject-card-title">${esc(s.name)}</h3>
+                        <div class="subject-card-meta">
+                            <span><strong>${s.totalSessions || 0}</strong> sessions held</span>
+                            ${s.isActive ? '<span class="live-session-badge"><span class="dot-live"></span> Live Session</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="subject-card-footer">
+                        <button class="${s.isActive ? 'primary' : 'secondary'}" style="flex:1; font-size:13px; padding:10px 16px;" onclick="selectSubjectById('${esc(s.id)}')">
+                            ${s.isActive ? 'Resume Session' : 'Launch Session'}
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectSubjectById(subjectId) {
+            const subj = teacherSubjects.find(s => s.id === subjectId);
+            if (!subj) return;
+            selectSubject(subj);
+        }
+
+        function selectSubject(subject) {
+            currentSelectedSubject = subject;
+            document.getElementById('subject').value = `${subject.code ? subject.code + ' ' : ''}${subject.name}`;
+            document.getElementById('crumbSubjectName').textContent = subject.name;
+            document.getElementById('crumbSubjectDept').textContent = subject.department || 'GENERAL';
+            document.getElementById('subjectBanner').style.display = 'flex';
+            showTab('live');
+        }
+
+        /* ── Subject Modals ── */
+        function openAddSubjectModal() {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+            overlay.innerHTML = `
+                <div class="modal-card">
+                    <h2>Add Course Subject</h2>
+                    <p class="sub">Add a subject to your teaching catalog across your departments.</p>
+                    <label>Course / Subject Name</label>
+                    <input id="newSubjName" placeholder="e.g. Data Structures & Algorithms">
+                    <label>Course Code</label>
+                    <input id="newSubjCode" placeholder="e.g. CS-204">
+                    <label>Department / Stream</label>
+                    <input id="newSubjDept" placeholder="e.g. CSE, IT, BCA">
+                    <p class="modal-error" id="newSubjError"></p>
+                    <div class="modal-actions">
+                        <button class="secondary" onclick="closeModal()">Cancel</button>
+                        <button id="addSubjectBtn" onclick="submitAddSubject()">Save Subject</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            document.getElementById('newSubjName').focus();
+        }
+
+        async function submitAddSubject() {
+            const btn = document.getElementById('addSubjectBtn');
+            const errEl = document.getElementById('newSubjError');
+            errEl.textContent = '';
+
+            const name = document.getElementById('newSubjName').value.trim();
+            const code = document.getElementById('newSubjCode').value.trim();
+            const department = document.getElementById('newSubjDept').value.trim();
+
+            if (!name) {
+                errEl.textContent = 'Please enter a subject name';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+
+            try {
+                const r = await fetch('/api/teacher/subjects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teacherId, name, code, department })
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    errEl.textContent = data.error || 'Failed to save subject';
+                    btn.disabled = false;
+                    btn.textContent = 'Save Subject';
+                    return;
+                }
+                closeModal();
+                loadSubjects();
+            } catch (e) {
+                errEl.textContent = 'Network error. Please try again.';
+                btn.disabled = false;
+                btn.textContent = 'Save Subject';
+            }
+        }
+
+        function openEditSubjectModal(subjectId) {
+            const subj = teacherSubjects.find(s => s.id === subjectId);
+            if (!subj) return;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+            overlay.innerHTML = `
+                <div class="modal-card">
+                    <h2>Edit Course Subject</h2>
+                    <p class="sub">Update subject details and department information.</p>
+                    <label>Course / Subject Name</label>
+                    <input id="editSubjName" value="${esc(subj.name)}">
+                    <label>Course Code</label>
+                    <input id="editSubjCode" value="${esc(subj.code || '')}">
+                    <label>Department / Stream</label>
+                    <input id="editSubjDept" value="${esc(subj.department || '')}">
+                    <p class="modal-error" id="editSubjError"></p>
+                    <div class="modal-actions">
+                        <button class="secondary" onclick="closeModal()">Cancel</button>
+                        <button id="saveEditSubjectBtn" onclick="submitEditSubject('${esc(subj.id)}')">Save Changes</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            document.getElementById('editSubjName').focus();
+        }
+
+        async function submitEditSubject(subjectId) {
+            const btn = document.getElementById('saveEditSubjectBtn');
+            const errEl = document.getElementById('editSubjError');
+            errEl.textContent = '';
+
+            const name = document.getElementById('editSubjName').value.trim();
+            const code = document.getElementById('editSubjCode').value.trim();
+            const department = document.getElementById('editSubjDept').value.trim();
+
+            if (!name) {
+                errEl.textContent = 'Please enter a subject name';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+
+            try {
+                const r = await fetch('/api/teacher/subjects/edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teacherId, subjectId, name, code, department })
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    errEl.textContent = data.error || 'Failed to update subject';
+                    btn.disabled = false;
+                    btn.textContent = 'Save Changes';
+                    return;
+                }
+                closeModal();
+                loadSubjects();
+            } catch (e) {
+                errEl.textContent = 'Network error. Please try again.';
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        }
+
+        function openDeleteSubjectModal(subjectId) {
+            const subj = teacherSubjects.find(s => s.id === subjectId);
+            if (!subj) return;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+            overlay.innerHTML = `
+                <div class="modal-card">
+                    <h2>Remove Course Subject</h2>
+                    <p class="sub" style="margin-bottom:8px;">Are you sure you want to remove <strong>${esc(subj.name)}</strong> from your catalog?</p>
+                    <p style="font-size:12.5px; color:var(--ink-2); margin-top:0;">Past attendance records for completed sessions will remain safely preserved.</p>
+                    <p class="modal-error" id="deleteSubjError"></p>
+                    <div class="modal-actions">
+                        <button class="secondary" onclick="closeModal()">Cancel</button>
+                        <button class="danger" id="deleteSubjConfirmBtn" onclick="confirmDeleteSubject('${esc(subj.id)}')">Remove</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        async function confirmDeleteSubject(subjectId) {
+            const btn = document.getElementById('deleteSubjConfirmBtn');
+            btn.disabled = true;
+            btn.textContent = 'Removing…';
+
+            try {
+                const r = await fetch('/api/teacher/subjects/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teacherId, subjectId })
+                });
+                closeModal();
+                loadSubjects();
+            } catch (e) {
+                closeModal();
+            }
+        }
+
+        /* ── Session & QR Lifecycle ── */
         function startSessionTimer(startTime) {
             sessionStartTime = startTime ? new Date(startTime) : new Date();
             if (sessionTimerInterval) clearInterval(sessionTimerInterval);
@@ -1561,8 +2104,8 @@
                 live.style.display = 'none';
                 if (statusPill) {
                     statusPill.textContent = 'Idle';
-                    statusPill.style.background = 'var(--blue-tint)';
-                    statusPill.style.color = 'var(--blue)';
+                    statusPill.style.background = 'rgba(0, 85, 179, 0.10)';
+                    statusPill.style.color = '#004D99';
                 }
                 stopSessionTimer();
                 return;
@@ -1608,10 +2151,12 @@
 
         async function generateSession() {
             const subject = document.getElementById('subject').value.trim();
+            const subjectId = currentSelectedSubject ? currentSelectedSubject.id : null;
+            
             const r = await fetch('/api/start-session', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ teacherId, subject }) 
+                body: JSON.stringify({ teacherId, subject, subjectId }) 
             });
             const data = await r.json();
             renderQr(data.qrToken);
@@ -1622,6 +2167,7 @@
             document.getElementById('statSubject').textContent = subject || 'General';
             startSessionTimer(new Date());
             refreshStats();
+            loadSubjects();
         }
 
         async function closeSession() {
@@ -1634,6 +2180,7 @@
             renderQr(null);
             closeProjectorModal();
             refreshStats();
+            loadSubjects();
         }
 
         function connectStream() {
@@ -1646,11 +2193,14 @@
                     renderQr(data.session.qrToken);
                     currentSessionId = data.session.id;
                     document.getElementById('closeBtn').style.display = 'inline-flex';
+                    document.getElementById('statSubject').textContent = data.session.subject || '–';
                     startSessionTimer(data.session.createdAt);
+                    loadSubjects();
                 }
                 if (data.type === 'closed') {
                     renderQr(null);
                     document.getElementById('closeBtn').style.display = 'none';
+                    loadSubjects();
                 }
                 if (data.type === 'mark') {
                     presentList.push(data.student);
@@ -1690,7 +2240,7 @@
 
         function esc(str) { 
             const d = document.createElement('div'); 
-            d.textContent = str; 
+            d.textContent = str || ''; 
             return d.innerHTML; 
         }
 
@@ -1719,11 +2269,6 @@
             document.getElementById('rows').appendChild(tr);
         }
 
-        function bumpPresent() {
-            const el = document.getElementById('statPresent');
-            el.textContent = Number(el.textContent) + 1;
-        }
-
         async function refreshStats() {
             try {
                 const r = await fetch(`/api/history?teacherId=${teacherId}`);
@@ -1734,12 +2279,46 @@
             }
         }
 
+        /* ── History Filter & Listing ── */
+        function renderHistoryFilters() {
+            const container = document.getElementById('historyFilters');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const allBtn = document.createElement('button');
+            allBtn.className = `filter-chip ${!activeHistorySubjectFilter ? 'active' : ''}`;
+            allBtn.textContent = 'All Subjects';
+            allBtn.onclick = () => {
+                activeHistorySubjectFilter = '';
+                loadHistory();
+            };
+            container.appendChild(allBtn);
+
+            teacherSubjects.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = `filter-chip ${activeHistorySubjectFilter === s.id ? 'active' : ''}`;
+                btn.textContent = `${s.code ? s.code + ' ' : ''}${s.name}`;
+                btn.onclick = () => {
+                    activeHistorySubjectFilter = s.id;
+                    loadHistory();
+                };
+                container.appendChild(btn);
+            });
+        }
+
         async function loadHistory() {
             try {
-                const r = await fetch(`/api/history?teacherId=${teacherId}`);
+                let url = `/api/history?teacherId=${teacherId}`;
+                if (activeHistorySubjectFilter) {
+                    url += `&subjectId=${encodeURIComponent(activeHistorySubjectFilter)}`;
+                }
+                const r = await fetch(url);
                 const list = await r.json();
                 const el = document.getElementById('histList');
-                el.innerHTML = list.length ? '' : '<p style="color:var(--ink-3); text-align:center; padding:32px 0;">No previous sessions found.</p>';
+                el.innerHTML = list.length ? '' : '<p style="color:var(--ink-2); text-align:center; padding:32px 0;">No sessions found for this selection.</p>';
+                
+                renderHistoryFilters();
+
                 list.forEach(s => {
                     const div = document.createElement('div');
                     div.className = 'hist-row';
@@ -1777,6 +2356,7 @@
             });
             loadHistory();
             refreshStats();
+            loadSubjects();
         }
 
         /* ── Projector Mode Handlers ── */
@@ -1788,7 +2368,7 @@
             document.getElementById('projectorModal').style.display = 'none';
         }
 
-        /* ── Modal helpers ── */
+        /* ── Student Edit/Delete Modal Helpers ── */
         function closeModal() {
             const overlay = document.querySelector('.modal-overlay');
             if (overlay) overlay.remove();
@@ -1872,7 +2452,7 @@
                 <div class="modal-card">
                     <h2>Remove Attendance</h2>
                     <p class="sub" style="margin-bottom:8px;">Are you sure you want to remove this student's attendance from the current session?</p>
-                    <p style="font-size:12.5px; color:var(--ink-3); margin-top:0;">This will remove them from today's register but preserves their student profile.</p>
+                    <p style="font-size:12.5px; color:var(--ink-2); margin-top:0;">This will remove them from today's register but preserves their student profile.</p>
                     <p class="modal-error" id="deleteError"></p>
                     <div class="modal-actions">
                         <button class="secondary" onclick="closeModal()">Cancel</button>
@@ -1885,36 +2465,23 @@
 
         async function confirmDelete(enrollment) {
             const btn = document.getElementById('deleteConfirmBtn');
-            const errEl = document.getElementById('deleteError');
-            errEl.textContent = '';
             btn.disabled = true;
             btn.textContent = 'Removing…';
 
             if (!currentSessionId) {
-                errEl.textContent = 'No active session found';
-                btn.disabled = false;
-                btn.textContent = 'Remove';
+                closeModal();
                 return;
             }
 
             try {
-                const r = await fetch(`/api/session/${currentSessionId}/student/delete`, {
+                await fetch(`/api/session/${currentSessionId}/student/delete`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ teacherId, enrollment })
                 });
-                const data = await r.json();
-                if (!r.ok) {
-                    errEl.textContent = data.error || 'Failed to remove attendance';
-                    btn.disabled = false;
-                    btn.textContent = 'Remove';
-                    return;
-                }
                 closeModal();
             } catch (e) {
-                errEl.textContent = 'Network error. Please try again.';
-                btn.disabled = false;
-                btn.textContent = 'Remove';
+                closeModal();
             }
         }
     </script>

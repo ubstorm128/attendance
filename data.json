@@ -4,7 +4,30 @@
       "id": "teacher-default-1",
       "name": "Wanraplang Nongbri",
       "username": "WanraplangNongbri",
-      "password": "teacher001"
+      "password": "teacher001",
+      "subjects": [
+        {
+          "id": "subj-1",
+          "name": "Data Structures & Algorithms",
+          "code": "CS-204",
+          "department": "CSE",
+          "createdAt": "2026-09-10T18:24:02.246Z"
+        },
+        {
+          "id": "subj-2",
+          "name": "Database Management Systems",
+          "code": "CS-301",
+          "department": "CSE",
+          "createdAt": "2026-09-10T18:24:02.247Z"
+        },
+        {
+          "id": "subj-3",
+          "name": "Web Technology & Design",
+          "code": "IT-102",
+          "department": "IT",
+          "createdAt": "2026-09-10T18:24:02.247Z"
+        }
+      ]
     }
   },
   "students": {
@@ -14,6 +37,18 @@
       "section": "C"
     }
   },
-  "sessions": [],
-  "nextSessionId": 3
+  "sessions": [
+    {
+      "id": 3,
+      "teacherId": "teacher-default-1",
+      "teacherName": "Wanraplang Nongbri",
+      "subject": "CS-402 Cloud Computing & Distributed Systems",
+      "subjectId": "subj-aadd0fb4",
+      "qrToken": null,
+      "present": {},
+      "createdAt": "2026-09-10T18:33:40.059Z",
+      "active": false
+    }
+  ],
+  "nextSessionId": 4
 }

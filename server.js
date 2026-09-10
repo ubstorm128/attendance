@@ -43,9 +43,27 @@ function loadData() {
             id: defaultId,
             name: 'Wanraplang Nongbri',
             username: 'WanraplangNongbri',
-            password: 'teacher001'
+            password: 'teacher001',
+            subjects: [
+                { id: 'subj-1', name: 'Data Structures & Algorithms', code: 'CS-204', department: 'CSE', createdAt: new Date().toISOString() },
+                { id: 'subj-2', name: 'Database Management Systems', code: 'CS-301', department: 'CSE', createdAt: new Date().toISOString() },
+                { id: 'subj-3', name: 'Web Technology & Design', code: 'IT-102', department: 'IT', createdAt: new Date().toISOString() }
+            ]
         };
         saveData();
+    } else {
+        let modified = false;
+        for (const t of Object.values(db.teachers)) {
+            if (!t.subjects || t.subjects.length === 0) {
+                t.subjects = [
+                    { id: 'subj-1', name: 'Data Structures & Algorithms', code: 'CS-204', department: 'CSE', createdAt: new Date().toISOString() },
+                    { id: 'subj-2', name: 'Database Management Systems', code: 'CS-301', department: 'CSE', createdAt: new Date().toISOString() },
+                    { id: 'subj-3', name: 'Web Technology & Design', code: 'IT-102', department: 'IT', createdAt: new Date().toISOString() }
+                ];
+                modified = true;
+            }
+        }
+        if (modified) saveData();
     }
 }
 
@@ -146,6 +164,7 @@ function formatSession(s) {
         teacherId: s.teacherId,
         teacherName: s.teacherName,
         subject: s.subject,
+        subjectId: s.subjectId || null,
         qrToken: s.qrToken,
         present: s.present || {},
         createdAt: s.createdAt,
@@ -277,9 +296,90 @@ const server = http.createServer(async (req, res) => {
             return send(res, 200, { ok: true, teacherId: teacher.id, teacherName: teacher.name });
         }
 
+        // --- teacher subjects: list ---
+        if (req.method === 'GET' && pathname === '/api/teacher/subjects') {
+            const teacherId = searchParams.get('teacherId') || '';
+            const teacher = db.teachers[teacherId];
+            if (!teacher) return send(res, 401, { error: 'not logged in' });
+
+            const subjects = (teacher.subjects || []).map(s => {
+                const matchingSessions = db.sessions.filter(sess => 
+                    sess.teacherId === teacherId && 
+                    (sess.subjectId === s.id || sess.subject === s.name || sess.subject === `${s.code} ${s.name}`)
+                );
+                const activeSession = matchingSessions.find(sess => sess.active);
+                const totalPresent = matchingSessions.reduce((acc, sess) => acc + Object.keys(sess.present || {}).length, 0);
+                
+                return {
+                    ...s,
+                    totalSessions: matchingSessions.length,
+                    totalPresent,
+                    isActive: !!activeSession,
+                    activeSessionId: activeSession ? activeSession.id : null
+                };
+            });
+
+            return send(res, 200, subjects);
+        }
+
+        // --- teacher subjects: create ---
+        if (req.method === 'POST' && pathname === '/api/teacher/subjects') {
+            const { teacherId, name, code, department } = await readBody(req);
+            const teacher = db.teachers[teacherId];
+            if (!teacher) return send(res, 401, { error: 'not logged in' });
+
+            const sName = (name || '').trim();
+            const sCode = (code || '').trim().toUpperCase();
+            const sDept = (department || '').trim().toUpperCase();
+            if (!sName) return send(res, 400, { error: 'Subject name is required' });
+
+            if (!teacher.subjects) teacher.subjects = [];
+            const id = 'subj-' + nodeCrypto.randomUUID().slice(0, 8);
+            const newSubj = {
+                id,
+                name: sName,
+                code: sCode || 'GEN',
+                department: sDept || 'GENERAL',
+                createdAt: new Date().toISOString()
+            };
+            teacher.subjects.push(newSubj);
+            saveData();
+            return send(res, 200, { ok: true, subject: newSubj });
+        }
+
+        // --- teacher subjects: edit ---
+        if (req.method === 'POST' && pathname === '/api/teacher/subjects/edit') {
+            const { teacherId, subjectId, name, code, department } = await readBody(req);
+            const teacher = db.teachers[teacherId];
+            if (!teacher) return send(res, 401, { error: 'not logged in' });
+
+            const subj = (teacher.subjects || []).find(s => s.id === subjectId);
+            if (!subj) return send(res, 404, { error: 'Subject not found' });
+
+            if (name && name.trim()) subj.name = name.trim();
+            if (code && code.trim()) subj.code = code.trim().toUpperCase();
+            if (department && department.trim()) subj.department = department.trim().toUpperCase();
+            saveData();
+            return send(res, 200, { ok: true, subject: subj });
+        }
+
+        // --- teacher subjects: delete ---
+        if (req.method === 'POST' && pathname === '/api/teacher/subjects/delete') {
+            const { teacherId, subjectId } = await readBody(req);
+            const teacher = db.teachers[teacherId];
+            if (!teacher) return send(res, 401, { error: 'not logged in' });
+
+            const idx = (teacher.subjects || []).findIndex(s => s.id === subjectId);
+            if (idx === -1) return send(res, 404, { error: 'Subject not found' });
+
+            teacher.subjects.splice(idx, 1);
+            saveData();
+            return send(res, 200, { ok: true });
+        }
+
         // --- start session ---
         if (req.method === 'POST' && pathname === '/api/start-session') {
-            const { teacherId, subject } = await readBody(req);
+            const { teacherId, subject, subjectId } = await readBody(req);
             const teacher = db.teachers[teacherId];
             if (!teacher) return send(res, 401, { error: 'not logged in' });
 
@@ -298,6 +398,7 @@ const server = http.createServer(async (req, res) => {
                 teacherId: teacher.id,
                 teacherName: teacher.name,
                 subject: subjectVal,
+                subjectId: subjectId || null,
                 qrToken,
                 present: {},
                 createdAt: new Date().toISOString(),
@@ -360,17 +461,25 @@ const server = http.createServer(async (req, res) => {
         // --- history ---
         if (req.method === 'GET' && pathname === '/api/history') {
             const teacherId = searchParams.get('teacherId') || '';
-            const list = db.sessions
-                .filter(s => s.teacherId === teacherId)
-                .sort((a, b) => b.id - a.id)
-                .map(s => ({
-                    id: s.id,
-                    subject: s.subject,
-                    createdAt: s.createdAt,
-                    count: Object.keys(s.present || {}).length,
-                    active: s.active
-                }));
-            return send(res, 200, list);
+            const subjectFilter = (searchParams.get('subject') || '').trim();
+            const subjectIdFilter = (searchParams.get('subjectId') || '').trim();
+
+            let list = db.sessions.filter(s => s.teacherId === teacherId);
+            if (subjectIdFilter) {
+                list = list.filter(s => s.subjectId === subjectIdFilter);
+            } else if (subjectFilter) {
+                list = list.filter(s => s.subject === subjectFilter || s.subjectId === subjectFilter);
+            }
+
+            const mapped = list.sort((a, b) => b.id - a.id).map(s => ({
+                id: s.id,
+                subject: s.subject,
+                subjectId: s.subjectId || null,
+                createdAt: s.createdAt,
+                count: Object.keys(s.present || {}).length,
+                active: s.active
+            }));
+            return send(res, 200, mapped);
         }
 
         // --- single session ---
