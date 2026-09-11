@@ -148,9 +148,8 @@ function validateStudentFields(name, enrollment, section) {
     if (!NAME_REGEX.test(n)) return { error: 'Name must contain letters and spaces only' };
     if (!e) return { error: 'Enrollment ID is required' };
     if (!ENROLLMENT_REGEX.test(e)) return { error: 'Invalid enrollment ID format. Expected format: ADTU/1/2023-26/BCAO/012' };
-    if (!s) return { error: 'Section is required' };
-    if (!SECTION_REGEX.test(s)) return { error: 'Section must be alphanumeric (e.g. A, B, S-1)' };
-    return { name: n, enrollment: e, section: s };
+    if (s && !SECTION_REGEX.test(s)) return { error: 'Section must be alphanumeric (e.g. A, B, S-1)' };
+    return { name: n, enrollment: e, section: s || '' };
 }
 
 function activeSessionFor(teacherId) {
@@ -199,10 +198,10 @@ const server = http.createServer(async (req, res) => {
             db.students[v.enrollment] = {
                 name: v.name,
                 enrollment: v.enrollment,
-                section: v.section
+                section: v.section || ''
             };
             saveData();
-            return send(res, 200, { ok: true });
+            return send(res, 200, { ok: true, student: db.students[v.enrollment] });
         }
 
         // --- mark attendance ---
@@ -218,15 +217,33 @@ const server = http.createServer(async (req, res) => {
 
             if (!session.present) session.present = {};
 
+            // Auto-resolve section from active teacher subject if student section is blank
+            let resolvedSection = student.section || '';
+            if (!resolvedSection && session.subjectId) {
+                const teacher = db.teachers[session.teacherId];
+                if (teacher && teacher.subjects) {
+                    const subj = teacher.subjects.find(s => s.id === session.subjectId);
+                    if (subj && subj.section) resolvedSection = subj.section;
+                }
+            }
+
             if (session.present[normEnrollment]) {
-                return send(res, 200, { ok: true, already: true });
+                const existing = session.present[normEnrollment];
+                return send(res, 200, {
+                    ok: true,
+                    already: true,
+                    subject: session.subject || 'Class Session',
+                    teacherName: session.teacherName || 'Instructor',
+                    time: existing.time,
+                    section: existing.section || resolvedSection
+                });
             }
 
             const timeStr = new Date().toISOString();
             const record = {
                 name: student.name,
                 enrollment: student.enrollment,
-                section: student.section,
+                section: resolvedSection,
                 time: timeStr
             };
             session.present[normEnrollment] = record;
@@ -236,7 +253,14 @@ const server = http.createServer(async (req, res) => {
                 type: 'mark',
                 student: record
             });
-            return send(res, 200, { ok: true });
+            return send(res, 200, {
+                ok: true,
+                already: false,
+                subject: session.subject || 'Class Session',
+                teacherName: session.teacherName || 'Instructor',
+                time: timeStr,
+                section: resolvedSection
+            });
         }
 
         // --- debug log ---

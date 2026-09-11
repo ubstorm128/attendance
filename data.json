@@ -16,17 +16,11 @@
         },
         {
           "id": "subj-2",
-          "name": "Database Management Systems",
-          "code": "CS-301",
-          "department": "CSE",
-          "createdAt": "2026-09-10T18:24:02.247Z"
-        },
-        {
-          "id": "subj-3",
-          "name": "Web Technology & Design",
-          "code": "IT-102",
-          "department": "IT",
-          "createdAt": "2026-09-10T18:24:02.247Z"
+          "name": "UI UX Lab",
+          "code": "24BCAO3101R",
+          "department": "BCA",
+          "createdAt": "2026-09-10T18:24:02.247Z",
+          "section": "C"
         }
       ]
     }
@@ -36,20 +30,36 @@
       "name": "AK",
       "enrollment": "ADTU/1/2024-27/BCAO/057",
       "section": "C"
+    },
+    "ADTU/1/2023-26/BCAO/901": {
+      "name": "Tariq Ali",
+      "enrollment": "ADTU/1/2023-26/BCAO/901",
+      "section": ""
     }
   },
   "sessions": [
     {
-      "id": 3,
+      "id": 8,
       "teacherId": "teacher-default-1",
       "teacherName": "Wanraplang Nongbri",
-      "subject": "CS-402 Cloud Computing & Distributed Systems",
-      "subjectId": "subj-aadd0fb4",
+      "subject": "24BCAO3101R Advance Application Development (Sec C)",
+      "subjectId": "subj-1",
       "qrToken": null,
       "present": {},
-      "createdAt": "2026-09-10T18:33:40.059Z",
+      "createdAt": "2026-09-11T12:16:03.385Z",
       "active": false
+    },
+    {
+      "id": 9,
+      "teacherId": "teacher-default-1",
+      "teacherName": "Wanraplang Nongbri",
+      "subject": "24BCAO3101R UI UX Lab (Sec C)",
+      "subjectId": "subj-2",
+      "qrToken": "f279726016d948a7a8ae2a4fe163e5739b5a08f98b951e86a7302e123f1ec34b",
+      "present": {},
+      "createdAt": "2026-09-11T12:25:38.505Z",
+      "active": true
     }
   ],
-  "nextSessionId": 4
+  "nextSessionId": 10
 }
