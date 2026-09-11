@@ -3,133 +3,183 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
     <meta name="theme-color" content="#F5F5F7">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Student Attendance · Campus Check-In</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"
-        onerror="this.dataset.failed='1';var s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';document.head.appendChild(s);"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-0: #F5F5F7;
-            --bg-canvas: #FAFAFC;
-            --card-bg: #FFFFFF;
-            --card-glass: rgba(255, 255, 255, 0.86);
+            --bg-card: #FFFFFF;
+            --bg-card-elevated: rgba(255, 255, 255, 0.96);
+            --bg-input: #F6F7F9;
+            --bg-input-focus: #FFFFFF;
             --ink: #1D1D1F;
             --ink-2: #48484A;
-            --ink-3: #59595E;
+            --ink-3: #6E6E73;
             --blue: #0066CC;
             --blue-hover: #0055B3;
             --blue-press: #004494;
             --blue-tint: rgba(0, 102, 204, 0.08);
+            --blue-tint-strong: rgba(0, 102, 204, 0.14);
             --green: #248A3D;
             --green-tint: rgba(36, 138, 61, 0.12);
             --green-text: #135B25;
-            --amber: #B25E00;
-            --amber-tint: rgba(178, 94, 0, 0.10);
             --bad: #D70015;
             --bad-tint: rgba(215, 0, 21, 0.10);
             --hair: rgba(0, 0, 0, 0.08);
-            --hair-strong: rgba(0, 0, 0, 0.14);
-            --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 24px -8px rgba(0, 0, 0, 0.05);
-            --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.03), 0 20px 40px -14px rgba(0, 0, 0, 0.07);
-            --shadow-pop: 0 8px 30px rgba(0, 0, 0, 0.12);
-            --radius-outer: 24px;
-            --radius-card: 18px;
+            --hair-strong: rgba(0, 0, 0, 0.13);
+            --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.03), 0 8px 20px -6px rgba(0, 0, 0, 0.04);
+            --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.03), 0 24px 48px -12px rgba(0, 0, 0, 0.08);
+            --radius-outer: 26px;
+            --radius-card: 20px;
+            --radius-inset: 16px;
             --radius-pill: 999px;
+            --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+            --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
         }
 
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-        }
-
-        html,
-        body {
-            height: 100%;
             margin: 0;
             padding: 0;
         }
 
+        html, body {
+            min-height: 100%;
+            height: 100%;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            font-family: var(--font-main);
             color: var(--ink);
             background: var(--bg-0);
+            position: relative;
             overflow-x: hidden;
-            min-height: 100vh;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             display: flex;
             flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
         }
 
-        /* ── Screen Center Shell ── */
-        .page-shell {
+        /* ── Ambient Background Canvas ── */
+        .ambient-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            background: 
+                radial-gradient(circle at 50% -10%, rgba(0, 102, 204, 0.07) 0%, transparent 45%),
+                radial-gradient(circle at 100% 100%, rgba(36, 138, 61, 0.05) 0%, transparent 45%),
+                radial-gradient(circle at 0% 100%, rgba(0, 102, 204, 0.04) 0%, transparent 45%),
+                var(--bg-0);
+        }
+
+        /* ── Responsive Viewport Shell ── */
+        .viewport-shell {
+            position: relative;
+            z-index: 1;
             width: 100%;
             max-width: 440px;
             margin: 0 auto;
-            padding: 24px 18px 48px;
-            flex: 1;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            padding: 16px 18px 24px;
         }
 
-        /* ── Top Navigation / Brand Bar ── */
-        .top-bar {
+        /* ── Top Header Navigation ── */
+        .app-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 0 20px;
+            padding: 8px 2px 20px;
+            width: 100%;
         }
 
-        .brand-mark {
+        .brand-cluster {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 17px;
-            font-weight: 600;
-            letter-spacing: -0.015em;
-            color: var(--ink);
+            text-decoration: none;
+            color: inherit;
         }
 
-        .brand-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            background: linear-gradient(145deg, #0077ED, #005bb5);
+        .brand-icon-shield {
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            background: linear-gradient(145deg, #0077ED 0%, #005BB5 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 3px 8px -2px rgba(0, 102, 204, 0.45);
+            box-shadow: 0 4px 10px -2px rgba(0, 102, 204, 0.4);
+            border: 0.5px solid rgba(255, 255, 255, 0.35);
         }
 
-        .brand-icon svg {
-            width: 18px;
-            height: 18px;
+        .brand-icon-shield svg {
+            width: 19px;
+            height: 19px;
+            stroke: #FFFFFF;
         }
 
+        .brand-text-block {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            color: var(--ink);
+            line-height: 1.2;
+        }
+
+        .brand-sub {
+            font-size: 11.5px;
+            color: var(--ink-3);
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Profile Chip (Top Right) ── */
         .profile-chip {
             display: flex;
             align-items: center;
             gap: 8px;
-            background: var(--card-glass);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background: var(--bg-card-elevated);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
             border: 0.5px solid var(--hair-strong);
-            padding: 4px 10px 4px 5px;
+            padding: 4px 10px 4px 4px;
             border-radius: var(--radius-pill);
             box-shadow: var(--shadow-subtle);
         }
 
-        .avatar-token {
-            width: 26px;
-            height: 26px;
+        .avatar-glyph {
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            background: var(--blue-tint);
+            background: var(--blue-tint-strong);
             color: var(--blue);
-            font-size: 11.5px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -138,183 +188,315 @@
 
         .chip-name {
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--ink);
-            max-width: 120px;
+            max-width: 110px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .chip-switch {
+        .chip-switch-btn {
             display: flex;
             align-items: center;
+            justify-content: center;
             background: none;
             border: none;
-            padding: 2px;
+            padding: 3px;
             cursor: pointer;
             color: var(--ink-3);
             border-radius: 50%;
             transition: color 0.15s ease;
         }
 
-        .chip-switch:hover {
+        .chip-switch-btn:hover {
             color: var(--blue);
         }
 
-        /* ── Cards & Surfaces ── */
-        .card {
-            background: var(--card-bg);
+        /* ── Main Body Container ── */
+        .content-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 6px 0 16px;
+        }
+
+        /* ── Elevated Frosted Card ── */
+        .portal-card {
+            background: var(--bg-card);
             border-radius: var(--radius-outer);
             border: 0.5px solid var(--hair);
             box-shadow: var(--shadow-card);
-            padding: 26px 22px;
+            padding: 30px 24px;
             position: relative;
-            animation: cardAppear 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            overflow: hidden;
+            animation: cardAppear 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         @keyframes cardAppear {
             from {
                 opacity: 0;
-                transform: translateY(10px) scale(0.985);
+                transform: translateY(12px) scale(0.98);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0) scale(1);
             }
         }
 
-        .card-header-badge {
-            width: 54px;
-            height: 54px;
-            border-radius: 16px;
-            background: var(--blue-tint);
-            color: var(--blue);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-        }
-
-        .card-header-badge svg {
-            width: 28px;
-            height: 28px;
-        }
-
-        h1 {
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-            text-align: center;
-            margin: 0 0 6px;
-            color: var(--ink);
-        }
-
-        .subtitle {
-            font-size: 13.5px;
-            line-height: 1.45;
-            color: var(--ink-2);
-            text-align: center;
-            margin: 0 0 22px;
-        }
-
-        /* ── iOS Inset Grouped Form ── */
-        .grouped-inset {
-            background: #F8F8FA;
-            border-radius: 16px;
-            border: 0.5px solid var(--hair);
-            overflow: hidden;
-            margin-bottom: 8px;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .grouped-row {
-            padding: 12px 16px;
+        /* Top Hero Cluster */
+        .card-top-cluster {
             display: flex;
             flex-direction: column;
-            position: relative;
-            background: #F8F8FA;
-            transition: background 0.15s ease;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 22px;
         }
 
-        .grouped-row:not(:last-child) {
-            border-bottom: 0.5px solid var(--hair);
-        }
-
-        .grouped-row.focused {
-            background: #FFFFFF;
-        }
-
-        .row-label {
-            font-size: 11px;
+        .step-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--blue-tint);
+            color: var(--blue);
+            font-size: 11.5px;
             font-weight: 600;
             letter-spacing: 0.02em;
             text-transform: uppercase;
-            color: var(--ink-3);
+            padding: 5px 12px;
+            border-radius: var(--radius-pill);
+            margin-bottom: 14px;
+        }
+
+        .hero-badge-container {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.09) 0%, rgba(0, 102, 204, 0.03) 100%);
+            border: 0.5px solid rgba(0, 102, 204, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--blue);
+            margin-bottom: 14px;
+            box-shadow: 0 4px 12px -2px rgba(0, 102, 204, 0.12);
+        }
+
+        .hero-badge-container svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .card-title {
+            font-size: 23px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: var(--ink);
+            margin-bottom: 6px;
+            line-height: 1.25;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            line-height: 1.45;
+            color: var(--ink-2);
+            max-width: 330px;
+        }
+
+        /* ── Scanned Session Highlight Box (Shown when token is present) ── */
+        .session-detected-banner {
+            display: none;
+            background: #F8F9FB;
+            border: 0.5px solid var(--hair-strong);
+            border-radius: var(--radius-inset);
+            padding: 14px 16px;
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .detected-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--green-text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
             margin-bottom: 4px;
         }
 
-        .grouped-row input {
+        .pulse-emerald-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: dotGlow 1.6s ease-in-out infinite;
+        }
+
+        @keyframes dotGlow {
+            0%, 100% { transform: scale(0.85); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; }
+        }
+
+        .detected-subject {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.3;
+        }
+
+        .detected-teacher {
+            font-size: 12.5px;
+            color: var(--ink-3);
+            margin-top: 2px;
+        }
+
+        /* ── Inset Grouped Cell Inputs ── */
+        .grouped-inset-container {
+            background: var(--bg-input);
+            border-radius: var(--radius-inset);
+            border: 0.5px solid var(--hair-strong);
+            overflow: hidden;
+            margin-bottom: 12px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .input-cell {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: transparent;
+            transition: background-color 0.15s ease;
+            position: relative;
+        }
+
+        .input-cell:not(:last-child) {
+            border-bottom: 0.5px solid var(--hair);
+        }
+
+        .input-cell.focused {
+            background: var(--bg-input-focus);
+        }
+
+        .cell-icon {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--ink-3);
+            flex-shrink: 0;
+            transition: color 0.15s ease;
+        }
+
+        .input-cell.focused .cell-icon {
+            color: var(--blue);
+        }
+
+        .cell-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .cell-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+            line-height: 1;
+        }
+
+        .cell-input {
+            width: 100%;
             border: none;
             outline: none;
             background: transparent;
             font-family: inherit;
             font-size: 16px;
+            font-weight: 500;
             color: var(--ink);
-            width: 100%;
-            padding: 2px 0;
-            font-weight: 400;
+            padding: 2px 0 0;
+            line-height: 1.3;
         }
 
-        .grouped-row input.mono-input {
-            font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+        .cell-input.mono {
+            font-family: var(--font-mono);
             font-size: 14.5px;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
+            font-weight: 600;
         }
 
-        .grouped-row input::placeholder {
-            color: #A0A0A5;
+        .cell-input::placeholder {
+            color: #A3A3A8;
             font-weight: 400;
+            letter-spacing: normal;
         }
 
-        .field-feedback {
-            font-size: 12px;
-            color: var(--bad);
-            margin: 4px 4px 14px;
+        /* ── Feedback Message ── */
+        .field-error-callout {
             display: none;
-        }
-
-        .field-feedback.show {
-            display: block;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .section-sync-note {
-            display: flex;
             align-items: center;
             gap: 8px;
-            background: var(--blue-tint);
+            background: var(--bad-tint);
+            border: 0.5px solid rgba(215, 0, 21, 0.2);
+            color: var(--bad);
             border-radius: 12px;
             padding: 10px 14px;
-            margin: 12px 0 20px;
-            font-size: 12px;
-            line-height: 1.4;
-            color: var(--blue);
+            font-size: 13px;
             font-weight: 500;
+            margin-bottom: 12px;
         }
 
-        .section-sync-note svg {
+        .field-error-callout svg {
             width: 16px;
             height: 16px;
             flex-shrink: 0;
         }
 
-        /* ── Buttons ── */
-        .btn-primary {
+        /* ── Section Sync Callout ── */
+        .sync-callout-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: var(--blue-tint);
+            border: 0.5px solid rgba(0, 102, 204, 0.16);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 22px;
+        }
+
+        .sync-callout-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--blue);
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .sync-callout-text {
+            font-size: 12.5px;
+            line-height: 1.45;
+            color: var(--blue);
+            font-weight: 500;
+        }
+
+        .sync-callout-text strong {
+            font-weight: 600;
+            color: #004D99;
+        }
+
+        /* ── Primary Action Button ── */
+        .btn-action-primary {
             width: 100%;
-            background: var(--blue);
+            height: 52px;
+            background: linear-gradient(180deg, #0077ED 0%, #0066CC 100%);
             color: #FFFFFF;
             border: none;
             outline: none;
@@ -322,201 +504,208 @@
             font-size: 16px;
             font-weight: 600;
             letter-spacing: -0.01em;
-            padding: 15px 20px;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 14px -3px rgba(0, 102, 204, 0.4);
-            transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px -2px rgba(0, 102, 204, 0.38), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: background 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary:hover {
-            background: var(--blue-hover);
+        .btn-action-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+            pointer-events: none;
         }
 
-        .btn-primary:active,
-        .btn-primary.pressed {
-            background: var(--blue-press);
+        .btn-action-primary:hover {
+            background: linear-gradient(180deg, #0A82FF 0%, #005BB5 100%);
+            box-shadow: 0 6px 18px -2px rgba(0, 102, 204, 0.45);
+        }
+
+        .btn-action-primary:active {
             transform: scale(0.985);
-            box-shadow: 0 2px 6px -2px rgba(0, 102, 204, 0.3);
+            box-shadow: 0 2px 6px -1px rgba(0, 102, 204, 0.3);
         }
 
-        .btn-secondary {
+        .btn-action-primary svg {
+            transition: transform 0.15s ease;
+        }
+
+        .btn-action-primary:hover svg {
+            transform: translateX(3px);
+        }
+
+        .btn-action-secondary {
             width: 100%;
-            background: #EEEEF2;
+            height: 48px;
+            background: #EFEFF4;
             color: var(--ink);
             border: none;
             outline: none;
             border-radius: var(--radius-card);
             font-size: 15px;
             font-weight: 600;
-            padding: 13px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             cursor: pointer;
             margin-top: 10px;
-            transition: background 0.15s ease;
+            transition: background 0.15s ease, transform 0.1s ease;
         }
 
-        .btn-secondary:hover {
-            background: #E4E4E8;
+        .btn-action-secondary:hover {
+            background: #E5E5EA;
         }
 
-        .btn-secondary:active {
-            background: #DADAE0;
+        .btn-action-secondary:active {
+            background: #DCDCE2;
+            transform: scale(0.985);
         }
 
-        /* ── Camera Scanner Viewport ── */
-        .scanner-card {
-            margin-top: 4px;
+        /* ── Standby View (When opening without QR scan) ── */
+        .standby-card {
+            text-align: center;
         }
 
-        .scanner-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--blue-tint);
+        .standby-scanner-art {
+            width: 78px;
+            height: 78px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 102, 204, 0.03) 100%);
+            border: 0.5px solid rgba(0, 102, 204, 0.2);
             color: var(--blue);
-            padding: 6px 14px;
-            border-radius: var(--radius-pill);
-            font-size: 12.5px;
-            font-weight: 600;
-            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            box-shadow: 0 8px 24px -4px rgba(0, 102, 204, 0.15);
         }
 
-        .pulse-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
+        .standby-scanner-art svg {
+            width: 38px;
+            height: 38px;
+        }
+
+        .student-id-plaque {
+            background: #F8F9FB;
+            border: 0.5px solid var(--hair-strong);
+            border-radius: var(--radius-inset);
+            padding: 16px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-align: left;
+        }
+
+        .plaque-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 13px;
             background: var(--blue);
-            animation: pulseGlow 1.6s ease-in-out infinite;
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            box-shadow: 0 3px 8px rgba(0, 102, 204, 0.3);
+            flex-shrink: 0;
         }
 
-        @keyframes pulseGlow {
-
-            0%,
-            100% {
-                transform: scale(0.9);
-                opacity: 0.6;
-            }
-
-            50% {
-                transform: scale(1.3);
-                opacity: 1;
-            }
-        }
-
-        .camera-viewport-wrap {
-            position: relative;
-            width: 100%;
-            border-radius: 20px;
+        .plaque-info {
+            flex: 1;
             overflow: hidden;
-            background: #000000;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            margin: 14px 0;
-            display: none;
         }
 
-        #qrReader {
-            width: 100% !important;
-            border: none !important;
+        .plaque-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        #qrReader video {
-            width: 100% !important;
-            border-radius: 18px;
-            object-fit: cover;
+        .plaque-enrollment {
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            color: var(--ink-2);
+            margin-top: 2px;
+            font-weight: 600;
         }
 
-        /* Reticle overlay corners */
-        .viewfinder-reticle {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 10;
+        .scan-instruction-box {
+            background: var(--blue-tint);
+            border-radius: var(--radius-inset);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            margin-bottom: 16px;
+            color: var(--blue);
+            font-size: 13px;
+            line-height: 1.4;
+            font-weight: 500;
         }
 
-        .reticle-corner {
-            position: absolute;
+        .scan-instruction-box svg {
             width: 24px;
             height: 24px;
-            border: 3px solid #FFFFFF;
+            flex-shrink: 0;
         }
 
-        .reticle-corner.tl {
-            top: 20px;
-            left: 20px;
-            border-right: none;
-            border-bottom: none;
-            border-top-left-radius: 8px;
-        }
-
-        .reticle-corner.tr {
-            top: 20px;
-            right: 20px;
-            border-left: none;
-            border-bottom: none;
-            border-top-right-radius: 8px;
-        }
-
-        .reticle-corner.bl {
-            bottom: 20px;
-            left: 20px;
-            border-right: none;
-            border-top: none;
-            border-bottom-left-radius: 8px;
-        }
-
-        .reticle-corner.br {
-            bottom: 20px;
-            right: 20px;
-            border-left: none;
-            border-top: none;
-            border-bottom-right-radius: 8px;
-        }
-
-        .cam-error-box {
+        /* ── Loading Spinner State ── */
+        .verifying-loader {
             display: none;
-            background: var(--bad-tint);
-            border: 0.5px solid rgba(215, 0, 21, 0.2);
-            color: var(--bad);
-            border-radius: 14px;
-            padding: 14px 16px;
-            font-size: 13px;
-            line-height: 1.45;
-            margin-top: 14px;
-        }
-
-        /* ── Attendance Receipt (Confirmation) ── */
-        .receipt-card {
-            display: none;
-            background: var(--card-bg);
-            border-radius: var(--radius-outer);
-            border: 0.5px solid var(--hair);
-            box-shadow: var(--shadow-card);
-            padding: 32px 22px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 36px 16px;
             text-align: center;
-            animation: popReceipt 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        @keyframes popReceipt {
-            from {
-                opacity: 0;
-                transform: scale(0.92) translateY(14px);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+        .spinner-ring {
+            width: 44px;
+            height: 44px;
+            border: 3px solid var(--blue-tint-strong);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
         }
 
-        .receipt-shield {
-            width: 72px;
-            height: 72px;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Celebratory Receipt Screen ── */
+        .receipt-card-body {
+            display: none;
+            text-align: center;
+            animation: receiptPop 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes receiptPop {
+            from { opacity: 0; transform: scale(0.93) translateY(14px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .receipt-shield-halo {
+            width: 76px;
+            height: 76px;
             border-radius: 50%;
             background: var(--green-tint);
             color: var(--green);
@@ -524,324 +713,367 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 16px;
-            position: relative;
-            box-shadow: 0 0 0 10px rgba(36, 138, 61, 0.08);
+            box-shadow: 0 0 0 12px rgba(36, 138, 61, 0.08);
+            border: 1px solid rgba(36, 138, 61, 0.2);
         }
 
-        .receipt-shield svg {
-            width: 38px;
-            height: 38px;
+        .receipt-shield-halo svg {
+            width: 42px;
+            height: 42px;
             stroke-width: 2.6;
         }
 
-        .receipt-title {
-            font-size: 24px;
+        .receipt-heading {
+            font-size: 25px;
             font-weight: 700;
             letter-spacing: -0.025em;
             color: var(--ink);
-            margin: 0 0 4px;
+            margin-bottom: 4px;
         }
 
-        .receipt-status-text {
+        .receipt-tagline {
             font-size: 14px;
             color: var(--green-text);
             font-weight: 600;
-            margin-bottom: 22px;
+            margin-bottom: 24px;
         }
 
-        .receipt-table {
-            background: #F8F8FA;
-            border-radius: 16px;
-            border: 0.5px solid var(--hair);
+        .receipt-meta-grouped {
+            background: var(--bg-input);
+            border-radius: var(--radius-inset);
+            border: 0.5px solid var(--hair-strong);
             overflow: hidden;
             margin-bottom: 22px;
             text-align: left;
         }
 
-        .receipt-row {
-            padding: 12px 16px;
+        .meta-row {
+            padding: 13px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
         }
 
-        .receipt-row:not(:last-child) {
+        .meta-row:not(:last-child) {
             border-bottom: 0.5px solid var(--hair);
         }
 
-        .receipt-key {
-            font-size: 12.5px;
+        .meta-label {
+            font-size: 13px;
             color: var(--ink-3);
             font-weight: 500;
         }
 
-        .receipt-val {
-            font-size: 13.5px;
+        .meta-value {
+            font-size: 14px;
             color: var(--ink);
             font-weight: 600;
             text-align: right;
-            max-width: 60%;
+            max-width: 65%;
             word-break: break-word;
         }
 
-        .receipt-val.mono {
-            font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+        .meta-value.tag {
+            background: #E7E7EB;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            color: var(--ink);
+        }
+
+        .meta-value.mono {
+            font-family: var(--font-mono);
             font-size: 12.5px;
         }
 
-        .receipt-val.tag {
-            background: #EBEBEF;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 12px;
+        /* ── Input Shake Animation ── */
+        .shake-field {
+            animation: fieldShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
 
-        /* ── Shake Animation for Validation Errors ── */
-        .shake {
-            animation: inputShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        @keyframes fieldShake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
-        @keyframes inputShake {
-
-            10%,
-            90% {
-                transform: translate3d(-1px, 0, 0);
-            }
-
-            20%,
-            80% {
-                transform: translate3d(2px, 0, 0);
-            }
-
-            30%,
-            50%,
-            70% {
-                transform: translate3d(-3px, 0, 0);
-            }
-
-            40%,
-            60% {
-                transform: translate3d(3px, 0, 0);
-            }
-        }
-
-        /* ── Module Two Teaser / Nav Footer ── */
-        .module-two-teaser {
-            margin-top: 18px;
-            background: var(--card-glass);
-            border-radius: 16px;
-            border: 0.5px solid var(--hair);
-            padding: 14px 16px;
+        /* ── Trust & Feature Badges (Footer) ── */
+        .footer-badges-cluster {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            color: var(--ink-2);
-            font-size: 13px;
-        }
-
-        .module-two-teaser .label {
+            justify-content: center;
+            gap: 16px;
+            padding: 20px 8px 6px;
+            color: var(--ink-3);
+            font-size: 12px;
             font-weight: 500;
         }
 
-        .module-two-teaser .badge {
-            background: var(--blue-tint);
-            color: var(--blue);
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: var(--radius-pill);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        @media (max-width: 360px) {
-            .page-shell {
-                padding: 16px 12px 36px;
-            }
+        .trust-item svg {
+            width: 14px;
+            height: 14px;
+            color: var(--blue);
+            flex-shrink: 0;
+        }
 
-            .card {
-                padding: 22px 16px;
-            }
+        /* ── Responsive Mobile Refinements ── */
+        @media (max-width: 380px) {
+            .viewport-shell { padding: 12px 14px 20px; }
+            .portal-card { padding: 24px 18px; border-radius: 22px; }
+            .card-title { font-size: 21px; }
+            .btn-action-primary { height: 48px; font-size: 15px; }
+            .footer-badges-cluster { gap: 10px; font-size: 11px; }
+        }
 
-            h1 {
-                font-size: 20px;
-            }
+        @media (min-width: 600px) {
+            .viewport-shell { padding-top: 48px; padding-bottom: 48px; }
+            .portal-card { padding: 34px 28px; }
         }
     </style>
 </head>
 
 <body>
-    <div class="page-shell">
+    <!-- Ambient Canvas Glow -->
+    <div class="ambient-canvas"></div>
 
-        <!-- Top Navigation Bar -->
-        <header class="top-bar">
-            <div class="brand-mark">
-                <div class="brand-icon">
+    <!-- Main Viewport Shell -->
+    <div class="viewport-shell">
+
+        <!-- Top Header / Campus Navigation -->
+        <header class="app-header">
+            <div class="brand-cluster">
+                <div class="brand-icon-shield">
                     <svg viewBox="0 0 24 24" fill="none">
-                        <path
-                            d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z"
-                            stroke="white" stroke-width="2" />
-                        <path d="M8 9h8M8 13h5" stroke="white" stroke-width="2" stroke-linecap="round" />
+                        <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z" stroke-width="2"/>
+                        <path d="M8 9h8M8 13h5" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </div>
-                <span>Attendance</span>
+                <div class="brand-text-block">
+                    <span class="brand-title">Campus Check-In</span>
+                    <span class="brand-sub">University Attendance</span>
+                </div>
             </div>
 
-            <!-- Profile Chip (Visible when logged in) -->
+            <!-- Profile Chip (Visible when student profile is stored) -->
             <div id="profileChip" class="profile-chip" style="display:none">
-                <div class="avatar-token" id="chipAvatar">--</div>
+                <div class="avatar-glyph" id="chipAvatar">ST</div>
                 <span class="chip-name" id="chipName">Student</span>
-                <button class="chip-switch" id="switchProfileBtn" title="Switch profile" aria-label="Switch profile">
+                <button class="chip-switch-btn" id="switchProfileBtn" title="Switch Student Profile" aria-label="Switch Student Profile">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                        <path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
             </div>
         </header>
 
-        <!-- SCREEN 1: Registration (Module One) -->
-        <main id="authView" style="display:none">
-            <div class="card" id="regCard">
-                <div class="card-header-badge">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M12 12c2.485 0 4.5-2.015 4.5-4.5S14.485 3 12 3 7.5 5.015 7.5 7.5 9.515 12 12 12Z"
-                            stroke="currentColor" stroke-width="2" />
-                        <path d="M4 20.5c0-3.5 3.5-5.5 8-5.5s8 2 8 5.5" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" />
-                    </svg>
-                </div>
+        <!-- Dynamic Body Area -->
+        <div class="content-body">
 
-                <h1 id="regHeading">Student Registration</h1>
-                <p class="subtitle" id="regSubtitle">Enter your name and enrollment ID to quickly check in.</p>
-
-                <div class="grouped-inset" id="regGroup">
-                    <!-- Full Name -->
-                    <div class="grouped-row" id="nameRow">
-                        <label class="row-label" for="nameInput">Full Name</label>
-                        <input id="nameInput" type="text" autocomplete="name" placeholder="e.g. Chandrachur Chouhan"
-                            spellcheck="false">
-                    </div>
-
-                    <!-- Enrollment ID -->
-                    <div class="grouped-row" id="enrollmentRow">
-                        <label class="row-label" for="enrollmentInput">Enrollment ID</label>
-                        <input id="enrollmentInput" class="mono-input" type="text" autocomplete="off"
-                            autocapitalize="characters" placeholder="ADTU/1/2024-27/BCAO/012" spellcheck="false">
-                    </div>
-                </div>
-
-                <div class="field-feedback" id="fieldErrorMsg"></div>
-
-                <div class="section-sync-note">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-                        <path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                    <span>Your Section is automatically synced from the teacher's active class session.</span>
-                </div>
-
-                <button class="btn-primary" id="regSubmitBtn">
-                    <span id="regBtnLabel">Continue to Check-In</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                        <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
-                </button>
-            </div>
-        </main>
-
-        <!-- SCREEN 2: Scanner & Check-In Standby (Module One) -->
-        <main id="scannerView" style="display:none">
-            <div class="card scanner-card">
-                <div style="text-align:center;">
-                    <div class="scanner-status-pill" id="scanStatusBadge">
-                        <div class="pulse-dot"></div>
-                        <span id="scanStatusText">Camera Ready</span>
-                    </div>
-                </div>
-
-                <h1 id="scanTitle">Scan Teacher's QR</h1>
-                <p class="subtitle" id="scanInstruction">Point your camera at the QR code projected in the classroom.
-                </p>
-
-                <!-- Standby Action -->
-                <button class="btn-primary" id="openCamBtn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-                            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        <circle cx="12" cy="13" r="4" stroke="white" stroke-width="2" />
-                    </svg>
-                    <span>Open Camera to Scan</span>
-                </button>
-
-                <!-- Camera Stream Viewport -->
-                <div class="camera-viewport-wrap" id="camWrap">
-                    <div id="qrReader"></div>
-                    <div class="viewfinder-reticle">
-                        <div class="reticle-corner tl"></div>
-                        <div class="reticle-corner tr"></div>
-                        <div class="reticle-corner bl"></div>
-                        <div class="reticle-corner br"></div>
-                    </div>
-                </div>
-
-                <button class="btn-secondary" id="stopCamBtn" style="display:none">
-                    Cancel Camera
-                </button>
-
-                <!-- Error Box -->
-                <div class="cam-error-box" id="camErrorBox"></div>
+            <!-- STATE 0: Verifying Loading State (when opened with QR token) -->
+            <div id="loadingView" class="verifying-loader">
+                <div class="spinner-ring"></div>
+                <h2 style="font-size:18px; font-weight:600; color:var(--ink); margin-bottom:4px;">Verifying Attendance…</h2>
+                <p style="font-size:13.5px; color:var(--ink-3);">Syncing with your classroom session</p>
             </div>
 
-            <!-- Module Two Preview Teaser -->
-            <div class="module-two-teaser">
-                <span class="label">Personal Attendance Tracking</span>
-                <span class="badge">Module 2</span>
-            </div>
-        </main>
+            <!-- STATE 1: Registration Form (Shown when token present + first-time student, or standby setup) -->
+            <main id="authView" style="display:none">
+                <div class="portal-card" id="regCard">
+                    <!-- Dynamic banner showing the scanned class -->
+                    <div class="session-detected-banner" id="sessionDetectedBanner">
+                        <div class="detected-label">
+                            <div class="pulse-emerald-dot"></div>
+                            <span>Class Session Active</span>
+                        </div>
+                        <div class="detected-subject" id="detectedSubjectText">Lecture Session</div>
+                        <div class="detected-teacher" id="detectedTeacherText">Instructor</div>
+                    </div>
 
-        <!-- SCREEN 3: Attendance Receipt (Confirmation) -->
-        <main id="receiptView" style="display:none">
-            <div class="receipt-card" id="receiptCard">
-                <div class="receipt-shield">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
+                    <div class="card-top-cluster">
+                        <span class="step-pill" id="stepPillLabel">1-Time Student Setup</span>
+                        <div class="hero-badge-container">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="8" r="4.5" stroke="currentColor" stroke-width="2"/>
+                                <path d="M4 20.5c0-3.5 3.5-5.5 8-5.5s8 2 8 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h1 class="card-title" id="regHeading">Confirm Attendance</h1>
+                        <p class="card-subtitle" id="regSubtitle">Enter your name and enrollment ID to record your attendance.</p>
+                    </div>
+
+                    <!-- Input Cells -->
+                    <div class="grouped-inset-container" id="regGroup">
+                        <!-- Full Name -->
+                        <div class="input-cell" id="nameCell">
+                            <div class="cell-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div class="cell-body">
+                                <label class="cell-label" for="nameInput">Full Name</label>
+                                <input class="cell-input" id="nameInput" type="text" autocomplete="name" placeholder="e.g. Chandrachur Chouhan" spellcheck="false">
+                            </div>
+                        </div>
+
+                        <!-- Enrollment ID -->
+                        <div class="input-cell" id="enrollmentCell">
+                            <div class="cell-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M7 8h10M7 12h6M7 16h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="cell-body">
+                                <label class="cell-label" for="enrollmentInput">Enrollment ID</label>
+                                <input class="cell-input mono" id="enrollmentInput" type="text" autocomplete="off" autocapitalize="characters" placeholder="ADTU/1/2024-27/BCAO/012" spellcheck="false">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Field Error Callout -->
+                    <div class="field-error-callout" id="fieldErrorMsg">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span id="fieldErrorText">Invalid input</span>
+                    </div>
+
+                    <!-- Automated Section Sync Note -->
+                    <div class="sync-callout-card">
+                        <svg class="sync-callout-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="sync-callout-text">
+                            <strong>Section is automatic</strong>: Resolved directly from your teacher's active subject session.
+                        </div>
+                    </div>
+
+                    <!-- Submit CTA -->
+                    <button class="btn-action-primary" id="regSubmitBtn">
+                        <span id="regBtnLabel">Mark Me Present</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
+            </main>
 
-                <h1 class="receipt-title" id="receiptHeading">Marked Present!</h1>
-                <div class="receipt-status-text" id="receiptStatusSub">Attendance verified & recorded</div>
+            <!-- STATE 2: Standby View (When visiting directly without scanning a QR code) -->
+            <main id="standbyView" style="display:none">
+                <div class="portal-card standby-card">
+                    <div class="standby-scanner-art">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                            <path d="M14 14h3v3M20 17v4M17 20h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
 
-                <div class="receipt-table">
-                    <div class="receipt-row">
-                        <span class="receipt-key">Subject</span>
-                        <span class="receipt-val" id="receiptSubject">–</span>
+                    <h1 class="card-title">Ready for Class</h1>
+                    <p class="card-subtitle">Use your phone's Camera, Google Lens, or scanner app to scan the classroom QR code.</p>
+
+                    <!-- Student Plaque -->
+                    <div class="student-id-plaque">
+                        <div class="plaque-avatar" id="plaqueAvatar">UB</div>
+                        <div class="plaque-info">
+                            <div class="plaque-name" id="plaqueName">Udit</div>
+                            <div class="plaque-enrollment" id="plaqueEnrollment">ADTU/...</div>
+                        </div>
                     </div>
-                    <div class="receipt-row">
-                        <span class="receipt-key">Instructor</span>
-                        <span class="receipt-val" id="receiptTeacher">–</span>
+
+                    <div class="scan-instruction-box">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 18h.01M9 7h6M9 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>When the instructor projects the QR code, point Google Lens or your phone camera to check in instantly.</span>
                     </div>
-                    <div class="receipt-row" id="receiptSectionRow">
-                        <span class="receipt-key">Section</span>
-                        <span class="receipt-val tag" id="receiptSection">Class Section</span>
+
+                    <button class="btn-action-secondary" id="standbySwitchBtn">
+                        Switch Student Profile
+                    </button>
+                </div>
+            </main>
+
+            <!-- STATE 3: Attendance Receipt Card (Immediate confirmation after scan) -->
+            <main id="receiptView" style="display:none">
+                <div class="portal-card receipt-card-body" id="receiptCard">
+                    <div class="receipt-shield-halo">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </div>
-                    <div class="receipt-row">
-                        <span class="receipt-key">Time</span>
-                        <span class="receipt-val" id="receiptTime">–</span>
+
+                    <h1 class="receipt-heading" id="receiptHeading">Marked Present!</h1>
+                    <div class="receipt-tagline" id="receiptStatusSub">Attendance verified & recorded digitally</div>
+
+                    <div class="receipt-meta-grouped">
+                        <div class="meta-row">
+                            <span class="meta-label">Subject</span>
+                            <span class="meta-value" id="receiptSubject">–</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Instructor</span>
+                            <span class="meta-value" id="receiptTeacher">–</span>
+                        </div>
+                        <div class="meta-row" id="receiptSectionRow">
+                            <span class="meta-label">Section</span>
+                            <span class="meta-value tag" id="receiptSection">Class Section</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Time</span>
+                            <span class="meta-value" id="receiptTime">–</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Student</span>
+                            <span class="meta-value mono" id="receiptStudentId">–</span>
+                        </div>
                     </div>
-                    <div class="receipt-row">
-                        <span class="receipt-key">Student</span>
-                        <span class="receipt-val mono" id="receiptStudentId">–</span>
+
+                    <div class="sync-callout-card" style="margin-bottom:0; justify-content:center;">
+                        <span style="font-size:12.5px; color:var(--green-text); font-weight:600;">✓ Synced with Teacher's Live Roster</span>
                     </div>
                 </div>
+            </main>
 
-                <button class="btn-secondary" id="scanAgainBtn">
-                    Scan Another Session
-                </button>
+        </div>
+
+        <!-- Trust Badges Footer -->
+        <footer class="footer-badges-cluster">
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Instant Check-In</span>
             </div>
-        </main>
+            <span>•</span>
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Google Lens Ready</span>
+            </div>
+            <span>•</span>
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Encrypted</span>
+            </div>
+        </footer>
 
     </div>
 
@@ -849,8 +1081,6 @@
         // ── State ──────────────────────────────────────────────────────────
         let token = new URLSearchParams(location.search).get('token');
         let profile = JSON.parse(localStorage.getItem('profile') || 'null');
-        let html5QrCode = null;
-        let isScanning = false;
 
         // ── Validation regex ───────────────────────────────────────────────
         const NAME_REGEX = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
@@ -879,27 +1109,37 @@
         }
 
         // ── DOM Elements ───────────────────────────────────────────────────
+        const loadingView = document.getElementById('loadingView');
         const authView = document.getElementById('authView');
-        const scannerView = document.getElementById('scannerView');
+        const standbyView = document.getElementById('standbyView');
         const receiptView = document.getElementById('receiptView');
+
         const profileChip = document.getElementById('profileChip');
         const chipAvatar = document.getElementById('chipAvatar');
         const chipName = document.getElementById('chipName');
         const switchProfileBtn = document.getElementById('switchProfileBtn');
 
+        const sessionDetectedBanner = document.getElementById('sessionDetectedBanner');
+        const detectedSubjectText = document.getElementById('detectedSubjectText');
+        const detectedTeacherText = document.getElementById('detectedTeacherText');
+        const stepPillLabel = document.getElementById('stepPillLabel');
+        const regHeading = document.getElementById('regHeading');
+        const regSubtitle = document.getElementById('regSubtitle');
+
         const nameInput = document.getElementById('nameInput');
         const enrollmentInput = document.getElementById('enrollmentInput');
+        const nameCell = document.getElementById('nameCell');
+        const enrollmentCell = document.getElementById('enrollmentCell');
         const regSubmitBtn = document.getElementById('regSubmitBtn');
         const regBtnLabel = document.getElementById('regBtnLabel');
         const fieldErrorMsg = document.getElementById('fieldErrorMsg');
+        const fieldErrorText = document.getElementById('fieldErrorText');
         const regGroup = document.getElementById('regGroup');
 
-        const openCamBtn = document.getElementById('openCamBtn');
-        const stopCamBtn = document.getElementById('stopCamBtn');
-        const camWrap = document.getElementById('camWrap');
-        const camErrorBox = document.getElementById('camErrorBox');
-        const scanStatusBadge = document.getElementById('scanStatusBadge');
-        const scanStatusText = document.getElementById('scanStatusText');
+        const plaqueAvatar = document.getElementById('plaqueAvatar');
+        const plaqueName = document.getElementById('plaqueName');
+        const plaqueEnrollment = document.getElementById('plaqueEnrollment');
+        const standbySwitchBtn = document.getElementById('standbySwitchBtn');
 
         const receiptCard = document.getElementById('receiptCard');
         const receiptHeading = document.getElementById('receiptHeading');
@@ -909,50 +1149,79 @@
         const receiptSection = document.getElementById('receiptSection');
         const receiptTime = document.getElementById('receiptTime');
         const receiptStudentId = document.getElementById('receiptStudentId');
-        const scanAgainBtn = document.getElementById('scanAgainBtn');
 
-        // ── Focus styling on grouped inputs ────────────────────────────────
-        [nameInput, enrollmentInput].forEach(inp => {
-            const row = inp.closest('.grouped-row');
-            inp.addEventListener('focus', () => row.classList.add('focused'));
-            inp.addEventListener('blur', () => row.classList.remove('focused'));
-            inp.addEventListener('input', () => clearError());
-        });
+        // ── Input Focus Helpers ────────────────────────────────────────────
+        nameInput.addEventListener('focus', () => nameCell.classList.add('focused'));
+        nameInput.addEventListener('blur', () => nameCell.classList.remove('focused'));
+        nameInput.addEventListener('input', () => clearError());
 
-        // Auto uppercase on enrollment input
+        enrollmentInput.addEventListener('focus', () => enrollmentCell.classList.add('focused'));
+        enrollmentInput.addEventListener('blur', () => enrollmentCell.classList.remove('focused'));
         enrollmentInput.addEventListener('input', (e) => {
             const cur = e.target.value;
             const upper = cur.toUpperCase();
             if (cur !== upper) e.target.value = upper;
+            clearError();
         });
 
-        // ── Initialization Router ──────────────────────────────────────────
-        function initApp() {
-            if (profile) {
-                renderProfileChip();
-                if (token) {
-                    // Token is ready in URL: immediately process attendance
-                    showView('scanner');
-                    scanStatusText.textContent = 'Verifying Attendance…';
-                    processMarkAttendance(token);
+        // ── Application Router (Classroom Google Lens Journey) ──────────────
+        async function initApp() {
+            renderProfileChip();
+
+            if (token) {
+                // The student arrived by scanning the projected QR code with Google Lens or camera
+                if (profile) {
+                    // RETURNING STUDENT: Already enrolled! Mark instantly with zero friction!
+                    showView('loading');
+                    await processMarkAttendance(token);
                 } else {
-                    showView('scanner');
+                    // FIRST-TIME STUDENT: Ask for Name and Enrollment ID to confirm this attendance
+                    showView('auth');
+                    stepPillLabel.textContent = 'QR Scanned · 1-Time Setup';
+                    regHeading.textContent = 'Confirm Attendance';
+                    regSubtitle.textContent = 'Enter your details once to confirm your attendance for this class.';
+                    regBtnLabel.textContent = 'Confirm & Mark Present';
+                    await loadSessionInfo(token);
                 }
             } else {
-                profileChip.style.display = 'none';
-                if (token) {
-                    regBtnLabel.textContent = 'Enroll & Mark Present';
+                // The student opened the page directly (no QR scanned yet)
+                if (profile) {
+                    // Show "Ready for Class" standby screen with their student card
+                    showView('standby');
+                    updatePlaque();
                 } else {
-                    regBtnLabel.textContent = 'Continue to Check-In';
+                    // First-time setup
+                    showView('auth');
+                    sessionDetectedBanner.style.display = 'none';
+                    stepPillLabel.textContent = '1-Time Setup';
+                    regHeading.textContent = 'Student Registration';
+                    regSubtitle.textContent = 'Save your name & enrollment ID so future QR scans check you in instantly.';
+                    regBtnLabel.textContent = 'Save Profile';
                 }
-                showView('auth');
             }
         }
 
         function showView(view) {
+            loadingView.style.display = view === 'loading' ? 'flex' : 'none';
             authView.style.display = view === 'auth' ? 'block' : 'none';
-            scannerView.style.display = view === 'scanner' ? 'block' : 'none';
+            standbyView.style.display = view === 'standby' ? 'block' : 'none';
             receiptView.style.display = view === 'receipt' ? 'block' : 'none';
+        }
+
+        async function loadSessionInfo(qrToken) {
+            try {
+                const res = await fetch(`/api/session-info?token=${encodeURIComponent(qrToken)}`);
+                const data = await res.json();
+                if (res.ok && data.subject) {
+                    detectedSubjectText.textContent = data.subject + (data.section ? ` (Sec ${data.section})` : '');
+                    detectedTeacherText.textContent = data.teacherName ? `Instructor: ${data.teacherName}` : 'Live Class Session';
+                    sessionDetectedBanner.style.display = 'block';
+                } else {
+                    sessionDetectedBanner.style.display = 'none';
+                }
+            } catch (e) {
+                sessionDetectedBanner.style.display = 'none';
+            }
         }
 
         function renderProfileChip() {
@@ -967,21 +1236,30 @@
             profileChip.style.display = 'flex';
         }
 
-        // ── Error feedback ─────────────────────────────────────────────────
+        function updatePlaque() {
+            if (!profile) return;
+            const parts = (profile.name || '').trim().split(/\s+/);
+            const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
+            plaqueAvatar.textContent = initials.toUpperCase();
+            plaqueName.textContent = profile.name || 'Student';
+            plaqueEnrollment.textContent = profile.enrollment || '';
+        }
+
+        // ── Error Feedback ─────────────────────────────────────────────────
         function showError(msg) {
-            fieldErrorMsg.textContent = msg;
-            fieldErrorMsg.classList.add('show');
-            regGroup.classList.remove('shake');
+            fieldErrorText.textContent = msg;
+            fieldErrorMsg.style.display = 'flex';
+            regGroup.classList.remove('shake-field');
             void regGroup.offsetWidth;
-            regGroup.classList.add('shake');
+            regGroup.classList.add('shake-field');
         }
 
         function clearError() {
-            fieldErrorMsg.textContent = '';
-            fieldErrorMsg.classList.remove('show');
+            fieldErrorMsg.style.display = 'none';
+            fieldErrorText.textContent = '';
         }
 
-        // ── Registration Logic (Name + Enrollment only) ────────────────────
+        // ── Registration Handler ───────────────────────────────────────────
         regSubmitBtn.addEventListener('click', handleRegister);
 
         async function handleRegister() {
@@ -1010,12 +1288,12 @@
                 return;
             }
             if (!ENROLLMENT_REGEX.test(enrollment)) {
-                showError('Invalid enrollment format (e.g. ADTU/1/2023-26/BCAO/012).');
+                showError('Format: ADTU/1/2024-27/BCAO/012');
                 return;
             }
 
             regSubmitBtn.disabled = true;
-            regBtnLabel.textContent = 'Enrolling…';
+            regBtnLabel.textContent = 'Recording…';
 
             try {
                 const res = await fetch('/api/register', {
@@ -1027,13 +1305,12 @@
                 const data = await res.json();
 
                 if (!res.ok && res.status !== 409) {
-                    showError(data.error || 'Registration failed. Please check your inputs.');
+                    showError(data.error || 'Registration failed. Please check your details.');
                     regSubmitBtn.disabled = false;
-                    regBtnLabel.textContent = token ? 'Enroll & Mark Present' : 'Continue to Check-In';
+                    regBtnLabel.textContent = token ? 'Confirm & Mark Present' : 'Save Profile';
                     return;
                 }
 
-                // Cache profile locally
                 profile = { name, enrollment };
                 localStorage.setItem('profile', JSON.stringify(profile));
                 renderProfileChip();
@@ -1041,21 +1318,23 @@
                 regSubmitBtn.disabled = false;
 
                 if (token) {
-                    showView('scanner');
-                    scanStatusText.textContent = 'Verifying Attendance…';
+                    // Token is active from Google Lens scan: mark attendance immediately!
+                    showView('loading');
                     await processMarkAttendance(token);
                 } else {
-                    showView('scanner');
+                    // Standby setup complete: show ready for class screen
+                    showView('standby');
+                    updatePlaque();
                 }
             } catch (err) {
                 console.error('Registration network error:', err);
-                showError('Network error. Check your campus Wi-Fi/connection.');
+                showError('Network error. Check connection and try again.');
                 regSubmitBtn.disabled = false;
-                regBtnLabel.textContent = token ? 'Enroll & Mark Present' : 'Continue to Check-In';
+                regBtnLabel.textContent = token ? 'Confirm & Mark Present' : 'Save Profile';
             }
         }
 
-        // ── Attendance Marking Logic ───────────────────────────────────────
+        // ── Attendance Marking Engine ──────────────────────────────────────
         async function processMarkAttendance(qrToken) {
             if (!profile || !qrToken) return;
 
@@ -1081,16 +1360,14 @@
                         already: data.already || false
                     });
                 } else {
-                    camErrorBox.textContent = data.error || 'Session is inactive or QR code is invalid.';
-                    camErrorBox.style.display = 'block';
-                    scanStatusText.textContent = 'Scan Unsuccessful';
-                    showView('scanner');
+                    // Expired or invalid token
+                    showView('auth');
+                    showError(data.error || 'Session is inactive or QR code expired.');
                 }
             } catch (err) {
                 console.error('Mark attendance fetch error:', err);
-                camErrorBox.textContent = 'Failed to mark attendance. Check your connection and retry.';
-                camErrorBox.style.display = 'block';
-                scanStatusText.textContent = 'Connection Error';
+                showView('auth');
+                showError('Failed to mark attendance. Check campus Wi-Fi.');
             }
         }
 
@@ -1100,120 +1377,35 @@
             receiptSubject.textContent = info.subject;
             receiptTeacher.textContent = info.teacherName;
             receiptSection.textContent = info.section ? `Section ${info.section}` : 'Standard';
-
+            
             const d = new Date(info.time);
             receiptTime.textContent = isNaN(d.getTime()) ? 'Just now' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });
             receiptStudentId.textContent = `${profile.name} · ${profile.enrollment}`;
 
             showView('receipt');
+            receiptCard.style.display = 'block';
         }
 
-        // ── Camera Scanner Controller ──────────────────────────────────────
-        openCamBtn.addEventListener('click', startCamera);
-        stopCamBtn.addEventListener('click', stopCamera);
-        scanAgainBtn.addEventListener('click', () => {
-            token = null;
-            showView('scanner');
-        });
-
-        function extractTokenFromText(decodedText) {
-            try {
-                const parsed = new URL(decodedText);
-                const t = parsed.searchParams.get('token');
-                if (t) return t;
-            } catch (e) { }
-            return decodedText;
-        }
-
-        async function startCamera() {
-            camErrorBox.style.display = 'none';
-            camErrorBox.textContent = '';
-
-            if (!window.isSecureContext && location.hostname !== 'localhost') {
-                camErrorBox.textContent = 'Camera requires HTTPS on mobile browsers. Please access via secure URL or scan with your native camera.';
-                camErrorBox.style.display = 'block';
-                return;
-            }
-
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                camErrorBox.textContent = 'Camera scanning is not supported on this browser. Scan using your phone\'s camera app.';
-                camErrorBox.style.display = 'block';
-                return;
-            }
-
-            if (typeof Html5Qrcode === 'undefined') {
-                camErrorBox.textContent = 'QR reader library is still loading. Please wait a moment and tap again.';
-                camErrorBox.style.display = 'block';
-                return;
-            }
-
-            camWrap.style.display = 'block';
-            openCamBtn.style.display = 'none';
-            stopCamBtn.style.display = 'block';
-            scanStatusText.textContent = 'Scanning Viewfinder Active';
-
-            try {
-                html5QrCode = new Html5Qrcode('qrReader');
-                await html5QrCode.start(
-                    { facingMode: 'environment' },
-                    { fps: 12, qrbox: { width: 230, height: 230 } },
-                    async (decodedText) => {
-                        const extracted = extractTokenFromText(decodedText);
-                        token = extracted;
-                        await stopCamera();
-                        scanStatusText.textContent = 'QR Detected — Marking…';
-                        await processMarkAttendance(extracted);
-                    },
-                    () => { /* ignore normal per-frame scan misses */ }
-                );
-                isScanning = true;
-            } catch (err) {
-                console.error('Camera initialization error:', err);
-                await stopCamera();
-                if (err && err.name === 'NotAllowedError') {
-                    camErrorBox.textContent = 'Camera permission was denied. Allow camera access in browser site settings to scan.';
-                } else if (err && err.name === 'NotFoundError') {
-                    camErrorBox.textContent = 'No camera device found on this phone.';
-                } else {
-                    camErrorBox.textContent = 'Could not access camera. You can also scan directly using your phone\'s built-in camera app.';
-                }
-                camErrorBox.style.display = 'block';
-            }
-        }
-
-        async function stopCamera() {
-            if (html5QrCode && isScanning) {
-                try {
-                    await html5QrCode.stop();
-                    html5QrCode.clear();
-                } catch (e) { }
-            }
-            isScanning = false;
-            camWrap.style.display = 'none';
-            openCamBtn.style.display = 'flex';
-            stopCamBtn.style.display = 'none';
-            scanStatusText.textContent = 'Camera Standby';
-        }
-
-        // ── Switch Profile Action ──────────────────────────────────────────
-        switchProfileBtn.addEventListener('click', () => {
-            if (confirm('Switch student profile? You can enter a new Name and Enrollment ID.')) {
+        // ── Profile Switching ──────────────────────────────────────────────
+        function handleSwitchProfile() {
+            if (confirm('Switch student profile? You can enter a different Name and Enrollment ID.')) {
                 localStorage.removeItem('profile');
                 profile = null;
                 nameInput.value = '';
                 enrollmentInput.value = '';
                 initApp();
             }
-        });
+        }
 
-        // Check for newly scanned URL tokens on page resume
+        switchProfileBtn.addEventListener('click', handleSwitchProfile);
+        standbySwitchBtn.addEventListener('click', handleSwitchProfile);
+
+        // ── Handle Scanned Link Re-Entry ───────────────────────────────────
         function checkUrlToken() {
             const urlTok = new URLSearchParams(location.search).get('token');
             if (urlTok && urlTok !== token) {
                 token = urlTok;
-                if (profile) {
-                    processMarkAttendance(urlTok);
-                }
+                initApp();
             }
         }
         window.addEventListener('pageshow', checkUrlToken);

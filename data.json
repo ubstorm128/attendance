@@ -35,31 +35,13 @@
       "name": "Tariq Ali",
       "enrollment": "ADTU/1/2023-26/BCAO/901",
       "section": ""
+    },
+    "ADTU/1/2024-27/BCAO/024": {
+      "name": "udit bora",
+      "enrollment": "ADTU/1/2024-27/BCAO/024",
+      "section": ""
     }
   },
-  "sessions": [
-    {
-      "id": 8,
-      "teacherId": "teacher-default-1",
-      "teacherName": "Wanraplang Nongbri",
-      "subject": "24BCAO3101R Advance Application Development (Sec C)",
-      "subjectId": "subj-1",
-      "qrToken": null,
-      "present": {},
-      "createdAt": "2026-09-11T12:16:03.385Z",
-      "active": false
-    },
-    {
-      "id": 9,
-      "teacherId": "teacher-default-1",
-      "teacherName": "Wanraplang Nongbri",
-      "subject": "24BCAO3101R UI UX Lab (Sec C)",
-      "subjectId": "subj-2",
-      "qrToken": "f279726016d948a7a8ae2a4fe163e5739b5a08f98b951e86a7302e123f1ec34b",
-      "present": {},
-      "createdAt": "2026-09-11T12:25:38.505Z",
-      "active": true
-    }
-  ],
-  "nextSessionId": 10
+  "sessions": [],
+  "nextSessionId": 12
 }

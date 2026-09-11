@@ -204,6 +204,29 @@ const server = http.createServer(async (req, res) => {
             return send(res, 200, { ok: true, student: db.students[v.enrollment] });
         }
 
+        // --- get session info by token ---
+        if (req.method === 'GET' && pathname === '/api/session-info') {
+            const tok = searchParams.get('token') || '';
+            const session = db.sessions.find(s => s.active && s.qrToken === tok);
+            if (!session) return send(res, 404, { error: 'Session is inactive or QR code expired' });
+
+            let resolvedSection = '';
+            if (session.subjectId) {
+                const teacher = db.teachers[session.teacherId];
+                if (teacher && teacher.subjects) {
+                    const subj = teacher.subjects.find(s => s.id === session.subjectId);
+                    if (subj && subj.section) resolvedSection = subj.section;
+                }
+            }
+
+            return send(res, 200, {
+                ok: true,
+                subject: session.subject || 'Class Session',
+                teacherName: session.teacherName || 'Instructor',
+                section: resolvedSection
+            });
+        }
+
         // --- mark attendance ---
         if (req.method === 'POST' && pathname === '/api/mark') {
             const { enrollment, token } = await readBody(req);
