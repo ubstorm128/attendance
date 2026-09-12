@@ -2213,8 +2213,27 @@
             loadSubjects();
         }
 
+        let _activeEventSource = null;
+        let _reconnectDelay = 3000; // start at 3s, double on each failure, cap at 30s
+        let _reconnectTimer = null;
+
         function connectStream() {
+            // Close any existing connection before opening a new one
+            if (_activeEventSource) {
+                _activeEventSource.onmessage = null;
+                _activeEventSource.onerror = null;
+                _activeEventSource.close();
+                _activeEventSource = null;
+            }
+
             const es = new EventSource(`/api/stream?token=${encodeURIComponent(teacherToken || '')}`);
+            _activeEventSource = es;
+
+            es.onopen = () => {
+                // Connection established — reset the backoff delay
+                _reconnectDelay = 3000;
+            };
+
             es.onmessage = (e) => {
                 const data = JSON.parse(e.data);
                 if (data.type === 'new-session') {
@@ -2266,7 +2285,19 @@
                     renderRows();
                 }
             };
+
+            es.onerror = () => {
+                // Connection dropped — schedule a reconnect with exponential backoff
+                es.close();
+                _activeEventSource = null;
+                clearTimeout(_reconnectTimer);
+                _reconnectTimer = setTimeout(() => {
+                    _reconnectDelay = Math.min(_reconnectDelay * 2, 30000); // cap at 30s
+                    connectStream();
+                }, _reconnectDelay);
+            };
         }
+
 
         function esc(str) { 
             const d = document.createElement('div'); 

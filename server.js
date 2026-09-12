@@ -186,12 +186,46 @@ function authenticateAdmin(req, res) {
     return payload;
 }
 
-// --- SSE clients (in-memory, per-process) ---
-let clients = [];
-function broadcastTo(teacherId, data) {
-    const msg = `data: ${JSON.stringify(data)}\n\n`;
-    clients.filter(c => c.teacherId === teacherId).forEach(c => c.res.write(msg));
+// --- SSE clients & replay buffer ---
+//
+// Each connected teacher gets their response object tracked.
+// A per-teacher ring buffer (last MAX_REPLAY events) allows reconnecting
+// clients to catch up on missed events via the Last-Event-ID header.
+//
+const MAX_REPLAY = 50;
+let clients = [];            // [{ res, teacherId }]
+let eventIdCounter = 0;      // global monotonic event ID
+const replayBuffers = {};    // teacherId → [{ id, data }]
+
+function getBuffer(teacherId) {
+    if (!replayBuffers[teacherId]) replayBuffers[teacherId] = [];
+    return replayBuffers[teacherId];
 }
+
+function pushToBuffer(teacherId, data) {
+    const id = ++eventIdCounter;
+    const buf = getBuffer(teacherId);
+    buf.push({ id, data });
+    if (buf.length > MAX_REPLAY) buf.shift();  // keep ring buffer bounded
+    return id;
+}
+
+function broadcastTo(teacherId, data) {
+    const id = pushToBuffer(teacherId, data);
+    const msg = `id: ${id}\ndata: ${JSON.stringify(data)}\n\n`;
+    clients
+        .filter(c => c.teacherId === teacherId)
+        .forEach(c => { try { c.res.write(msg); } catch (_) {} });
+}
+
+// Heartbeat: send a comment ping every 30s to prevent proxies/LBs from
+// closing idle SSE connections. Comments (lines starting with ':') are
+// ignored by the EventSource API on the client side.
+const heartbeatInterval = setInterval(() => {
+    const ping = ': heartbeat\n\n';
+    clients.forEach(c => { try { c.res.write(ping); } catch (_) {} });
+}, 30_000);
+heartbeatInterval.unref(); // don't block process exit
 
 function send(res, code, body) {
     res.writeHead(code, { 'Content-Type': 'application/json' });
@@ -397,125 +431,146 @@ const server = http.createServer(async (req, res) => {
             const enrollment = (searchParams.get('enrollment') || '').trim().toUpperCase();
             if (!enrollment) return send(res, 400, { error: 'enrollment is required' });
 
-            const stCheck = await pool.query('SELECT * FROM students WHERE enrollment = $1', [enrollment]);
+            // 1. Verify student exists
+            const stCheck = await pool.query(
+                'SELECT enrollment, name, section, avatar, about FROM students WHERE enrollment = $1',
+                [enrollment]
+            );
             if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
             const currentStudent = stCheck.rows[0];
 
-            const subjectsRes = await pool.query('SELECT * FROM subjects ORDER BY name ASC');
-            const allSessionsRes = await pool.query('SELECT id, subject, subject_id, teacher_name, created_at FROM sessions ORDER BY id ASC');
-            const allAttendanceRes = await pool.query('SELECT session_id, enrollment, name, time FROM attendance');
+            // 2. Per-subject attendance breakdown — all done in SQL
+            const bySubjectRows = await pool.query(`
+                SELECT
+                    subj.id,
+                    subj.name,
+                    subj.code,
+                    subj.department,
+                    subj.section,
+                    COUNT(DISTINCT sess.id)::int                                          AS "totalHeld",
+                    COUNT(DISTINCT CASE WHEN a.enrollment = $1 THEN a.session_id END)::int AS "attended",
+                    MIN(sess.teacher_name)                                                 AS "teacherName"
+                FROM subjects subj
+                LEFT JOIN sessions sess
+                    ON sess.subject_id = subj.id
+                    OR sess.subject    = subj.name
+                    OR sess.subject    = subj.code || ' ' || subj.name
+                LEFT JOIN attendance a
+                    ON a.session_id = sess.id
+                GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section
+                ORDER BY subj.name ASC
+            `, [enrollment]);
 
-            const allSessions = allSessionsRes.rows;
-            const allAtt = allAttendanceRes.rows;
-
-            // Compute subject breakdown for this student
-            const bySubject = subjectsRes.rows.map(subj => {
-                const matchingSessions = allSessions.filter(s =>
-                    s.subject_id === subj.id || s.subject === subj.name || s.subject === `${subj.code} ${subj.name}`
-                );
-                const totalHeld = matchingSessions.length;
-                const studentAttended = allAtt.filter(a =>
-                    a.enrollment === enrollment && matchingSessions.some(s => s.id === a.session_id)
-                ).length;
-
-                const percentage = totalHeld > 0 ? Math.round((studentAttended / totalHeld) * 100) : 100;
-                const isRedFlag = totalHeld > 0 && percentage < 75;
-                const classesToRecover = isRedFlag ? Math.max(1, Math.ceil((0.75 * totalHeld - studentAttended) / 0.25)) : 0;
-
+            const bySubject = bySubjectRows.rows.map(row => {
+                const totalHeld = row.totalHeld;
+                const attended  = row.attended;
+                const percentage = totalHeld > 0 ? Math.round((attended / totalHeld) * 100) : 100;
+                const isRedFlag  = totalHeld > 0 && percentage < 75;
+                const classesToRecover = isRedFlag
+                    ? Math.max(1, Math.ceil((0.75 * totalHeld - attended) / 0.25))
+                    : 0;
                 return {
-                    id: subj.id,
-                    name: subj.name,
-                    code: subj.code,
-                    department: subj.department,
-                    section: subj.section,
-                    teacherName: matchingSessions[0]?.teacher_name || 'Instructor',
+                    id: row.id,
+                    name: row.name,
+                    code: row.code,
+                    department: row.department,
+                    section: row.section,
+                    teacherName: row.teacherName || 'Instructor',
                     totalHeld,
-                    attended: studentAttended,
+                    attended,
                     percentage,
                     isRedFlag,
                     classesToRecover
                 };
             });
 
-            // Overall attendance for this student
-            const totalHeldOverall = allSessions.length;
-            const totalAttendedOverall = allAtt.filter(a => a.enrollment === enrollment).length;
-            const overallPercentage = totalHeldOverall > 0 ? Math.round((totalAttendedOverall / totalHeldOverall) * 100) : 100;
-            const isOverallRedFlag = totalHeldOverall > 0 && overallPercentage < 75;
-            const overallClassesToRecover = isOverallRedFlag ? Math.max(1, Math.ceil((0.75 * totalHeldOverall - totalAttendedOverall) / 0.25)) : 0;
+            // 3. Overall stats — single aggregated query
+            const overallRow = await pool.query(`
+                SELECT
+                    COUNT(DISTINCT sess.id)::int                                          AS "totalHeld",
+                    COUNT(DISTINCT CASE WHEN a.enrollment = $1 THEN a.session_id END)::int AS "totalAttended"
+                FROM sessions sess
+                LEFT JOIN attendance a ON a.session_id = sess.id
+            `, [enrollment]);
 
-            // Recent check-in history for this student
-            const studentAttRows = allAtt.filter(a => a.enrollment === enrollment);
-            const recent = studentAttRows.map(a => {
-                const s = allSessions.find(sess => sess.id === a.session_id);
-                return {
-                    sessionId: a.session_id,
-                    subject: s ? s.subject : 'Class Session',
-                    teacherName: s ? s.teacher_name : 'Instructor',
-                    time: a.time.toISOString()
-                };
-            }).sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 15);
+            const totalHeldOverall     = overallRow.rows[0].totalHeld;
+            const totalAttendedOverall = overallRow.rows[0].totalAttended;
+            const overallPercentage    = totalHeldOverall > 0
+                ? Math.round((totalAttendedOverall / totalHeldOverall) * 100)
+                : 100;
+            const isOverallRedFlag     = totalHeldOverall > 0 && overallPercentage < 75;
+            const overallClassesToRecover = isOverallRedFlag
+                ? Math.max(1, Math.ceil((0.75 * totalHeldOverall - totalAttendedOverall) / 0.25))
+                : 0;
 
-            // Real-time Leaderboard:
-            // "real time leaderboard of students who has most attendance percentage but only if their attendance is greater than 75% and not according to the whole class greatest percentage."
-            const allStudentsRes = await pool.query('SELECT enrollment, name, section, avatar FROM students');
-            const qualifyingStudents = [];
+            // 4. Recent check-in history — sorted & limited in SQL
+            const recentRows = await pool.query(`
+                SELECT a.session_id AS "sessionId", sess.subject, sess.teacher_name AS "teacherName", a.time
+                FROM attendance a
+                JOIN sessions sess ON sess.id = a.session_id
+                WHERE a.enrollment = $1
+                ORDER BY a.time DESC
+                LIMIT 15
+            `, [enrollment]);
 
-            if (totalHeldOverall > 0) {
-                for (const st of allStudentsRes.rows) {
-                    const stAttCount = allAtt.filter(a => a.enrollment === st.enrollment).length;
-                    const stPct = Math.round((stAttCount / totalHeldOverall) * 100);
-                    // Must be strictly greater than 75%
-                    if (stPct > 75) {
-                        qualifyingStudents.push({
-                            enrollment: st.enrollment,
-                            name: st.name,
-                            section: st.section,
-                            avatar: st.avatar || '',
-                            attended: stAttCount,
-                            total: totalHeldOverall,
-                            percentage: stPct
-                        });
-                    }
-                }
-            }
+            const recent = recentRows.rows.map(r => ({
+                sessionId:   r.sessionId,
+                subject:     r.subject || 'Class Session',
+                teacherName: r.teacherName || 'Instructor',
+                time:        r.time.toISOString()
+            }));
 
-            qualifyingStudents.sort((a, b) => b.percentage - a.percentage || b.attended - a.attended || a.name.localeCompare(b.name));
+            // 5. Leaderboard — students with >75% attendance, ranked by SQL
+            const leaderboardRows = await pool.query(`
+                SELECT
+                    st.enrollment,
+                    st.name,
+                    st.section,
+                    st.avatar,
+                    COUNT(a.session_id)::int AS attended,
+                    $2::int                  AS total
+                FROM students st
+                JOIN attendance a ON a.enrollment = st.enrollment
+                GROUP BY st.enrollment, st.name, st.section, st.avatar
+                HAVING $2 > 0
+                    AND ROUND(COUNT(a.session_id)::numeric / $2 * 100) > 75
+                ORDER BY attended DESC, st.name ASC
+            `, [enrollment, totalHeldOverall]);
 
-            const leaderboard = qualifyingStudents.map((s, idx) => ({
-                rank: idx + 1,
-                name: s.name,
-                section: s.section,
-                avatar: s.avatar,
-                percentage: s.percentage,
-                attended: s.attended,
-                total: s.total,
-                totalAttended: s.attended,
-                totalHeld: s.total,
+            const leaderboard = leaderboardRows.rows.map((s, idx) => ({
+                rank:             idx + 1,
+                name:             s.name,
+                section:          s.section,
+                avatar:           s.avatar || '',
+                percentage:       totalHeldOverall > 0 ? Math.round((s.attended / totalHeldOverall) * 100) : 100,
+                attended:         s.attended,
+                total:            s.total,
+                totalAttended:    s.attended,
+                totalHeld:        s.total,
                 isCurrentStudent: s.enrollment === enrollment
             }));
 
             return send(res, 200, {
                 ok: true,
                 profile: {
-                    name: currentStudent.name,
+                    name:       currentStudent.name,
                     enrollment: currentStudent.enrollment,
-                    section: currentStudent.section,
-                    avatar: currentStudent.avatar || '',
-                    about: currentStudent.about || ''
+                    section:    currentStudent.section,
+                    avatar:     currentStudent.avatar || '',
+                    about:      currentStudent.about  || ''
                 },
                 student: {
-                    name: currentStudent.name,
+                    name:       currentStudent.name,
                     enrollment: currentStudent.enrollment,
-                    section: currentStudent.section,
-                    avatar: currentStudent.avatar || '',
-                    about: currentStudent.about || ''
+                    section:    currentStudent.section,
+                    avatar:     currentStudent.avatar || '',
+                    about:      currentStudent.about  || ''
                 },
                 overall: {
-                    totalHeld: totalHeldOverall,
-                    totalAttended: totalAttendedOverall,
-                    percentage: overallPercentage,
-                    isRedFlag: isOverallRedFlag,
+                    totalHeld:        totalHeldOverall,
+                    totalAttended:    totalAttendedOverall,
+                    percentage:       overallPercentage,
+                    isRedFlag:        isOverallRedFlag,
                     classesToRecover: overallClassesToRecover
                 },
                 bySubject,
@@ -752,6 +807,8 @@ const server = http.createServer(async (req, res) => {
 
         // --- SSE stream ---
         // EventSource (browser) cannot send custom headers, so the JWT is passed as ?token=
+        // The Last-Event-ID header is sent automatically by the browser on reconnect,
+        // allowing us to replay any events the client missed during the disconnect.
         if (req.method === 'GET' && pathname === '/api/stream') {
             const qToken = searchParams.get('token') || '';
             let payload = null;
@@ -764,7 +821,8 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, {
                 'Content-Type': 'text/event-stream',
                 'Cache-Control': 'no-cache',
-                Connection: 'keep-alive'
+                'Connection': 'keep-alive',
+                'X-Accel-Buffering': 'no'   // disable Nginx buffering for SSE
             });
 
             const activeR = await pool.query('SELECT * FROM sessions WHERE teacher_id = $1 AND active = true ORDER BY id DESC LIMIT 1', [teacherId]);
@@ -794,7 +852,20 @@ const server = http.createServer(async (req, res) => {
                 };
             }
 
-            res.write(`data: ${JSON.stringify({ type: 'init', session: currentSession })}\n\n`);
+            // Replay missed events if the client sends Last-Event-ID
+            const lastId = Number(req.headers['last-event-id'] || 0);
+            const initId = ++eventIdCounter;
+            const initMsg = `id: ${initId}\ndata: ${JSON.stringify({ type: 'init', session: currentSession })}\n\n`;
+            res.write(initMsg);
+
+            if (lastId > 0) {
+                const buf = getBuffer(teacherId);
+                const missed = buf.filter(e => e.id > lastId);
+                for (const e of missed) {
+                    res.write(`id: ${e.id}\ndata: ${JSON.stringify(e.data)}\n\n`);
+                }
+            }
+
             clients.push({ res, teacherId });
             req.on('close', () => {
                 clients = clients.filter(c => c.res !== res);
