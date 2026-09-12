@@ -28,8 +28,8 @@ Zero-install, mobile-web QR check-in that requires no app store downloads or com
 
 ## Capabilities and Constraints
 
-- **Architecture**: Plain Node.js `http` server with local persistent `data.json` storage (migrating to Supabase in a future phase) with static files served from `public/`.
-- **Data Model**: Structured stores for `teachers`, `students`, `sessions`, and `attendance` with uniqueness enforcement per session.
+- **Architecture**: Plain Node.js `http` server backed by remote persistent Supabase PostgreSQL (`pg.Pool`), with static files served from `public/` and hosted on Render.
+- **Data Model**: Relational tables for `teachers`, `subjects`, `students`, `sessions`, and `attendance` with uniqueness enforcement per session and foreign key integrity.
 - **Real-Time Updates**: Native Server-Sent Events (SSE) streaming live check-ins directly to the teacher's browser without external websocket libraries.
 - **Offline & Storage Resiliency**: Client `localStorage` caches student profile details; backend gracefully handles HTTP 409 duplicates so students are never stuck.
 - **Session Lifecycle**: Active session state with start, live monitoring, close, and deletion capabilities.

@@ -1,8 +1,9 @@
-// Local JSON-backed attendance server. Run: node server.js
+// PostgreSQL-backed attendance server for Render + Supabase. Run: node server.js
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const nodeCrypto = require('crypto');
+const { Pool } = require('pg');
 
 const DEFAULT_PORT = Number(process.env.PORT) || 3000;
 const MAX_PORT_ATTEMPTS = 10;
@@ -10,72 +11,90 @@ let currentPort = DEFAULT_PORT;
 const SUPERADMIN_USER = process.env.SUPERADMIN_USER || 'admin';
 const SUPERADMIN_PASS = process.env.SUPERADMIN_PASS || 'admin123';
 
-const DATA_FILE = path.join(__dirname, 'data.json');
+const SUPABASE_DB_URL = 'postgresql://postgres.hddezwltrmtxizbxuvvf:reT5QVBJYaxrnxvx@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres';
+const DATABASE_URL = process.env.DATABASE_URL || SUPABASE_DB_URL;
 
-// In-memory data store with JSON file persistence
-let db = {
-    teachers: {},
-    students: {},
-    sessions: [],
-    nextSessionId: 1
-};
+const pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
 
-function loadData() {
+// --- Database Schema Initialization ---
+async function initDb() {
     try {
-        if (fs.existsSync(DATA_FILE)) {
-            const raw = fs.readFileSync(DATA_FILE, 'utf8');
-            if (raw.trim()) {
-                db = JSON.parse(raw);
-            }
-        }
-    } catch (e) {
-        console.error('Warning: could not read data.json, starting with clean store:', e.message);
-    }
-    if (!db.teachers) db.teachers = {};
-    if (!db.students) db.students = {};
-    if (!db.sessions) db.sessions = [];
-    if (!db.nextSessionId) db.nextSessionId = 1;
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS teachers (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            );
 
-    // Ensure default teacher exists if teachers map is empty
-    if (Object.keys(db.teachers).length === 0) {
-        const defaultId = 'teacher-default-1';
-        db.teachers[defaultId] = {
-            id: defaultId,
-            name: 'Wanraplang Nongbri',
-            username: 'WanraplangNongbri',
-            password: 'teacher001',
-            subjects: [
-                { id: 'subj-1', name: 'Data Structures & Algorithms', code: 'CS-204', department: 'CSE', section: 'A', createdAt: new Date().toISOString() },
-                { id: 'subj-2', name: 'Database Management Systems', code: 'CS-301', department: 'CSE', section: 'B', createdAt: new Date().toISOString() },
-                { id: 'subj-3', name: 'Web Technology & Design', code: 'IT-102', department: 'IT', section: 'A', createdAt: new Date().toISOString() }
-            ]
-        };
-        saveData();
-    } else {
-        let modified = false;
-        for (const t of Object.values(db.teachers)) {
-            if (!t.subjects || t.subjects.length === 0) {
-                t.subjects = [
-                    { id: 'subj-1', name: 'Data Structures & Algorithms', code: 'CS-204', department: 'CSE', section: 'A', createdAt: new Date().toISOString() },
-                    { id: 'subj-2', name: 'Database Management Systems', code: 'CS-301', department: 'CSE', section: 'B', createdAt: new Date().toISOString() },
-                    { id: 'subj-3', name: 'Web Technology & Design', code: 'IT-102', department: 'IT', section: 'A', createdAt: new Date().toISOString() }
-                ];
-                modified = true;
-            }
+            CREATE TABLE IF NOT EXISTS subjects (
+                id TEXT PRIMARY KEY,
+                teacher_id TEXT NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                code TEXT DEFAULT 'GEN',
+                department TEXT DEFAULT 'GENERAL',
+                section TEXT DEFAULT '',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+
+            CREATE TABLE IF NOT EXISTS students (
+                enrollment TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                section TEXT DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS sessions (
+                id SERIAL PRIMARY KEY,
+                teacher_id TEXT NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+                teacher_name TEXT NOT NULL,
+                subject TEXT,
+                subject_id TEXT REFERENCES subjects(id) ON DELETE SET NULL,
+                qr_token TEXT,
+                active BOOLEAN NOT NULL DEFAULT true,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+
+            CREATE TABLE IF NOT EXISTS attendance (
+                id SERIAL PRIMARY KEY,
+                session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+                enrollment TEXT NOT NULL,
+                name TEXT NOT NULL,
+                section TEXT DEFAULT '',
+                time TIMESTAMPTZ NOT NULL DEFAULT now(),
+                UNIQUE(session_id, enrollment)
+            );
+        `);
+
+        // Seed default teacher if empty
+        const teacherCheck = await pool.query('SELECT 1 FROM teachers WHERE id = $1', ['teacher-default-1']);
+        if (teacherCheck.rows.length === 0) {
+            await pool.query(`
+                INSERT INTO teachers (id, name, username, password)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (id) DO NOTHING
+            `, ['teacher-default-1', 'Wanraplang Nongbri', 'WanraplangNongbri', 'teacher001']);
         }
-        if (modified) saveData();
+
+        // Seed default subjects if empty
+        const subjCheck = await pool.query('SELECT 1 FROM subjects WHERE teacher_id = $1', ['teacher-default-1']);
+        if (subjCheck.rows.length === 0) {
+            await pool.query(`
+                INSERT INTO subjects (id, teacher_id, name, code, department, section)
+                VALUES 
+                    ('subj-1', 'teacher-default-1', 'Advance Application Development', '24BCAO3101R', 'BCA', 'C'),
+                    ('subj-2', 'teacher-default-1', 'UI UX Lab', '24BCAO3101R', 'BCA', 'C')
+                ON CONFLICT (id) DO NOTHING
+            `);
+        }
+
+        console.log('PostgreSQL database initialized successfully in Supabase.');
+    } catch (err) {
+        console.error('Database initialization error:', err);
     }
 }
-
-function saveData() {
-    try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf8');
-    } catch (e) {
-        console.error('Error saving data.json:', e);
-    }
-}
-
-loadData();
 
 // --- SSE clients (in-memory, per-process) ---
 let clients = [];
@@ -152,25 +171,6 @@ function validateStudentFields(name, enrollment, section) {
     return { name: n, enrollment: e, section: s || '' };
 }
 
-function activeSessionFor(teacherId) {
-    return db.sessions.slice().reverse().find(s => s.teacherId === teacherId && s.active) || null;
-}
-
-function formatSession(s) {
-    if (!s) return null;
-    return {
-        id: s.id,
-        teacherId: s.teacherId,
-        teacherName: s.teacherName,
-        subject: s.subject,
-        subjectId: s.subjectId || null,
-        qrToken: s.qrToken,
-        present: s.present || {},
-        createdAt: s.createdAt,
-        active: s.active
-    };
-}
-
 const server = http.createServer(async (req, res) => {
     try {
         const host = (req.headers && req.headers.host) ? req.headers.host : `localhost:${currentPort}`;
@@ -191,38 +191,38 @@ const server = http.createServer(async (req, res) => {
             const v = validateStudentFields(body.name, body.enrollment, body.section);
             if (v.error) return send(res, 400, { error: v.error });
 
-            if (db.students[v.enrollment]) {
+            const existing = await pool.query('SELECT 1 FROM students WHERE enrollment = $1', [v.enrollment]);
+            if (existing.rows.length) {
                 return send(res, 409, { error: 'Student with this enrollment ID is already registered' });
             }
 
-            db.students[v.enrollment] = {
-                name: v.name,
-                enrollment: v.enrollment,
-                section: v.section || ''
-            };
-            saveData();
-            return send(res, 200, { ok: true, student: db.students[v.enrollment] });
+            await pool.query(
+                'INSERT INTO students (enrollment, name, section) VALUES ($1, $2, $3)',
+                [v.enrollment, v.name, v.section || '']
+            );
+
+            return send(res, 200, { ok: true, student: { name: v.name, enrollment: v.enrollment, section: v.section || '' } });
         }
 
         // --- get session info by token ---
         if (req.method === 'GET' && pathname === '/api/session-info') {
             const tok = searchParams.get('token') || '';
-            const session = db.sessions.find(s => s.active && s.qrToken === tok);
-            if (!session) return send(res, 404, { error: 'Session is inactive or QR code expired' });
+            const sessR = await pool.query('SELECT * FROM sessions WHERE active = true AND qr_token = $1', [tok]);
+            if (!sessR.rows.length) return send(res, 404, { error: 'Session is inactive or QR code expired' });
+            const session = sessR.rows[0];
 
             let resolvedSection = '';
-            if (session.subjectId) {
-                const teacher = db.teachers[session.teacherId];
-                if (teacher && teacher.subjects) {
-                    const subj = teacher.subjects.find(s => s.id === session.subjectId);
-                    if (subj && subj.section) resolvedSection = subj.section;
+            if (session.subject_id) {
+                const subjR = await pool.query('SELECT section FROM subjects WHERE id = $1', [session.subject_id]);
+                if (subjR.rows.length && subjR.rows[0].section) {
+                    resolvedSection = subjR.rows[0].section;
                 }
             }
 
             return send(res, 200, {
                 ok: true,
                 subject: session.subject || 'Class Session',
-                teacherName: session.teacherName || 'Instructor',
+                teacherName: session.teacher_name || 'Instructor',
                 section: resolvedSection
             });
         }
@@ -231,57 +231,63 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'POST' && pathname === '/api/mark') {
             const { enrollment, token } = await readBody(req);
             const normEnrollment = (enrollment || '').trim().toUpperCase();
-            const student = db.students[normEnrollment];
-            if (!student) return send(res, 404, { error: 'register first' });
+            if (!normEnrollment) return send(res, 400, { error: 'enrollment is required' });
             if (!token) return send(res, 400, { error: 'missing QR token — scan the code again' });
 
-            const session = db.sessions.find(s => s.active && s.qrToken === token);
-            if (!session) return send(res, 401, { error: 'QR code is invalid or expired' });
+            const sR = await pool.query('SELECT * FROM students WHERE enrollment = $1', [normEnrollment]);
+            if (!sR.rows.length) return send(res, 404, { error: 'register first' });
+            const student = sR.rows[0];
 
-            if (!session.present) session.present = {};
+            const sessR = await pool.query('SELECT * FROM sessions WHERE active = true AND qr_token = $1', [token]);
+            if (!sessR.rows.length) return send(res, 401, { error: 'QR code is invalid or expired' });
+            const session = sessR.rows[0];
 
             // Auto-resolve section from active teacher subject if student section is blank
             let resolvedSection = student.section || '';
-            if (!resolvedSection && session.subjectId) {
-                const teacher = db.teachers[session.teacherId];
-                if (teacher && teacher.subjects) {
-                    const subj = teacher.subjects.find(s => s.id === session.subjectId);
-                    if (subj && subj.section) resolvedSection = subj.section;
+            if (!resolvedSection && session.subject_id) {
+                const subjR = await pool.query('SELECT section FROM subjects WHERE id = $1', [session.subject_id]);
+                if (subjR.rows.length && subjR.rows[0].section) {
+                    resolvedSection = subjR.rows[0].section;
                 }
             }
 
-            if (session.present[normEnrollment]) {
-                const existing = session.present[normEnrollment];
+            const existingAtt = await pool.query('SELECT * FROM attendance WHERE session_id = $1 AND enrollment = $2', [session.id, normEnrollment]);
+            if (existingAtt.rows.length) {
+                const existing = existingAtt.rows[0];
                 return send(res, 200, {
                     ok: true,
                     already: true,
                     subject: session.subject || 'Class Session',
-                    teacherName: session.teacherName || 'Instructor',
-                    time: existing.time,
+                    teacherName: session.teacher_name || 'Instructor',
+                    time: existing.time.toISOString(),
                     section: existing.section || resolvedSection
                 });
             }
 
-            const timeStr = new Date().toISOString();
-            const record = {
-                name: student.name,
-                enrollment: student.enrollment,
-                section: resolvedSection,
-                time: timeStr
-            };
-            session.present[normEnrollment] = record;
-            saveData();
+            const insR = await pool.query(
+                'INSERT INTO attendance (session_id, enrollment, name, section, time) VALUES ($1, $2, $3, $4, now()) RETURNING *',
+                [session.id, normEnrollment, student.name, resolvedSection]
+            );
+            const record = insR.rows[0];
 
-            broadcastTo(session.teacherId, {
+            const studentPayload = {
+                name: student.name,
+                enrollment: normEnrollment,
+                section: resolvedSection,
+                time: record.time.toISOString()
+            };
+
+            broadcastTo(session.teacher_id, {
                 type: 'mark',
-                student: record
+                student: studentPayload
             });
+
             return send(res, 200, {
                 ok: true,
                 already: false,
                 subject: session.subject || 'Class Session',
-                teacherName: session.teacherName || 'Instructor',
-                time: timeStr,
+                teacherName: session.teacher_name || 'Instructor',
+                time: record.time.toISOString(),
                 section: resolvedSection
             });
         }
@@ -298,31 +304,38 @@ const server = http.createServer(async (req, res) => {
             const enrollment = (searchParams.get('enrollment') || '').trim().toUpperCase();
             if (!enrollment) return send(res, 400, { error: 'enrollment is required' });
 
-            if (!db.students[enrollment]) {
-                return send(res, 404, { error: 'Student not registered' });
-            }
+            const stCheck = await pool.query('SELECT 1 FROM students WHERE enrollment = $1', [enrollment]);
+            if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
+
+            const sessQuery = await pool.query(`
+                SELECT s.id, s.subject, s.teacher_name, s.created_at,
+                       a.time AS attended_time
+                FROM sessions s
+                LEFT JOIN attendance a ON a.session_id = s.id AND a.enrollment = $1
+                ORDER BY s.id DESC
+            `, [enrollment]);
 
             const map = {};
             const recent = [];
 
-            for (const s of db.sessions) {
-                const subKey = s.subject || 'No subject';
+            for (const row of sessQuery.rows) {
+                const subKey = row.subject || 'No subject';
                 if (!map[subKey]) {
                     map[subKey] = {
                         subject: subKey,
-                        teacherName: s.teacherName || 'Instructor',
+                        teacherName: row.teacher_name || 'Instructor',
                         totalSessions: 0,
                         presentSessions: 0
                     };
                 }
                 map[subKey].totalSessions++;
 
-                if (s.present && s.present[enrollment]) {
+                if (row.attended_time) {
                     map[subKey].presentSessions++;
                     recent.push({
-                        subject: s.subject || 'No subject',
-                        teacherName: s.teacherName || 'Instructor',
-                        time: s.present[enrollment].time
+                        subject: subKey,
+                        teacherName: row.teacher_name || 'Instructor',
+                        time: row.attended_time.toISOString()
                     });
                 }
             }
@@ -338,27 +351,42 @@ const server = http.createServer(async (req, res) => {
         // --- teacher auth ---
         if (req.method === 'POST' && pathname === '/api/login') {
             const { username, password } = await readBody(req);
-            const teacher = Object.values(db.teachers).find(t => t.username === username && t.password === password);
-            if (!teacher) return send(res, 401, { error: 'invalid credentials' });
-            return send(res, 200, { ok: true, teacherId: teacher.id, teacherName: teacher.name });
+            const r = await pool.query('SELECT id, name FROM teachers WHERE username = $1 AND password = $2', [username, password]);
+            if (!r.rows.length) return send(res, 401, { error: 'invalid credentials' });
+            return send(res, 200, { ok: true, teacherId: r.rows[0].id, teacherName: r.rows[0].name });
         }
 
         // --- teacher subjects: list ---
         if (req.method === 'GET' && pathname === '/api/teacher/subjects') {
             const teacherId = searchParams.get('teacherId') || '';
-            const teacher = db.teachers[teacherId];
-            if (!teacher) return send(res, 401, { error: 'not logged in' });
+            const tR = await pool.query('SELECT 1 FROM teachers WHERE id = $1', [teacherId]);
+            if (!tR.rows.length) return send(res, 401, { error: 'not logged in' });
 
-            const subjects = (teacher.subjects || []).map(s => {
-                const matchingSessions = db.sessions.filter(sess => 
-                    sess.teacherId === teacherId && 
-                    (sess.subjectId === s.id || sess.subject === s.name || sess.subject === `${s.code} ${s.name}`)
+            const subjR = await pool.query('SELECT * FROM subjects WHERE teacher_id = $1 ORDER BY created_at ASC', [teacherId]);
+            const sessR = await pool.query('SELECT id, subject, subject_id, active FROM sessions WHERE teacher_id = $1', [teacherId]);
+            const attR = await pool.query(`
+                SELECT a.session_id, s.subject_id, s.subject
+                FROM attendance a
+                JOIN sessions s ON a.session_id = s.id
+                WHERE s.teacher_id = $1
+            `, [teacherId]);
+
+            const subjects = subjR.rows.map(s => {
+                const matchingSessions = sessR.rows.filter(sess =>
+                    sess.subject_id === s.id || sess.subject === s.name || sess.subject === `${s.code} ${s.name}`
                 );
                 const activeSession = matchingSessions.find(sess => sess.active);
-                const totalPresent = matchingSessions.reduce((acc, sess) => acc + Object.keys(sess.present || {}).length, 0);
-                
+                const totalPresent = attR.rows.filter(a =>
+                    a.subject_id === s.id || a.subject === s.name || a.subject === `${s.code} ${s.name}`
+                ).length;
+
                 return {
-                    ...s,
+                    id: s.id,
+                    name: s.name,
+                    code: s.code,
+                    department: s.department,
+                    section: s.section,
+                    createdAt: s.created_at.toISOString(),
                     totalSessions: matchingSessions.length,
                     totalPresent,
                     isActive: !!activeSession,
@@ -372,8 +400,8 @@ const server = http.createServer(async (req, res) => {
         // --- teacher subjects: create ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects') {
             const { teacherId, name, code, department, section } = await readBody(req);
-            const teacher = db.teachers[teacherId];
-            if (!teacher) return send(res, 401, { error: 'not logged in' });
+            const tR = await pool.query('SELECT 1 FROM teachers WHERE id = $1', [teacherId]);
+            if (!tR.rows.length) return send(res, 401, { error: 'not logged in' });
 
             const sName = (name || '').trim();
             const sCode = (code || '').trim().toUpperCase();
@@ -381,113 +409,115 @@ const server = http.createServer(async (req, res) => {
             const sSection = (section || '').trim().toUpperCase();
             if (!sName) return send(res, 400, { error: 'Subject name is required' });
 
-            if (!teacher.subjects) teacher.subjects = [];
             const id = 'subj-' + nodeCrypto.randomUUID().slice(0, 8);
-            const newSubj = {
-                id,
-                name: sName,
-                code: sCode || 'GEN',
-                department: sDept || 'GENERAL',
-                section: sSection || '',
-                createdAt: new Date().toISOString()
-            };
-            teacher.subjects.push(newSubj);
-            saveData();
-            return send(res, 200, { ok: true, subject: newSubj });
+            const ins = await pool.query(
+                'INSERT INTO subjects (id, teacher_id, name, code, department, section, created_at) VALUES ($1, $2, $3, $4, $5, $6, now()) RETURNING *',
+                [id, teacherId, sName, sCode || 'GEN', sDept || 'GENERAL', sSection || '']
+            );
+            const row = ins.rows[0];
+
+            return send(res, 200, {
+                ok: true,
+                subject: {
+                    id: row.id,
+                    name: row.name,
+                    code: row.code,
+                    department: row.department,
+                    section: row.section,
+                    createdAt: row.created_at.toISOString()
+                }
+            });
         }
 
         // --- teacher subjects: edit ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects/edit') {
             const { teacherId, subjectId, name, code, department, section } = await readBody(req);
-            const teacher = db.teachers[teacherId];
-            if (!teacher) return send(res, 401, { error: 'not logged in' });
+            const check = await pool.query('SELECT * FROM subjects WHERE id = $1 AND teacher_id = $2', [subjectId, teacherId]);
+            if (!check.rows.length) return send(res, 404, { error: 'Subject not found' });
 
-            const subj = (teacher.subjects || []).find(s => s.id === subjectId);
-            if (!subj) return send(res, 404, { error: 'Subject not found' });
+            const cur = check.rows[0];
+            const newName = name && name.trim() ? name.trim() : cur.name;
+            const newCode = code && code.trim() ? code.trim().toUpperCase() : cur.code;
+            const newDept = department && department.trim() ? department.trim().toUpperCase() : cur.department;
+            const newSec = section !== undefined ? (section || '').trim().toUpperCase() : cur.section;
 
-            if (name && name.trim()) subj.name = name.trim();
-            if (code && code.trim()) subj.code = code.trim().toUpperCase();
-            if (department && department.trim()) subj.department = department.trim().toUpperCase();
-            if (section !== undefined) subj.section = (section || '').trim().toUpperCase();
-            saveData();
-            return send(res, 200, { ok: true, subject: subj });
+            const upd = await pool.query(
+                'UPDATE subjects SET name = $1, code = $2, department = $3, section = $4 WHERE id = $5 AND teacher_id = $6 RETURNING *',
+                [newName, newCode, newDept, newSec, subjectId, teacherId]
+            );
+            const row = upd.rows[0];
+
+            return send(res, 200, {
+                ok: true,
+                subject: {
+                    id: row.id,
+                    name: row.name,
+                    code: row.code,
+                    department: row.department,
+                    section: row.section,
+                    createdAt: row.created_at.toISOString()
+                }
+            });
         }
 
         // --- teacher subjects: delete ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects/delete') {
             const { teacherId, subjectId } = await readBody(req);
-            const teacher = db.teachers[teacherId];
-            if (!teacher) return send(res, 401, { error: 'not logged in' });
-
-            const idx = (teacher.subjects || []).findIndex(s => s.id === subjectId);
-            if (idx === -1) return send(res, 404, { error: 'Subject not found' });
-
-            teacher.subjects.splice(idx, 1);
-            saveData();
+            const del = await pool.query('DELETE FROM subjects WHERE id = $1 AND teacher_id = $2', [subjectId, teacherId]);
+            if (del.rowCount === 0) return send(res, 404, { error: 'Subject not found' });
             return send(res, 200, { ok: true });
         }
 
         // --- start session ---
         if (req.method === 'POST' && pathname === '/api/start-session') {
             const { teacherId, subject, subjectId } = await readBody(req);
-            const teacher = db.teachers[teacherId];
-            if (!teacher) return send(res, 401, { error: 'not logged in' });
+            const tR = await pool.query('SELECT id, name FROM teachers WHERE id = $1', [teacherId]);
+            if (!tR.rows.length) return send(res, 401, { error: 'not logged in' });
+            const teacher = tR.rows[0];
 
             // Close any previous active sessions for this teacher
-            const prev = activeSessionFor(teacher.id);
-            if (prev) {
-                prev.active = false;
-                prev.qrToken = null;
-            }
+            await pool.query('UPDATE sessions SET active = false, qr_token = NULL WHERE teacher_id = $1 AND active = true', [teacher.id]);
 
             const qrToken = nodeCrypto.randomBytes(32).toString('hex');
             const subjectVal = subject && subject.trim() ? subject.trim() : null;
 
-            const session = {
-                id: db.nextSessionId++,
-                teacherId: teacher.id,
-                teacherName: teacher.name,
-                subject: subjectVal,
-                subjectId: subjectId || null,
-                qrToken,
-                present: {},
-                createdAt: new Date().toISOString(),
-                active: true
-            };
-
-            db.sessions.push(session);
-            saveData();
+            const ins = await pool.query(
+                'INSERT INTO sessions (teacher_id, teacher_name, subject, subject_id, qr_token, active, created_at) VALUES ($1, $2, $3, $4, $5, true, now()) RETURNING *',
+                [teacher.id, teacher.name, subjectVal, subjectId || null, qrToken]
+            );
+            const session = ins.rows[0];
 
             broadcastTo(teacher.id, {
                 type: 'new-session',
-                session: formatSession(session)
+                session: {
+                    id: session.id,
+                    teacherId: session.teacher_id,
+                    teacherName: session.teacher_name,
+                    subject: session.subject,
+                    subjectId: session.subject_id,
+                    qrToken: session.qr_token,
+                    present: {},
+                    createdAt: session.created_at.toISOString(),
+                    active: session.active
+                }
             });
 
-            return send(res, 200, { qrToken: session.qrToken, sessionId: session.id });
+            return send(res, 200, { qrToken: session.qr_token, sessionId: session.id });
         }
 
         // --- close session ---
         if (req.method === 'POST' && pathname === '/api/close-session') {
             const { teacherId } = await readBody(req);
-            const session = activeSessionFor(teacherId);
-            if (session) {
-                session.active = false;
-                session.qrToken = null;
-                saveData();
-                broadcastTo(teacherId, { type: 'closed' });
-            }
+            await pool.query('UPDATE sessions SET active = false, qr_token = NULL WHERE teacher_id = $1 AND active = true', [teacherId]);
+            broadcastTo(teacherId, { type: 'closed' });
             return send(res, 200, { ok: true });
         }
 
         // --- delete session ---
         if (req.method === 'POST' && pathname === '/api/delete-session') {
             const { teacherId, sessionId } = await readBody(req);
-            const idx = db.sessions.findIndex(s => s.id === Number(sessionId));
-            if (idx === -1) return send(res, 404, { error: 'not found' });
-            if (db.sessions[idx].teacherId !== teacherId) return send(res, 403, { error: 'not your session' });
-
-            db.sessions.splice(idx, 1);
-            saveData();
+            const r = await pool.query('DELETE FROM sessions WHERE id = $1 AND teacher_id = $2', [Number(sessionId), teacherId]);
+            if (r.rowCount === 0) return send(res, 404, { error: 'not found or not your session' });
             return send(res, 200, { ok: true });
         }
 
@@ -499,8 +529,35 @@ const server = http.createServer(async (req, res) => {
                 'Cache-Control': 'no-cache',
                 Connection: 'keep-alive'
             });
-            const current = activeSessionFor(teacherId);
-            res.write(`data: ${JSON.stringify({ type: 'init', session: formatSession(current) })}\n\n`);
+
+            const activeR = await pool.query('SELECT * FROM sessions WHERE teacher_id = $1 AND active = true ORDER BY id DESC LIMIT 1', [teacherId]);
+            let currentSession = null;
+            if (activeR.rows.length) {
+                const sess = activeR.rows[0];
+                const attR = await pool.query('SELECT enrollment, name, section, time FROM attendance WHERE session_id = $1 ORDER BY id ASC', [sess.id]);
+                const presentMap = {};
+                for (const a of attR.rows) {
+                    presentMap[a.enrollment] = {
+                        name: a.name,
+                        enrollment: a.enrollment,
+                        section: a.section,
+                        time: a.time.toISOString()
+                    };
+                }
+                currentSession = {
+                    id: sess.id,
+                    teacherId: sess.teacher_id,
+                    teacherName: sess.teacher_name,
+                    subject: sess.subject,
+                    subjectId: sess.subject_id,
+                    qrToken: sess.qr_token,
+                    present: presentMap,
+                    createdAt: sess.created_at.toISOString(),
+                    active: sess.active
+                };
+            }
+
+            res.write(`data: ${JSON.stringify({ type: 'init', session: currentSession })}\n\n`);
             clients.push({ res, teacherId });
             req.on('close', () => {
                 clients = clients.filter(c => c.res !== res);
@@ -514,19 +571,31 @@ const server = http.createServer(async (req, res) => {
             const subjectFilter = (searchParams.get('subject') || '').trim();
             const subjectIdFilter = (searchParams.get('subjectId') || '').trim();
 
-            let list = db.sessions.filter(s => s.teacherId === teacherId);
+            let query = `
+                SELECT s.id, s.subject, s.subject_id, s.created_at, s.active, COUNT(a.id)::int AS count
+                FROM sessions s
+                LEFT JOIN attendance a ON a.session_id = s.id
+                WHERE s.teacher_id = $1
+            `;
+            const params = [teacherId];
+
             if (subjectIdFilter) {
-                list = list.filter(s => s.subjectId === subjectIdFilter);
+                params.push(subjectIdFilter);
+                query += ` AND s.subject_id = $${params.length}`;
             } else if (subjectFilter) {
-                list = list.filter(s => s.subject === subjectFilter || s.subjectId === subjectFilter);
+                params.push(subjectFilter);
+                query += ` AND (s.subject = $${params.length} OR s.subject_id = $${params.length})`;
             }
 
-            const mapped = list.sort((a, b) => b.id - a.id).map(s => ({
+            query += ` GROUP BY s.id ORDER BY s.id DESC`;
+
+            const r = await pool.query(query, params);
+            const mapped = r.rows.map(s => ({
                 id: s.id,
                 subject: s.subject,
-                subjectId: s.subjectId || null,
-                createdAt: s.createdAt,
-                count: Object.keys(s.present || {}).length,
+                subjectId: s.subject_id,
+                createdAt: s.created_at.toISOString(),
+                count: s.count,
                 active: s.active
             }));
             return send(res, 200, mapped);
@@ -535,22 +604,53 @@ const server = http.createServer(async (req, res) => {
         // --- single session ---
         if (req.method === 'GET' && pathname === '/api/session') {
             const id = Number(searchParams.get('id'));
-            const session = db.sessions.find(s => s.id === id);
-            if (!session) return send(res, 404, { error: 'not found' });
-            return send(res, 200, formatSession(session));
+            const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [id]);
+            if (!sessR.rows.length) return send(res, 404, { error: 'not found' });
+            const sess = sessR.rows[0];
+
+            const attR = await pool.query('SELECT enrollment, name, section, time FROM attendance WHERE session_id = $1 ORDER BY id ASC', [id]);
+            const presentMap = {};
+            for (const a of attR.rows) {
+                presentMap[a.enrollment] = {
+                    name: a.name,
+                    enrollment: a.enrollment,
+                    section: a.section,
+                    time: a.time.toISOString()
+                };
+            }
+            return send(res, 200, {
+                id: sess.id,
+                teacherId: sess.teacher_id,
+                teacherName: sess.teacher_name,
+                subject: sess.subject,
+                subjectId: sess.subject_id,
+                qrToken: sess.qr_token,
+                present: presentMap,
+                createdAt: sess.created_at.toISOString(),
+                active: sess.active
+            });
         }
 
         // --- export csv ---
         if (req.method === 'GET' && pathname === '/api/export') {
             const id = Number(searchParams.get('id'));
-            const session = db.sessions.find(s => s.id === id);
-            if (!session) return send(res, 404, { error: 'not found' });
-            const rows = sortStudentsByEnrollment(Object.values(session.present || {}));
+            const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [id]);
+            if (!sessR.rows.length) return send(res, 404, { error: 'not found' });
+            const sess = sessR.rows[0];
+
+            const attR = await pool.query('SELECT enrollment, name, section, time FROM attendance WHERE session_id = $1', [id]);
+            const rows = sortStudentsByEnrollment(attR.rows.map(r => ({
+                name: r.name,
+                enrollment: r.enrollment,
+                section: r.section,
+                time: r.time.toISOString()
+            })));
+
             res.writeHead(200, {
                 'Content-Type': 'text/csv',
-                'Content-Disposition': `attachment; filename="${safeFilename(session.teacherName, session.subject, session.id)}"`
+                'Content-Disposition': `attachment; filename="${safeFilename(sess.teacher_name, sess.subject, sess.id)}"`
             });
-            return res.end(toCsv(session.subject, rows));
+            return res.end(toCsv(sess.subject, rows));
         }
 
         // --- super-admin ---
@@ -560,28 +660,27 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (req.method === 'GET' && pathname === '/api/admin/teachers') {
-            const list = Object.values(db.teachers)
-                .map(({ password, ...rest }) => rest)
-                .sort((a, b) => a.name.localeCompare(b.name));
-            return send(res, 200, list);
+            const r = await pool.query('SELECT id, name, username FROM teachers ORDER BY name ASC');
+            return send(res, 200, r.rows);
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/teachers') {
             const { name, username, password } = await readBody(req);
             if (!name || !username || !password) return send(res, 400, { error: 'missing fields' });
-            if (Object.values(db.teachers).some(t => t.username === username)) {
+
+            const check = await pool.query('SELECT 1 FROM teachers WHERE username = $1', [username]);
+            if (check.rows.length) {
                 return send(res, 409, { error: 'username taken' });
             }
+
             const id = nodeCrypto.randomUUID();
-            db.teachers[id] = { id, name, username, password };
-            saveData();
+            await pool.query('INSERT INTO teachers (id, name, username, password) VALUES ($1, $2, $3, $4)', [id, name, username, password]);
             return send(res, 200, { ok: true, id });
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/teachers/delete') {
             const { id } = await readBody(req);
-            delete db.teachers[id];
-            saveData();
+            await pool.query('DELETE FROM teachers WHERE id = $1', [id]);
             return send(res, 200, { ok: true });
         }
 
@@ -590,54 +689,47 @@ const server = http.createServer(async (req, res) => {
             const sessionId = Number(pathname.split('/')[3]);
             const { teacherId: reqTeacherId, oldEnrollment, name, enrollment, section } = await readBody(req);
 
-            const teacher = db.teachers[reqTeacherId];
-            if (!teacher) return send(res, 401, { error: 'Not authenticated' });
+            const tR = await pool.query('SELECT id FROM teachers WHERE id = $1', [reqTeacherId]);
+            if (!tR.rows.length) return send(res, 401, { error: 'Not authenticated' });
 
-            const session = db.sessions.find(s => s.id === sessionId);
-            if (!session) return send(res, 404, { error: 'Session not found' });
-            if (session.teacherId !== teacher.id) return send(res, 403, { error: 'Not authorized to modify this session' });
+            const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
+            if (!sessR.rows.length) return send(res, 404, { error: 'Session not found' });
+            if (sessR.rows[0].teacher_id !== reqTeacherId) return send(res, 403, { error: 'Not authorized to modify this session' });
 
             const v = validateStudentFields(name, enrollment, section);
             if (v.error) return send(res, 400, { error: v.error });
             const normalizedOld = (oldEnrollment || '').trim().toUpperCase();
             if (!normalizedOld) return send(res, 400, { error: 'Old enrollment ID is required' });
 
-            if (!session.present || !session.present[normalizedOld]) {
-                return send(res, 404, { error: 'Attendance record not found in this session' });
-            }
+            const attR = await pool.query('SELECT * FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedOld]);
+            if (!attR.rows.length) return send(res, 404, { error: 'Attendance record not found in this session' });
+            const originalTime = attR.rows[0].time;
 
-            const originalTime = session.present[normalizedOld].time;
-            const enrollmentChanged = normalizedOld !== v.enrollment;
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
 
-            if (enrollmentChanged && db.students[v.enrollment]) {
-                return send(res, 409, { error: 'This enrollment ID is already registered' });
-            }
-
-            // Update student profile
-            if (enrollmentChanged) {
-                delete db.students[normalizedOld];
-            }
-            db.students[v.enrollment] = { name: v.name, enrollment: v.enrollment, section: v.section };
-
-            // Update attendance in this and other sessions
-            for (const s of db.sessions) {
-                if (s.present && s.present[normalizedOld]) {
-                    const recTime = s.present[normalizedOld].time;
-                    delete s.present[normalizedOld];
-                    s.present[v.enrollment] = {
-                        name: v.name,
-                        enrollment: v.enrollment,
-                        section: v.section,
-                        time: recTime
-                    };
+                if (normalizedOld !== v.enrollment) {
+                    await client.query('INSERT INTO students (enrollment, name, section) VALUES ($1, $2, $3) ON CONFLICT (enrollment) DO UPDATE SET name = $2, section = $3', [v.enrollment, v.name, v.section]);
+                    await client.query('DELETE FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedOld]);
+                    await client.query('INSERT INTO attendance (session_id, enrollment, name, section, time) VALUES ($1, $2, $3, $4, $5)', [sessionId, v.enrollment, v.name, v.section, originalTime]);
+                } else {
+                    await client.query('UPDATE students SET name = $1, section = $2 WHERE enrollment = $3', [v.name, v.section, v.enrollment]);
+                    await client.query('UPDATE attendance SET name = $1, section = $2 WHERE session_id = $3 AND enrollment = $4', [v.name, v.section, sessionId, v.enrollment]);
                 }
-            }
-            saveData();
 
-            broadcastTo(teacher.id, {
+                await client.query('COMMIT');
+            } catch (txErr) {
+                await client.query('ROLLBACK');
+                throw txErr;
+            } finally {
+                client.release();
+            }
+
+            broadcastTo(reqTeacherId, {
                 type: 'student-updated',
                 oldEnrollment: normalizedOld,
-                student: { name: v.name, enrollment: v.enrollment, section: v.section, time: originalTime }
+                student: { name: v.name, enrollment: v.enrollment, section: v.section, time: originalTime.toISOString() }
             });
             return send(res, 200, { ok: true });
         }
@@ -647,24 +739,20 @@ const server = http.createServer(async (req, res) => {
             const sessionId = Number(pathname.split('/')[3]);
             const { teacherId: reqTeacherId, enrollment } = await readBody(req);
 
-            const teacher = db.teachers[reqTeacherId];
-            if (!teacher) return send(res, 401, { error: 'Not authenticated' });
+            const tR = await pool.query('SELECT id FROM teachers WHERE id = $1', [reqTeacherId]);
+            if (!tR.rows.length) return send(res, 401, { error: 'Not authenticated' });
 
-            const session = db.sessions.find(s => s.id === sessionId);
-            if (!session) return send(res, 404, { error: 'Session not found' });
-            if (session.teacherId !== teacher.id) return send(res, 403, { error: 'Not authorized to modify this session' });
+            const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
+            if (!sessR.rows.length) return send(res, 404, { error: 'Session not found' });
+            if (sessR.rows[0].teacher_id !== reqTeacherId) return send(res, 403, { error: 'Not authorized to modify this session' });
 
             const normalizedEnrollment = (enrollment || '').trim().toUpperCase();
             if (!normalizedEnrollment) return send(res, 400, { error: 'Enrollment ID is required' });
 
-            if (!session.present || !session.present[normalizedEnrollment]) {
-                return send(res, 404, { error: 'Attendance record not found in this session' });
-            }
+            const del = await pool.query('DELETE FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedEnrollment]);
+            if (del.rowCount === 0) return send(res, 404, { error: 'Attendance record not found in this session' });
 
-            delete session.present[normalizedEnrollment];
-            saveData();
-
-            broadcastTo(teacher.id, {
+            broadcastTo(reqTeacherId, {
                 type: 'student-deleted',
                 enrollment: normalizedEnrollment
             });
@@ -673,7 +761,7 @@ const server = http.createServer(async (req, res) => {
 
         send(res, 404, { error: 'not found' });
     } catch (err) {
-        console.error(err);
+        console.error('Server error:', err);
         if (!res.headersSent) send(res, 500, { error: 'server error' });
     }
 });
@@ -695,4 +783,9 @@ function startServer(port) {
     server.listen(port, () => console.log(`Attendance server running at: http://localhost:${port}`));
 }
 
-startServer(DEFAULT_PORT);
+initDb()
+    .then(() => startServer(DEFAULT_PORT))
+    .catch(err => {
+        console.error('Failed to initialize database:', err);
+        process.exit(1);
+    });
