@@ -176,10 +176,12 @@ const server = http.createServer(async (req, res) => {
         const { pathname, searchParams } = new URL(req.url ?? '/', `http://${host}`);
 
         // --- static pages ---
-        if (req.method === 'GET' && ['/', '/student.html', '/admin.html', '/superadmin.html'].includes(pathname)) {
-            const file = pathname === '/' ? 'student.html' : pathname.slice(1);
+        if (req.method === 'GET' && ['/', '/student.html', '/checkin.html', '/profile.html', '/profile', '/admin.html', '/superadmin.html'].includes(pathname)) {
+            let file = pathname === '/' ? 'student.html' : pathname.slice(1);
+            if (file === 'profile') file = 'profile.html';
+            if (file === 'checkin.html') file = 'student.html';
             const headers = { 'Content-Type': 'text/html' };
-            if (file === 'student.html') headers['Cache-Control'] = 'no-store';
+            if (file === 'student.html' || file === 'profile.html') headers['Cache-Control'] = 'no-store';
             res.writeHead(200, headers);
             return res.end(fs.readFileSync(path.join(__dirname, 'public', file)));
         }

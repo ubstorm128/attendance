@@ -1,0 +1,1909 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="theme-color" content="#F5F5F7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Student Profile & Attendance Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-0: #F5F5F7;
+            --bg-card: #FFFFFF;
+            --bg-card-elevated: rgba(255, 255, 255, 0.96);
+            --bg-input: #F6F7F9;
+            --bg-input-focus: #FFFFFF;
+            --ink: #1D1D1F;
+            --ink-2: #48484A;
+            --ink-3: #6E6E73;
+            --blue: #0066CC;
+            --blue-hover: #0055B3;
+            --blue-press: #004494;
+            --blue-tint: rgba(0, 102, 204, 0.08);
+            --blue-tint-strong: rgba(0, 102, 204, 0.14);
+            --green: #248A3D;
+            --green-tint: rgba(36, 138, 61, 0.12);
+            --green-text: #135B25;
+            --bad: #D70015;
+            --bad-tint: rgba(215, 0, 21, 0.10);
+            --hair: rgba(0, 0, 0, 0.08);
+            --hair-strong: rgba(0, 0, 0, 0.13);
+            --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.03), 0 8px 20px -6px rgba(0, 0, 0, 0.04);
+            --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.03), 0 24px 48px -12px rgba(0, 0, 0, 0.08);
+            --radius-outer: 26px;
+            --radius-card: 20px;
+            --radius-inset: 16px;
+            --radius-pill: 999px;
+            --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+            --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            min-height: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: var(--font-main);
+            color: var(--ink);
+            background: var(--bg-0);
+            position: relative;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+        }
+
+        /* ── Ambient Background Canvas ── */
+        .ambient-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            background: 
+                radial-gradient(circle at 50% -10%, rgba(0, 102, 204, 0.07) 0%, transparent 45%),
+                radial-gradient(circle at 100% 100%, rgba(36, 138, 61, 0.05) 0%, transparent 45%),
+                radial-gradient(circle at 0% 100%, rgba(0, 102, 204, 0.04) 0%, transparent 45%),
+                var(--bg-0);
+        }
+
+        /* ── Responsive Viewport Shell ── */
+        .viewport-shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px 24px 32px;
+            box-sizing: border-box;
+            transition: max-width 0.25s ease, padding 0.25s ease;
+        }
+
+        @media (max-width: 768px) {
+            .viewport-shell {
+                max-width: 480px;
+                padding: 12px 14px 20px;
+            }
+        }
+
+        /* ── Top Header Navigation ── */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 4px 20px;
+            width: 100%;
+        }
+
+        .brand-cluster {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .brand-icon-shield {
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            background: linear-gradient(145deg, #0077ED 0%, #005BB5 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px -2px rgba(0, 102, 204, 0.4);
+            border: 0.5px solid rgba(255, 255, 255, 0.35);
+        }
+
+        .brand-icon-shield svg {
+            width: 19px;
+            height: 19px;
+            stroke: #FFFFFF;
+        }
+
+        .brand-text-block {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            color: var(--ink);
+            line-height: 1.2;
+        }
+
+        .brand-sub {
+            font-size: 11.5px;
+            color: var(--ink-3);
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Profile Chip (Top Right) ── */
+        .profile-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card-elevated);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 0.5px solid var(--hair-strong);
+            padding: 4px 10px 4px 4px;
+            border-radius: var(--radius-pill);
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .avatar-glyph {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--blue-tint-strong);
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+
+        .chip-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink);
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chip-switch-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            padding: 3px;
+            cursor: pointer;
+            color: var(--ink-3);
+            border-radius: 50%;
+            transition: color 0.15s ease;
+        }
+
+        .chip-switch-btn:hover {
+            color: var(--bad);
+        }
+
+        /* ── Base Elevated Card ── */
+        .portal-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-outer);
+            border: 0.5px solid var(--hair);
+            box-shadow: var(--shadow-card);
+            padding: 26px 24px;
+            position: relative;
+            overflow: hidden;
+            animation: cardAppear 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @media (max-width: 768px) {
+            .portal-card {
+                padding: 20px 16px;
+                border-radius: 20px;
+            }
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.99);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ── Lookup View (When no profile in localStorage) ── */
+        #lookupView {
+            width: 100%;
+            max-width: 460px;
+            margin: 40px auto;
+        }
+
+        .lookup-top-cluster {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .hero-badge-container {
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.09) 0%, rgba(0, 102, 204, 0.03) 100%);
+            border: 0.5px solid rgba(0, 102, 204, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--blue);
+            margin-bottom: 12px;
+        }
+
+        .hero-badge-container svg {
+            width: 30px;
+            height: 30px;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--ink);
+            margin-bottom: 6px;
+            line-height: 1.25;
+        }
+
+        .card-subtitle {
+            font-size: 13.5px;
+            color: var(--ink-3);
+            line-height: 1.45;
+        }
+
+        .grouped-inset-container {
+            background: var(--bg-input);
+            border-radius: var(--radius-inset);
+            border: 0.5px solid var(--hair);
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .input-cell {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            background: var(--bg-input);
+            transition: background 0.15s ease;
+        }
+
+        .input-cell.focused {
+            background: var(--bg-input-focus);
+        }
+
+        .cell-icon {
+            color: var(--ink-3);
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .cell-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cell-label {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: var(--ink-3);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 2px;
+        }
+
+        .cell-input {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--ink);
+            outline: none;
+            padding: 0;
+            width: 100%;
+        }
+
+        .btn-action-primary {
+            width: 100%;
+            height: 48px;
+            border-radius: var(--radius-pill);
+            background: linear-gradient(180deg, var(--blue) 0%, var(--blue-hover) 100%);
+            color: #FFFFFF;
+            border: none;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.15s ease;
+            box-shadow: 0 4px 14px -2px rgba(0, 102, 204, 0.35);
+        }
+
+        .btn-action-primary:active {
+            transform: scale(0.985);
+        }
+
+        .field-error-msg {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--bad);
+            font-size: 12.5px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        /* ── Profile Dashboard Multi-Screen Responsive Grid ── */
+        .profile-dashboard-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 100%;
+        }
+
+        .dash-col-left {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .dash-col-right {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        @media (min-width: 920px) {
+            .profile-dashboard-grid {
+                display: grid;
+                grid-template-columns: 390px 1fr;
+                align-items: start;
+                gap: 24px;
+            }
+
+            .dash-col-left {
+                position: sticky;
+                top: 20px;
+                gap: 20px;
+            }
+
+            .dash-col-right {
+                gap: 20px;
+            }
+        }
+
+        @media (min-width: 1140px) {
+            .profile-dashboard-grid {
+                grid-template-columns: 420px 1fr;
+                gap: 28px;
+            }
+
+            .subjects-list-stack {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                gap: 14px;
+            }
+        }
+
+        /* ── Module 2: Student Profile Card ── */
+        .profile-hero-card {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .profile-hero-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .profile-avatar-wrapper {
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar-img-box {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #0077ED 0%, #005BB5 100%);
+            color: #FFFFFF;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 4px 14px -2px rgba(0, 102, 204, 0.35);
+            border: 2.5px solid #FFFFFF;
+        }
+
+        .profile-avatar-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .avatar-camera-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            color: var(--blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            border: 1.5px solid #FFFFFF;
+        }
+
+        .avatar-camera-badge svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .profile-meta-text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .btn-remove-avatar {
+            align-self: flex-start;
+            background: transparent;
+            border: none;
+            color: var(--bad);
+            font-size: 11.5px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 2px 0;
+            margin-top: 2px;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            transition: opacity 0.15s ease;
+        }
+
+        .btn-remove-avatar:hover {
+            opacity: 0.8;
+        }
+
+        .profile-student-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.25;
+            letter-spacing: -0.015em;
+        }
+
+        .profile-enrollment-badge {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--ink-2);
+            background: var(--bg-input);
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            align-self: flex-start;
+            border: 0.5px solid var(--hair);
+        }
+
+        .profile-section-pill {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--blue);
+            background: var(--blue-tint);
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            display: inline-block;
+            align-self: flex-start;
+        }
+
+        /* About Me Block */
+        .profile-about-box {
+            background: var(--bg-input);
+            border-radius: var(--radius-inset);
+            padding: 14px 16px;
+            border: 0.5px solid var(--hair);
+        }
+
+        .about-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .about-title-tag {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--ink-3);
+        }
+
+        .about-edit-btn {
+            background: none;
+            border: none;
+            color: var(--blue);
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
+        .about-text-content {
+            font-size: 13.5px;
+            color: var(--ink-2);
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .about-textarea {
+            width: 100%;
+            border: 1px solid var(--blue);
+            border-radius: 10px;
+            padding: 10px;
+            font-family: inherit;
+            font-size: 13.5px;
+            color: var(--ink);
+            background: #FFFFFF;
+            resize: vertical;
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .about-btn-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn-about-cancel, .btn-about-save {
+            padding: 5px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-about-cancel {
+            background: var(--bg-0);
+            color: var(--ink-2);
+        }
+
+        .btn-about-save {
+            background: var(--blue);
+            color: #FFFFFF;
+        }
+
+        /* ── Overall Attendance Card ── */
+        .overall-metric-card {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .overall-gauge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .gauge-caption {
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--ink-3);
+        }
+
+        .standing-pill {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .standing-pill.good {
+            background: var(--green-tint);
+            color: var(--green-text);
+        }
+
+        .standing-pill.bad {
+            background: var(--bad-tint);
+            color: var(--bad);
+        }
+
+        .overall-big-percentage-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .big-percent-number {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            font-family: var(--font-mono);
+        }
+
+        .big-percent-number.good { color: var(--green); }
+        .big-percent-number.bad { color: var(--bad); }
+
+        .attendance-ratio-tag {
+            font-size: 13.5px;
+            color: var(--ink-3);
+            font-weight: 500;
+        }
+
+        /* Red Flag Alert Callout */
+        .red-flag-callout-box {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(215, 0, 21, 0.08);
+            border: 1px solid rgba(215, 0, 21, 0.28);
+            border-radius: 14px;
+            padding: 12px 14px;
+            color: var(--bad);
+            animation: pulseWarning 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseWarning {
+            0%, 100% { border-color: rgba(215, 0, 21, 0.28); }
+            50% { border-color: rgba(215, 0, 21, 0.65); box-shadow: 0 0 12px rgba(215, 0, 21, 0.12); }
+        }
+
+        .red-flag-icon-wrap {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .red-flag-text-content {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #72000A;
+        }
+
+        .red-flag-text-content strong {
+            display: block;
+            font-size: 13.5px;
+            color: var(--bad);
+            margin-bottom: 2px;
+        }
+
+        /* Metrics Trio */
+        .metrics-trio-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 12px 14px;
+            background: var(--bg-input);
+            border-radius: var(--radius-inset);
+            border: 0.5px solid var(--hair);
+        }
+
+        .metric-trio-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .trio-val {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--ink);
+            font-family: var(--font-mono);
+        }
+
+        .trio-lbl {
+            font-size: 11px;
+            color: var(--ink-3);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .metric-trio-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--hair-strong);
+        }
+
+        /* ── Real-Time Leaderboard Card (Strictly > 75%) ── */
+        .leaderboard-card {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .leaderboard-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .leaderboard-title {
+            font-size: 16.5px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+        }
+
+        .leaderboard-subtitle {
+            font-size: 12px;
+            color: var(--ink-3);
+            margin-top: 1px;
+        }
+
+        .live-pulse-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--green);
+            background: var(--green-tint);
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
+        }
+
+        .live-pulse-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: liveDot 1.4s infinite;
+        }
+
+        @keyframes liveDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.75); }
+        }
+
+        .leaderboard-roster-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--bg-input);
+            border-radius: 14px;
+            border: 0.5px solid var(--hair);
+            transition: transform 0.1s ease, background 0.15s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(0, 0, 0, 0.04);
+            transform: translateY(-1px);
+        }
+
+        .leaderboard-item.is-me {
+            border-color: rgba(0, 102, 204, 0.35);
+            background: rgba(0, 102, 204, 0.05);
+        }
+
+        .leaderboard-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .leaderboard-rank-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .leaderboard-rank-badge.rank-1 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #4A3300; }
+        .leaderboard-rank-badge.rank-2 { background: linear-gradient(135deg, #D8D8D8 0%, #A8A8A8 100%); color: #2B2B2B; }
+        .leaderboard-rank-badge.rank-3 { background: linear-gradient(135deg, #E29B62 0%, #C47234 100%); color: #FFFFFF; }
+        .leaderboard-rank-badge.rank-default { background: rgba(0, 0, 0, 0.06); color: var(--ink-2); font-family: var(--font-mono); }
+
+        .leaderboard-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--blue-tint-strong);
+            color: var(--blue);
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        .leaderboard-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .leaderboard-name-block {
+            min-width: 0;
+        }
+
+        .leaderboard-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .leaderboard-sec-tag {
+            font-size: 11.5px;
+            color: var(--ink-3);
+        }
+
+        .empty-leaderboard-box {
+            text-align: center;
+            padding: 24px 16px;
+            color: var(--ink-3);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* ── Course Attendance Breakdown Card ── */
+        .subjects-breakdown-card {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .subjects-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .subjects-title {
+            font-size: 16.5px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+        }
+
+        .subjects-sub {
+            font-size: 12px;
+            color: var(--ink-3);
+            font-weight: 500;
+        }
+
+        .subjects-list-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .subject-item-box {
+            background: var(--bg-input);
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 0.5px solid var(--hair);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: transform 0.1s ease, border-color 0.15s ease;
+        }
+
+        .subject-item-box:hover {
+            border-color: var(--blue-tint-strong);
+            transform: translateY(-1px);
+        }
+
+        .subject-item-box.red-flag {
+            border-color: rgba(215, 0, 21, 0.35);
+            background: rgba(215, 0, 21, 0.03);
+        }
+
+        .subject-item-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .subject-item-meta {
+            min-width: 0;
+        }
+
+        .subject-item-title {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.3;
+            margin-bottom: 2px;
+        }
+
+        .subject-item-instructor {
+            font-size: 12px;
+            color: var(--ink-3);
+        }
+
+        .subject-percent-badge {
+            font-size: 15px;
+            font-weight: 800;
+            flex-shrink: 0;
+            font-family: var(--font-mono);
+        }
+
+        .subject-percent-badge.safe { color: var(--green); }
+        .subject-percent-badge.danger { color: var(--bad); }
+
+        .subject-progress-track {
+            width: 100%;
+            height: 7px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .subject-progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .subject-progress-fill.safe {
+            background: linear-gradient(90deg, #34C759 0%, #248A3D 100%);
+        }
+
+        .subject-progress-fill.danger {
+            background: linear-gradient(90deg, #FF3B30 0%, #D70015 100%);
+        }
+
+        .subject-redflag-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(215, 0, 21, 0.1);
+            color: var(--bad);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* ── Recent Check-Ins Timeline ── */
+        .recent-timeline-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .timeline-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .timeline-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border-radius: 12px;
+            border: 0.5px solid var(--hair);
+            font-size: 12.5px;
+        }
+
+        .timeline-left {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+
+        .timeline-sub {
+            font-weight: 600;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .timeline-teach {
+            font-size: 11.5px;
+            color: var(--ink-3);
+        }
+
+        .timeline-time {
+            font-size: 11.5px;
+            color: var(--ink-3);
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        /* ── Footer ── */
+        .footer-badges-cluster {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 24px 8px 6px;
+            color: var(--ink-3);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .trust-item svg {
+            width: 14px;
+            height: 14px;
+            color: var(--blue);
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-canvas"></div>
+
+    <div class="viewport-shell">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand-cluster">
+                <div class="brand-icon-shield">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="brand-text-block">
+                    <span class="brand-title">Student Portal</span>
+                    <span class="brand-sub">Academic Attendance & Analytics</span>
+                </div>
+            </div>
+
+            <!-- Profile Chip -->
+            <div id="profileChip" class="profile-chip" style="display:none">
+                <div class="avatar-glyph" id="chipAvatar">ST</div>
+                <span class="chip-name" id="chipName">Student</span>
+                <button class="chip-switch-btn" id="switchProfileBtn" title="Switch Student / Sign Out" aria-label="Switch Student / Sign Out">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                        <path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- STATE 1: Lookup / Login View (When no student profile exists) -->
+        <main id="lookupView" style="display:none">
+            <div class="portal-card">
+                <div class="lookup-top-cluster">
+                    <div class="hero-badge-container">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h1 class="card-title">Student Attendance Portal</h1>
+                    <p class="card-subtitle">Enter your Enrollment ID to view your overall percentage, subject-wise breakdown, and cohort leaderboard.</p>
+                </div>
+
+                <div class="grouped-inset-container">
+                    <div class="input-cell" id="enrollmentCell">
+                        <div class="cell-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <line x1="7" y1="9" x2="17" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="7" y1="13" x2="13" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="cell-body">
+                            <label class="cell-label" for="enrollmentInput">Enrollment ID</label>
+                            <input class="cell-input" id="enrollmentInput" type="text" placeholder="e.g. ADTU/1/2024-27/BCAO/024" spellcheck="false" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="lookupError" class="field-error-msg" style="display:none;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="12" cy="16" r="1" fill="currentColor"/>
+                    </svg>
+                    <span id="lookupErrorText">Student record not found.</span>
+                </div>
+
+                <button class="btn-action-primary" id="lookupSubmitBtn">
+                    <span>Access My Portal</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </main>
+
+        <!-- STATE 2: Student Profile & Attendance Dashboard (Module Two) -->
+        <main id="dashboardView" style="display:none">
+            <div class="profile-dashboard-grid">
+                <!-- LEFT COLUMN: Student Identity & Overall Status -->
+                <div class="dash-col-left">
+                    <!-- 1. Hero Student Profile Card -->
+                    <div class="portal-card profile-hero-card">
+                        <div class="profile-hero-top">
+                            <div class="profile-avatar-wrapper" onclick="triggerAvatarUpload()" title="Change Profile Picture">
+                                <div class="profile-avatar-img-box" id="profileAvatarBox">
+                                    <span id="profileAvatarInitials">ST</span>
+                                    <img id="profileAvatarImg" src="" alt="Profile Picture" style="display:none;">
+                                </div>
+                                <div class="avatar-camera-badge" title="Upload Photo">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarFileSelected(event)">
+                            </div>
+                            <div class="profile-meta-text">
+                                <h2 class="profile-student-name" id="dashStudentName">Student Name</h2>
+                                <div class="profile-enrollment-badge" id="dashEnrollment">ADTU/...</div>
+                                <div class="profile-section-pill" id="dashSectionPill">Standard</div>
+                                <button type="button" id="removeAvatarBtn" class="btn-remove-avatar" onclick="removeAvatarPhoto(event)" style="display:none;" title="Remove Photo">
+                                    ✕ Remove photo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- About Me Section -->
+                        <div class="profile-about-box">
+                            <div class="about-header-row">
+                                <span class="about-title-tag">About Me</span>
+                                <button class="about-edit-btn" id="editAboutBtn" onclick="toggleEditAbout()">✏️ Edit Bio</button>
+                            </div>
+                            <p class="about-text-content" id="aboutTextDisplay">No bio added yet. Tap edit to write about yourself, academic interests, or notes.</p>
+                            <div id="aboutEditBlock" style="display:none;">
+                                <textarea id="aboutTextInput" class="about-textarea" rows="3" placeholder="Write a short note about yourself..."></textarea>
+                                <div class="about-btn-row">
+                                    <button class="btn-about-cancel" onclick="cancelEditAbout()">Cancel</button>
+                                    <button class="btn-about-save" onclick="saveAbout()">Save Bio</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Overall Attendance & Red Flag Notice Card -->
+                    <div class="portal-card overall-metric-card" id="overallCard">
+                        <div class="overall-gauge-header">
+                            <span class="gauge-caption">Overall Attendance</span>
+                            <div class="standing-pill good" id="overallStandingPill">
+                                ✅ In Good Standing
+                            </div>
+                        </div>
+
+                        <div class="overall-big-percentage-row">
+                            <div class="big-percent-number good" id="overallPercentageText">--%</div>
+                            <div class="attendance-ratio-tag" id="overallRatioText">-- / -- sessions</div>
+                        </div>
+
+                        <!-- Red Flag Alert Callout (Shows if overall < 75%) -->
+                        <div class="red-flag-callout-box" id="overallRedFlagBox" style="display:none;">
+                            <div class="red-flag-icon-wrap">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"/>
+                                    <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="red-flag-text-content">
+                                <strong>Attendance Shortage Alert</strong>
+                                <p id="overallRedFlagDesc">Your overall attendance is below the 75% requirement.</p>
+                            </div>
+                        </div>
+
+                        <!-- Metric Counters Row -->
+                        <div class="metrics-trio-row">
+                            <div class="metric-trio-item">
+                                <span class="trio-val" id="metricTotalClasses">0</span>
+                                <span class="trio-lbl">Total Held</span>
+                            </div>
+                            <div class="metric-trio-divider"></div>
+                            <div class="metric-trio-item">
+                                <span class="trio-val" id="metricAttended">0</span>
+                                <span class="trio-lbl">Attended</span>
+                            </div>
+                            <div class="metric-trio-divider"></div>
+                            <div class="metric-trio-item">
+                                <span class="trio-val" id="metricMissed">0</span>
+                                <span class="trio-lbl">Missed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Recent Check-Ins Timeline -->
+                    <div class="portal-card recent-timeline-card">
+                        <h3 class="timeline-title">🕒 Recent Verified Check-Ins</h3>
+                        <div id="timelineContainer" class="timeline-stack">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Real-Time Leaderboard & Courses Breakdown -->
+                <div class="dash-col-right">
+                    <!-- 3. Real-Time Leaderboard Card (Qualifying strictly > 75%) -->
+                    <div class="portal-card leaderboard-card" id="leaderboardCard">
+                        <div class="leaderboard-header-row">
+                            <div>
+                                <h3 class="leaderboard-title">🏆 Real-Time Leaderboard</h3>
+                                <p class="leaderboard-subtitle">Qualifying students with strictly &gt;75% attendance</p>
+                            </div>
+                            <span class="live-pulse-badge">Live</span>
+                        </div>
+
+                        <div id="leaderboardList" class="leaderboard-roster-list">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- 4. Course Breakdown & Subject Red Flags -->
+                    <div class="portal-card subjects-breakdown-card">
+                        <div class="subjects-header-row">
+                            <h3 class="subjects-title">📚 Course Attendance Breakdown</h3>
+                            <span class="subjects-sub">75% Target</span>
+                        </div>
+
+                        <div id="subjectsListContainer" class="subjects-list-stack">
+                            <!-- Dynamically populated with subject progress bars and red flags -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Trust Badges Footer -->
+        <footer class="footer-badges-cluster">
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Encrypted Academic Records</span>
+            </div>
+            <span>•</span>
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M22 4L12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Live Supabase Cloud Sync</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ── State ──────────────────────────────────────────────────────────
+        let profile = JSON.parse(localStorage.getItem('profile') || 'null');
+        let latestAttendanceData = null;
+
+        // ── DOM Elements ───────────────────────────────────────────────────
+        const lookupView = document.getElementById('lookupView');
+        const dashboardView = document.getElementById('dashboardView');
+        const profileChip = document.getElementById('profileChip');
+        const chipAvatar = document.getElementById('chipAvatar');
+        const chipName = document.getElementById('chipName');
+        const switchProfileBtn = document.getElementById('switchProfileBtn');
+
+        const enrollmentInput = document.getElementById('enrollmentInput');
+        const enrollmentCell = document.getElementById('enrollmentCell');
+        const lookupSubmitBtn = document.getElementById('lookupSubmitBtn');
+        const lookupError = document.getElementById('lookupError');
+        const lookupErrorText = document.getElementById('lookupErrorText');
+
+        // Dashboard Elements
+        const profileAvatarInitials = document.getElementById('profileAvatarInitials');
+        const profileAvatarImg = document.getElementById('profileAvatarImg');
+        const avatarFileInput = document.getElementById('avatarFileInput');
+        const removeAvatarBtn = document.getElementById('removeAvatarBtn');
+        const dashStudentName = document.getElementById('dashStudentName');
+        const dashEnrollment = document.getElementById('dashEnrollment');
+        const dashSectionPill = document.getElementById('dashSectionPill');
+
+        const editAboutBtn = document.getElementById('editAboutBtn');
+        const aboutTextDisplay = document.getElementById('aboutTextDisplay');
+        const aboutEditBlock = document.getElementById('aboutEditBlock');
+        const aboutTextInput = document.getElementById('aboutTextInput');
+
+        const overallStandingPill = document.getElementById('overallStandingPill');
+        const overallPercentageText = document.getElementById('overallPercentageText');
+        const overallRatioText = document.getElementById('overallRatioText');
+        const overallRedFlagBox = document.getElementById('overallRedFlagBox');
+        const overallRedFlagDesc = document.getElementById('overallRedFlagDesc');
+        const metricTotalClasses = document.getElementById('metricTotalClasses');
+        const metricAttended = document.getElementById('metricAttended');
+        const metricMissed = document.getElementById('metricMissed');
+
+        const leaderboardList = document.getElementById('leaderboardList');
+        const subjectsListContainer = document.getElementById('subjectsListContainer');
+        const timelineContainer = document.getElementById('timelineContainer');
+
+        // ── Input Focus Helpers ────────────────────────────────────────────
+        if (enrollmentInput) {
+            enrollmentInput.addEventListener('focus', () => enrollmentCell && enrollmentCell.classList.add('focused'));
+            enrollmentInput.addEventListener('blur', () => enrollmentCell && enrollmentCell.classList.remove('focused'));
+            enrollmentInput.addEventListener('input', (e) => {
+                const cur = e.target.value;
+                const upper = cur.toUpperCase();
+                if (cur !== upper) e.target.value = upper;
+                clearLookupError();
+            });
+            enrollmentInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleLookup();
+            });
+        }
+
+        if (lookupSubmitBtn) {
+            lookupSubmitBtn.addEventListener('click', handleLookup);
+        }
+
+        if (switchProfileBtn) {
+            switchProfileBtn.addEventListener('click', handleSignOut);
+        }
+
+        function clearLookupError() {
+            if (lookupError) lookupError.style.display = 'none';
+        }
+
+        function showLookupError(msg) {
+            if (lookupError && lookupErrorText) {
+                lookupErrorText.textContent = msg;
+                lookupError.style.display = 'flex';
+            }
+        }
+
+        // ── Security Helper ────────────────────────────────────────────────
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ── Init Portal ────────────────────────────────────────────────────
+        async function initPortal() {
+            if (profile && profile.enrollment) {
+                renderProfileChip();
+                lookupView.style.display = 'none';
+                dashboardView.style.display = 'block';
+                await loadStudentAttendanceAndProfile();
+            } else {
+                profileChip.style.display = 'none';
+                dashboardView.style.display = 'none';
+                lookupView.style.display = 'block';
+                if (enrollmentInput) enrollmentInput.focus();
+            }
+        }
+
+        function renderProfileChip() {
+            if (!profile) {
+                profileChip.style.display = 'none';
+                return;
+            }
+            const parts = (profile.name || '').trim().split(/\s+/);
+            const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
+            
+            if (profile.avatar) {
+                chipAvatar.innerHTML = `<img src="${profile.avatar}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                chipAvatar.textContent = initials.toUpperCase();
+            }
+            chipName.textContent = parts[0] || 'Student';
+            profileChip.style.display = 'flex';
+        }
+
+        // ── Lookup by Enrollment ID ────────────────────────────────────────
+        async function handleLookup() {
+            clearLookupError();
+            const enrollment = enrollmentInput.value.trim().toUpperCase();
+
+            if (!enrollment) {
+                showLookupError('Please enter your enrollment ID.');
+                enrollmentInput.focus();
+                return;
+            }
+
+            lookupSubmitBtn.disabled = true;
+            lookupSubmitBtn.querySelector('span').textContent = 'Loading Portal…';
+
+            try {
+                const res = await fetch(`/api/my-attendance?enrollment=${encodeURIComponent(enrollment)}`);
+                const data = await res.json();
+
+                if (!res.ok || !data.ok) {
+                    showLookupError(data.error || 'Student not registered. Please check the Enrollment ID.');
+                    lookupSubmitBtn.disabled = false;
+                    lookupSubmitBtn.querySelector('span').textContent = 'Access My Portal';
+                    return;
+                }
+
+                const p = data.profile || data.student || {};
+                profile = {
+                    name: p.name || 'Student',
+                    enrollment: p.enrollment || enrollment,
+                    section: p.section || '',
+                    avatar: p.avatar || '',
+                    about: p.about || ''
+                };
+                localStorage.setItem('profile', JSON.stringify(profile));
+
+                lookupView.style.display = 'none';
+                dashboardView.style.display = 'block';
+                renderProfileChip();
+
+                latestAttendanceData = data;
+                renderAttendanceDashboard(data);
+
+                lookupSubmitBtn.disabled = false;
+                lookupSubmitBtn.querySelector('span').textContent = 'Access My Portal';
+            } catch (err) {
+                console.error('Lookup network error:', err);
+                showLookupError('Network error. Check connection and try again.');
+                lookupSubmitBtn.disabled = false;
+                lookupSubmitBtn.querySelector('span').textContent = 'Access My Portal';
+            }
+        }
+
+        function handleSignOut() {
+            if (confirm('Sign out of student portal? You can log back in anytime with your Enrollment ID.')) {
+                localStorage.removeItem('profile');
+                profile = null;
+                if (enrollmentInput) enrollmentInput.value = '';
+                initPortal();
+            }
+        }
+
+        // ── Fetch Attendance & Profile Data ────────────────────────────────
+        async function loadStudentAttendanceAndProfile() {
+            if (!profile || !profile.enrollment) return;
+
+            try {
+                const res = await fetch(`/api/my-attendance?enrollment=${encodeURIComponent(profile.enrollment)}`);
+                if (!res.ok) {
+                    console.error('Failed to fetch attendance data');
+                    return;
+                }
+                const data = await res.json();
+                latestAttendanceData = data;
+                renderAttendanceDashboard(data);
+            } catch (err) {
+                console.error('Network error loading attendance dashboard:', err);
+            }
+        }
+
+        // ── Render Dashboard UI ────────────────────────────────────────────
+        function renderAttendanceDashboard(data) {
+            // 1. Profile Hero Section
+            const p = data.profile || data.student || {};
+            dashStudentName.textContent = p.name || profile.name || 'Student';
+            dashEnrollment.textContent = p.enrollment || profile.enrollment || '';
+            dashSectionPill.textContent = p.section ? `Section ${p.section}` : 'General Cohort';
+
+            // Sync updated profile to localStorage
+            if (p.name && profile) {
+                profile.name = p.name;
+                if (p.avatar !== undefined) profile.avatar = p.avatar;
+                if (p.section !== undefined) profile.section = p.section;
+                localStorage.setItem('profile', JSON.stringify(profile));
+                renderProfileChip();
+            }
+
+            // Avatar Picture or Initials
+            if (p.avatar && p.avatar.trim()) {
+                profileAvatarImg.src = p.avatar;
+                profileAvatarImg.style.display = 'block';
+                profileAvatarInitials.style.display = 'none';
+                if (removeAvatarBtn) removeAvatarBtn.style.display = 'inline-block';
+            } else {
+                const parts = (p.name || profile.name || '').trim().split(/\s+/);
+                const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
+                profileAvatarInitials.textContent = initials.toUpperCase();
+                profileAvatarInitials.style.display = 'block';
+                profileAvatarImg.style.display = 'none';
+                profileAvatarImg.src = '';
+                if (removeAvatarBtn) removeAvatarBtn.style.display = 'none';
+            }
+
+            // About Me Bio
+            if (p.about && p.about.trim()) {
+                aboutTextDisplay.textContent = p.about.trim();
+            } else {
+                aboutTextDisplay.textContent = 'No bio added yet. Tap edit to write about yourself, academic interests, or notes.';
+            }
+
+            // 2. Overall Attendance & Red Flag Notice
+            const ov = data.overall || { totalHeld: 0, totalAttended: 0, percentage: 0, isRedFlag: false, classesToRecover: 0 };
+            overallPercentageText.textContent = `${ov.percentage}%`;
+            overallRatioText.textContent = `${ov.totalAttended} of ${ov.totalHeld} session${ov.totalHeld === 1 ? '' : 's'} attended`;
+
+            metricTotalClasses.textContent = ov.totalHeld;
+            metricAttended.textContent = ov.totalAttended;
+            metricMissed.textContent = Math.max(0, ov.totalHeld - ov.totalAttended);
+
+            if (ov.isRedFlag) {
+                overallPercentageText.classList.remove('good');
+                overallPercentageText.classList.add('bad');
+                overallStandingPill.className = 'standing-pill bad';
+                overallStandingPill.innerHTML = '⚠️ Attendance Shortage (&lt; 75%)';
+                overallRedFlagBox.style.display = 'flex';
+                
+                const recText = ov.classesToRecover > 0 
+                    ? `You must attend the next <strong>${ov.classesToRecover} consecutive lecture${ov.classesToRecover > 1 ? 's' : ''}</strong> without absence to recover your overall attendance above the mandatory 75% threshold.`
+                    : 'Your overall attendance is currently below the mandatory 75% university requirement.';
+                overallRedFlagDesc.innerHTML = `Your overall attendance is at <strong>${ov.percentage}%</strong>. ${recText}`;
+            } else {
+                overallPercentageText.classList.remove('bad');
+                overallPercentageText.classList.add('good');
+                overallStandingPill.className = 'standing-pill good';
+                overallStandingPill.innerHTML = '✅ In Good Standing (≥ 75%)';
+                overallRedFlagBox.style.display = 'none';
+            }
+
+            // 3. Real-Time Leaderboard (strictly students with attendance > 75%)
+            const lbData = data.leaderboard || [];
+            if (lbData.length === 0) {
+                leaderboardList.innerHTML = `
+                    <div class="empty-leaderboard-box">
+                        <div style="font-size:26px; margin-bottom:6px;">🌟</div>
+                        <strong>No students above 75% yet</strong>
+                        <p style="margin-top:4px;">Only students maintaining strictly &gt;75% attendance qualify for the leaderboard. Attend upcoming classes to take the lead!</p>
+                    </div>
+                `;
+            } else {
+                leaderboardList.innerHTML = lbData.map((item, idx) => {
+                    const rank = idx + 1;
+                    let rankBadgeClass = 'rank-default';
+                    let rankContent = `#${rank}`;
+                    if (rank === 1) { rankBadgeClass = 'rank-1'; rankContent = '🥇'; }
+                    else if (rank === 2) { rankBadgeClass = 'rank-2'; rankContent = '🥈'; }
+                    else if (rank === 3) { rankBadgeClass = 'rank-3'; rankContent = '🥉'; }
+
+                    const isMe = item.isCurrentStudent;
+                    const nameParts = (item.name || '').trim().split(/\s+/);
+                    const inits = nameParts.length > 1 ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]) : (nameParts[0] ? nameParts[0].slice(0, 2) : 'ST');
+                    
+                    const avatarHtml = item.avatar 
+                        ? `<img src="${item.avatar}" alt="${escapeHtml(item.name)}">`
+                        : inits.toUpperCase();
+
+                    const attCount = item.totalAttended ?? item.attended ?? 0;
+                    const totCount = item.totalHeld ?? item.total ?? 0;
+                    const sessionDesc = totCount > 0 ? `${attCount}/${totCount} attended` : `${item.percentage}% record`;
+
+                    return `
+                        <div class="leaderboard-item ${isMe ? 'is-me' : ''}">
+                            <div class="leaderboard-left">
+                                <div class="leaderboard-rank-badge ${rankBadgeClass}">${rankContent}</div>
+                                <div class="leaderboard-avatar">${avatarHtml}</div>
+                                <div class="leaderboard-name-block">
+                                    <div class="leaderboard-name">
+                                        <span>${escapeHtml(item.name)}</span>
+                                        ${isMe ? '<span class="leaderboard-me-badge" style="font-size:10.5px; font-weight:700; background:var(--blue-tint-strong); color:var(--blue); padding:1px 6px; border-radius:6px;">YOU</span>' : ''}
+                                    </div>
+                                    <div class="leaderboard-sec-tag">${item.section ? 'Sec ' + escapeHtml(item.section) : 'Student'} · ${sessionDesc}</div>
+                                </div>
+                            </div>
+                            <div class="leaderboard-badge-right">
+                                <div style="font-size:14.5px; font-weight:700; color:var(--green); font-family:var(--font-mono);">${item.percentage}%</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 4. Course Breakdown & Subject Red Flags
+            const subjects = data.bySubject || [];
+            if (subjects.length === 0) {
+                subjectsListContainer.innerHTML = `
+                    <div style="text-align:center; padding:20px; color:var(--ink-3); font-size:13px;">
+                        No enrolled subjects recorded for this section yet.
+                    </div>
+                `;
+            } else {
+                subjectsListContainer.innerHTML = subjects.map(s => {
+                    const isRed = s.isRedFlag;
+                    const pctClass = isRed ? 'danger' : 'safe';
+                    const fillWidth = Math.min(100, Math.max(0, s.percentage));
+
+                    const redFlagNotice = isRed ? `
+                        <div class="subject-redflag-pill">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"/>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Low Attendance Warning (${s.percentage}%): Attend next <strong>${s.classesToRecover}</strong> lecture${s.classesToRecover > 1 ? 's' : ''} to reach 75%</span>
+                        </div>
+                    ` : '';
+
+                    return `
+                        <div class="subject-item-box ${isRed ? 'red-flag' : ''}">
+                            <div class="subject-item-top">
+                                <div class="subject-item-meta">
+                                    <div class="subject-item-title">${escapeHtml(s.name)} ${s.code ? `<span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-3); font-weight:500;">(${escapeHtml(s.code)})</span>` : ''}</div>
+                                    <div class="subject-item-instructor">${s.teacherName ? 'Instructor: ' + escapeHtml(s.teacherName) : 'Course Module'} · ${s.attended} of ${s.totalHeld} attended</div>
+                                </div>
+                                <div class="subject-percent-badge ${pctClass}">
+                                    ${isRed ? '🚩' : '✓'} ${s.percentage}%
+                                </div>
+                            </div>
+
+                            <div class="subject-progress-track">
+                                <div class="subject-progress-fill ${pctClass}" style="width: ${fillWidth}%;"></div>
+                            </div>
+
+                            ${redFlagNotice}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 5. Recent Verified Check-Ins Timeline
+            const recents = data.recent || [];
+            if (recents.length === 0) {
+                timelineContainer.innerHTML = `
+                    <div style="text-align:center; padding:16px; color:var(--ink-3); font-size:12.5px;">
+                        No check-in history recorded yet.
+                    </div>
+                `;
+            } else {
+                timelineContainer.innerHTML = recents.map(r => {
+                    const d = new Date(r.timestamp);
+                    const timeStr = isNaN(d.getTime()) ? 'Recently' : (d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                    return `
+                        <div class="timeline-row">
+                            <div class="timeline-left">
+                                <div class="timeline-sub">${escapeHtml(r.subject)} ${r.code ? `<span style="font-family:var(--font-mono); font-size:10.5px; opacity:0.7;">(${escapeHtml(r.code)})</span>` : ''}</div>
+                                <div class="timeline-teach">${r.teacherName ? escapeHtml(r.teacherName) : 'Class Session'}</div>
+                            </div>
+                            <div class="timeline-time">${timeStr}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // ── Profile Photo Upload System (Canvas Downscaled Base64) ───────────
+        function triggerAvatarUpload() {
+            if (avatarFileInput) avatarFileInput.click();
+        }
+
+        function handleAvatarFileSelected(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file || !profile) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file (PNG, JPG, WebP).');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 200;
+                    let width = img.width;
+                    let height = img.height;
+
+                    const minDim = Math.min(width, height);
+                    const sx = (width - minDim) / 2;
+                    const sy = (height - minDim) / 2;
+
+                    canvas.width = maxDim;
+                    canvas.height = maxDim;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, maxDim, maxDim);
+
+                    const base64Data = canvas.toDataURL('image/jpeg', 0.82);
+
+                    profileAvatarImg.src = base64Data;
+                    profileAvatarImg.style.display = 'block';
+                    profileAvatarInitials.style.display = 'none';
+
+                    chipAvatar.innerHTML = `<img src="${base64Data}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+
+                    profile.avatar = base64Data;
+                    localStorage.setItem('profile', JSON.stringify(profile));
+
+                    if (removeAvatarBtn) removeAvatarBtn.style.display = 'inline-block';
+
+                    saveAvatarToServer(base64Data);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function removeAvatarPhoto(event) {
+            if (event) event.stopPropagation();
+            if (!profile || !profile.enrollment) return;
+            if (!confirm('Remove profile picture and revert to initials?')) return;
+
+            profile.avatar = '';
+            localStorage.setItem('profile', JSON.stringify(profile));
+
+            profileAvatarImg.src = '';
+            profileAvatarImg.style.display = 'none';
+            profileAvatarInitials.style.display = 'block';
+
+            if (removeAvatarBtn) removeAvatarBtn.style.display = 'none';
+
+            renderProfileChip();
+
+            await saveAvatarToServer('');
+        }
+
+        async function saveAvatarToServer(base64Data) {
+            if (!profile || !profile.enrollment) return;
+            try {
+                await fetch('/api/student/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enrollment: profile.enrollment,
+                        avatar: base64Data
+                    })
+                });
+            } catch (err) {
+                console.error('Error saving avatar to server:', err);
+            }
+        }
+
+        // ── About Me Bio Editing System ─────────────────────────────────────
+        function toggleEditAbout() {
+            aboutEditBlock.style.display = 'block';
+            aboutTextDisplay.style.display = 'none';
+            editAboutBtn.style.display = 'none';
+            const cur = aboutTextDisplay.textContent;
+            aboutTextInput.value = (cur && !cur.startsWith('No bio added yet')) ? cur : '';
+            aboutTextInput.focus();
+        }
+
+        function cancelEditAbout() {
+            aboutEditBlock.style.display = 'none';
+            aboutTextDisplay.style.display = 'block';
+            editAboutBtn.style.display = 'inline-block';
+        }
+
+        async function saveAbout() {
+            const text = aboutTextInput.value.trim();
+            if (!profile || !profile.enrollment) return;
+
+            try {
+                const res = await fetch('/api/student/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enrollment: profile.enrollment,
+                        about: text
+                    })
+                });
+
+                if (res.ok) {
+                    aboutTextDisplay.textContent = text || 'No bio added yet. Tap edit to write about yourself, academic interests, or notes.';
+                    cancelEditAbout();
+                } else {
+                    alert('Failed to save bio. Please check your connection.');
+                }
+            } catch (e) {
+                console.error('Error saving bio:', e);
+                alert('Network error while saving bio.');
+            }
+        }
+
+        // Run
+        initPortal();
+    </script>
+</body>
+
+</html>
