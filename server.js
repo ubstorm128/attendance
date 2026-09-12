@@ -32,8 +32,25 @@ const BCRYPT_ROUNDS = 10;
 
 const pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    max: 10,                    // max connections in pool
+    idleTimeoutMillis: 30_000,  // close idle connections after 30s
+    connectionTimeoutMillis: 5_000  // fail fast if pool is exhausted (5s)
 });
+
+// --- Static file cache ---
+// Pre-load all HTML pages into memory at startup so disk I/O is paid once,
+// not on every incoming request.
+const STATIC_FILES = ['student.html', 'admin.html', 'superadmin.html', 'profile.html'];
+const staticCache = new Map();
+for (const file of STATIC_FILES) {
+    try {
+        staticCache.set(file, fs.readFileSync(path.join(__dirname, 'public', file)));
+    } catch (_) {
+        console.warn(`[static] Could not pre-load ${file}`);
+    }
+}
+console.log(`[static] Pre-loaded ${staticCache.size} HTML file(s) into memory.`);
 
 // --- Database Schema Initialization ---
 async function initDb() {
@@ -94,6 +111,19 @@ async function initDb() {
                 UNIQUE(session_id, enrollment)
             );
         `);
+
+        // --- Performance indexes ---
+        // These make the most-queried columns use index scans instead of
+        // sequential table scans. CREATE INDEX IF NOT EXISTS is idempotent.
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_sessions_teacher_id  ON sessions (teacher_id);
+            CREATE INDEX IF NOT EXISTS idx_sessions_qr_token    ON sessions (qr_token) WHERE qr_token IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_sessions_active      ON sessions (active)   WHERE active = true;
+            CREATE INDEX IF NOT EXISTS idx_attendance_session   ON attendance (session_id);
+            CREATE INDEX IF NOT EXISTS idx_attendance_enrollment ON attendance (enrollment);
+            CREATE INDEX IF NOT EXISTS idx_subjects_teacher     ON subjects (teacher_id);
+        `);
+        console.log('Database indexes ensured.');
 
         // If superadmins table is completely empty, insert initial superadmin account
         const adminCheck = await pool.query('SELECT 1 FROM superadmins LIMIT 1');
@@ -308,7 +338,7 @@ const server = http.createServer(async (req, res) => {
             const headers = { 'Content-Type': 'text/html' };
             if (file === 'student.html' || file === 'profile.html') headers['Cache-Control'] = 'no-store';
             res.writeHead(200, headers);
-            return res.end(fs.readFileSync(path.join(__dirname, 'public', file)));
+            return res.end(staticCache.get(file) ?? fs.readFileSync(path.join(__dirname, 'public', file)));
         }
 
         // --- student registration ---
@@ -317,7 +347,10 @@ const server = http.createServer(async (req, res) => {
             const v = validateStudentFields(body.name, body.enrollment, body.section);
             if (v.error) return send(res, 400, { error: v.error });
 
-            const existing = await pool.query('SELECT * FROM students WHERE enrollment = $1', [v.enrollment]);
+            const existing = await pool.query(
+                'SELECT enrollment, name, section, avatar, about FROM students WHERE enrollment = $1',
+                [v.enrollment]
+            );
             if (existing.rows.length) {
                 const st = existing.rows[0];
                 return send(res, 409, { error: 'Student with this enrollment ID is already registered', student: st });
@@ -361,11 +394,17 @@ const server = http.createServer(async (req, res) => {
             if (!normEnrollment) return send(res, 400, { error: 'enrollment is required' });
             if (!token) return send(res, 400, { error: 'missing QR token — scan the code again' });
 
-            const sR = await pool.query('SELECT * FROM students WHERE enrollment = $1', [normEnrollment]);
+            const sR = await pool.query(
+                'SELECT enrollment, name, section FROM students WHERE enrollment = $1',
+                [normEnrollment]
+            );
             if (!sR.rows.length) return send(res, 404, { error: 'register first' });
             const student = sR.rows[0];
 
-            const sessR = await pool.query('SELECT * FROM sessions WHERE active = true AND qr_token = $1', [token]);
+            const sessR = await pool.query(
+                'SELECT id, teacher_id, teacher_name, subject, subject_id, qr_token FROM sessions WHERE active = true AND qr_token = $1',
+                [token]
+            );
             if (!sessR.rows.length) return send(res, 401, { error: 'QR code is invalid or expired' });
             const session = sessR.rows[0];
 
@@ -378,7 +417,10 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
-            const existingAtt = await pool.query('SELECT * FROM attendance WHERE session_id = $1 AND enrollment = $2', [session.id, normEnrollment]);
+            const existingAtt = await pool.query(
+                'SELECT id, time, section FROM attendance WHERE session_id = $1 AND enrollment = $2',
+                [session.id, normEnrollment]
+            );
             if (existingAtt.rows.length) {
                 const existing = existingAtt.rows[0];
                 return send(res, 200, {
@@ -528,14 +570,14 @@ const server = http.createServer(async (req, res) => {
                     st.section,
                     st.avatar,
                     COUNT(a.session_id)::int AS attended,
-                    $2::int                  AS total
+                    ${totalHeldOverall}      AS total
                 FROM students st
                 JOIN attendance a ON a.enrollment = st.enrollment
                 GROUP BY st.enrollment, st.name, st.section, st.avatar
-                HAVING $2 > 0
-                    AND ROUND(COUNT(a.session_id)::numeric / $2 * 100) > 75
+                HAVING ${totalHeldOverall} > 0
+                    AND ROUND(COUNT(a.session_id)::numeric / ${totalHeldOverall} * 100) > 75
                 ORDER BY attended DESC, st.name ASC
-            `, [enrollment, totalHeldOverall]);
+            `);
 
             const leaderboard = leaderboardRows.rows.map((s, idx) => ({
                 rank:             idx + 1,
@@ -585,7 +627,10 @@ const server = http.createServer(async (req, res) => {
             const normEnrollment = (enrollment || '').trim().toUpperCase();
             if (!normEnrollment) return send(res, 400, { error: 'enrollment is required' });
 
-            const stCheck = await pool.query('SELECT * FROM students WHERE enrollment = $1', [normEnrollment]);
+            const stCheck = await pool.query(
+                'SELECT enrollment, name, section, avatar, about FROM students WHERE enrollment = $1',
+                [normEnrollment]
+            );
             if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
             const current = stCheck.rows[0];
 
@@ -630,37 +675,43 @@ const server = http.createServer(async (req, res) => {
             if (!auth) return;
             const { teacherId } = auth;
 
-            const subjR = await pool.query('SELECT * FROM subjects WHERE teacher_id = $1 ORDER BY created_at ASC', [teacherId]);
-            const sessR = await pool.query('SELECT id, subject, subject_id, active FROM sessions WHERE teacher_id = $1', [teacherId]);
-            const attR = await pool.query(`
-                SELECT a.session_id, s.subject_id, s.subject
-                FROM attendance a
-                JOIN sessions s ON a.session_id = s.id
-                WHERE s.teacher_id = $1
+            // Single SQL query: join subjects → sessions → attendance, aggregate in DB
+            const r = await pool.query(`
+                SELECT
+                    subj.id,
+                    subj.name,
+                    subj.code,
+                    subj.department,
+                    subj.section,
+                    subj.created_at,
+                    COUNT(DISTINCT sess.id)::int                        AS "totalSessions",
+                    COUNT(DISTINCT a.id)::int                           AS "totalPresent",
+                    BOOL_OR(sess.active)                                AS "isActive",
+                    MIN(CASE WHEN sess.active THEN sess.id END)         AS "activeSessionId"
+                FROM subjects subj
+                LEFT JOIN sessions sess
+                    ON  sess.teacher_id = $1
+                    AND (sess.subject_id = subj.id
+                         OR sess.subject  = subj.name
+                         OR sess.subject  = subj.code || ' ' || subj.name)
+                LEFT JOIN attendance a ON a.session_id = sess.id
+                WHERE subj.teacher_id = $1
+                GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section, subj.created_at
+                ORDER BY subj.created_at ASC
             `, [teacherId]);
 
-            const subjects = subjR.rows.map(s => {
-                const matchingSessions = sessR.rows.filter(sess =>
-                    sess.subject_id === s.id || sess.subject === s.name || sess.subject === `${s.code} ${s.name}`
-                );
-                const activeSession = matchingSessions.find(sess => sess.active);
-                const totalPresent = attR.rows.filter(a =>
-                    a.subject_id === s.id || a.subject === s.name || a.subject === `${s.code} ${s.name}`
-                ).length;
-
-                return {
-                    id: s.id,
-                    name: s.name,
-                    code: s.code,
-                    department: s.department,
-                    section: s.section,
-                    createdAt: s.created_at.toISOString(),
-                    totalSessions: matchingSessions.length,
-                    totalPresent,
-                    isActive: !!activeSession,
-                    activeSessionId: activeSession ? activeSession.id : null
-                };
-            });
+            const subjects = r.rows.map(s => ({
+                id:              s.id,
+                name:            s.name,
+                code:            s.code,
+                department:      s.department,
+                section:         s.section,
+                createdAt:       s.created_at.toISOString(),
+                totalSessions:   s.totalSessions,
+                totalPresent:    s.totalPresent,
+                isActive:        !!s.isActive,
+                activeSessionId: s.activeSessionId ?? null
+            }));
 
             return send(res, 200, subjects);
         }
@@ -914,7 +965,10 @@ const server = http.createServer(async (req, res) => {
         // --- single session ---
         if (req.method === 'GET' && pathname === '/api/session') {
             const id = Number(searchParams.get('id'));
-            const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [id]);
+            const sessR = await pool.query(
+                'SELECT id, teacher_id, teacher_name, subject, subject_id, qr_token, active, created_at FROM sessions WHERE id = $1',
+                [id]
+            );
             if (!sessR.rows.length) return send(res, 404, { error: 'not found' });
             const sess = sessR.rows[0];
 
@@ -944,7 +998,10 @@ const server = http.createServer(async (req, res) => {
         // --- export csv ---
         if (req.method === 'GET' && pathname === '/api/export') {
             const id = Number(searchParams.get('id'));
-            const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [id]);
+            const sessR = await pool.query(
+                'SELECT id, teacher_name, subject FROM sessions WHERE id = $1',
+                [id]
+            );
             if (!sessR.rows.length) return send(res, 404, { error: 'not found' });
             const sess = sessR.rows[0];
 
@@ -1040,7 +1097,10 @@ const server = http.createServer(async (req, res) => {
             const sessionId = Number(pathname.split('/')[3]);
             const { oldEnrollment, name, enrollment, section } = await readBody(req);
 
-            const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
+            const sessR = await pool.query(
+                'SELECT teacher_id FROM sessions WHERE id = $1',
+                [sessionId]
+            );
             if (!sessR.rows.length) return send(res, 404, { error: 'Session not found' });
             if (sessR.rows[0].teacher_id !== auth.teacherId) return send(res, 403, { error: 'Not authorized to modify this session' });
 
@@ -1049,7 +1109,10 @@ const server = http.createServer(async (req, res) => {
             const normalizedOld = (oldEnrollment || '').trim().toUpperCase();
             if (!normalizedOld) return send(res, 400, { error: 'Old enrollment ID is required' });
 
-            const attR = await pool.query('SELECT * FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedOld]);
+            const attR = await pool.query(
+                'SELECT time FROM attendance WHERE session_id = $1 AND enrollment = $2',
+                [sessionId, normalizedOld]
+            );
             if (!attR.rows.length) return send(res, 404, { error: 'Attendance record not found in this session' });
             const originalTime = attR.rows[0].time;
 
@@ -1115,17 +1178,20 @@ const server = http.createServer(async (req, res) => {
 
 function startServer(port) {
     currentPort = port;
-    server.on('error', (error) => {
+    server.once('error', (error) => {
         if (error.code === 'EADDRINUSE') {
             const nextPort = port + 1;
             if (nextPort <= DEFAULT_PORT + MAX_PORT_ATTEMPTS) {
                 console.log(`Port ${port} is busy. Trying ${nextPort} instead...`);
-                startServer(nextPort);
+                // Close the server instance properly before trying again
+                server.close(() => {
+                    startServer(nextPort);
+                });
                 return;
             }
-            throw error;
         }
-        throw error;
+        console.error('Fatal server error:', error);
+        process.exit(1);
     });
     server.listen(port, () => console.log(`Attendance server running at: http://localhost:${port}`));
 }
