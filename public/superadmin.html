@@ -354,6 +354,14 @@
 
     <script>
         let currentAdminUser = sessionStorage.getItem('adminUser') || 'admin';
+        let adminToken = sessionStorage.getItem('adminToken') || null;
+
+        // Helper: fetch() with admin Authorization header automatically attached
+        function adminApiFetch(url, options = {}) {
+            options.headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+            if (adminToken) options.headers['Authorization'] = `Bearer ${adminToken}`;
+            return fetch(url, options);
+        }
 
         function setupPasswordToggles() {
             const toggles = document.querySelectorAll('[data-password-toggle]');
@@ -370,7 +378,7 @@
 
         setupPasswordToggles();
 
-        if (sessionStorage.getItem('superAdmin')) enterDash();
+        if (sessionStorage.getItem('superAdmin') && adminToken) enterDash();
 
         function showTab(tab) {
             document.getElementById('tabTeachers').classList.toggle('active', tab === 'teachers');
@@ -399,6 +407,8 @@
             if (r.ok) { 
                 sessionStorage.setItem('superAdmin', '1'); 
                 sessionStorage.setItem('adminUser', data.username || username);
+                sessionStorage.setItem('adminToken', data.token);
+                adminToken = data.token;
                 currentAdminUser = data.username || username;
                 enterDash(); 
             } else {
@@ -409,6 +419,7 @@
         function logout() { 
             sessionStorage.removeItem('superAdmin'); 
             sessionStorage.removeItem('adminUser');
+            sessionStorage.removeItem('adminToken');
             location.reload(); 
         }
 
@@ -423,9 +434,8 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             if (!name || !username || !password) return alert('Please fill all fields');
-            const r = await fetch('/api/admin/teachers', { 
+            const r = await adminApiFetch('/api/admin/teachers', { 
                 method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ name, username, password }) 
             });
             if (!r.ok) { const d = await r.json(); return alert(d.error || 'Failed to add teacher'); }
@@ -435,9 +445,8 @@
 
         async function removeTeacher(id) {
             if (!confirm('Remove this teacher?')) return;
-            await fetch('/api/admin/teachers/delete', { 
+            await adminApiFetch('/api/admin/teachers/delete', { 
                 method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ id }) 
             });
             loadTeachers();
@@ -445,7 +454,7 @@
 
         async function loadTeachers() {
             try {
-                const r = await fetch('/api/admin/teachers');
+                const r = await adminApiFetch('/api/admin/teachers');
                 const list = await r.json();
                 const el = document.getElementById('list');
                 el.innerHTML = list.length ? '' : '<p class="empty">No teachers in database.</p>';
@@ -463,7 +472,7 @@
 
         async function loadStudents() {
             try {
-                const r = await fetch('/api/admin/students');
+                const r = await adminApiFetch('/api/admin/students');
                 const list = await r.json();
                 const el = document.getElementById('studentList');
                 el.innerHTML = list.length ? '' : '<p class="empty">No registered students in database.</p>';
@@ -481,9 +490,8 @@
 
         async function removeStudent(enrollment) {
             if (!confirm(`Remove student ${enrollment}?`)) return;
-            const r = await fetch('/api/admin/students/delete', {
+            const r = await adminApiFetch('/api/admin/students/delete', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ enrollment })
             });
             if (r.ok) loadStudents();
@@ -506,11 +514,9 @@
                 return;
             }
 
-            const r = await fetch('/api/admin/change-password', {
+            const r = await adminApiFetch('/api/admin/change-password', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: currentAdminUser,
                     currentPassword,
                     newPassword
                 })

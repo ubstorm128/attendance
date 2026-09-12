@@ -4,13 +4,31 @@ const fs = require('fs');
 const path = require('path');
 const nodeCrypto = require('crypto');
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// Load .env variables if available (for local development)
+try {
+    require('fs').readFileSync('.env', 'utf8').split('\n').forEach(line => {
+        const eqIdx = line.indexOf('=');
+        if (eqIdx === -1) return;
+        const k = line.slice(0, eqIdx).trim();
+        const v = line.slice(eqIdx + 1).trim();
+        if (k) process.env[k] = v;
+    });
+} catch (_) {}
 
 const DEFAULT_PORT = Number(process.env.PORT) || 3000;
 const MAX_PORT_ATTEMPTS = 10;
 let currentPort = DEFAULT_PORT;
 
-const SUPABASE_DB_URL = 'postgresql://postgres.hddezwltrmtxizbxuvvf:reT5QVBJYaxrnxvx@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres';
-const DATABASE_URL = process.env.DATABASE_URL || SUPABASE_DB_URL;
+// Credentials must live in environment variables, never in source code.
+// Priority: SUPABASE_DB_URL for local dev, DATABASE_URL for Render deployment.
+const DATABASE_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+if (!DATABASE_URL) { console.error('FATAL: No DATABASE_URL or SUPABASE_DB_URL set in environment.'); process.exit(1); }
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production';
+const BCRYPT_ROUNDS = 10;
 
 const pool = new Pool({
     connectionString: DATABASE_URL,
@@ -77,22 +95,95 @@ async function initDb() {
             );
         `);
 
-        // If superadmins table is completely empty, insert initial superadmin account into Supabase
+        // If superadmins table is completely empty, insert initial superadmin account
         const adminCheck = await pool.query('SELECT 1 FROM superadmins LIMIT 1');
         if (adminCheck.rows.length === 0) {
             const initialUser = process.env.SUPERADMIN_USER || 'admin';
             const initialPass = process.env.SUPERADMIN_PASS || 'admin123';
+            const hashedPass = await bcrypt.hash(initialPass, BCRYPT_ROUNDS);
             await pool.query(
                 'INSERT INTO superadmins (id, username, password) VALUES ($1, $2, $3)',
-                ['admin-1', initialUser, initialPass]
+                ['admin-1', initialUser, hashedPass]
             );
-            console.log(`Initial superadmin account initialized in Supabase table "superadmins" (${initialUser}).`);
+            console.log(`Initial superadmin account initialized (${initialUser}) with hashed password.`);
         }
 
-        console.log('PostgreSQL database initialized successfully in Supabase.');
+        // --- One-time migration: hash any existing plain-text passwords ---
+        await migratePlainTextPasswords();
+
+        console.log('PostgreSQL database initialized successfully.');
     } catch (err) {
         console.error('Database initialization error:', err);
     }
+}
+
+// Detects and bcrypt-hashes any plain-text password rows (runs once on startup)
+async function migratePlainTextPasswords() {
+    const tables = [
+        { table: 'superadmins', idCol: 'id' },
+        { table: 'teachers', idCol: 'id' }
+    ];
+    for (const { table, idCol } of tables) {
+        const rows = await pool.query(`SELECT ${idCol}, password FROM ${table}`);
+        for (const row of rows.rows) {
+            // bcrypt hashes always start with '$2a$' or '$2b$' — if it doesn't, it's plain text
+            const isHashed = typeof row.password === 'string' && row.password.startsWith('$2');
+            if (!isHashed) {
+                const hashed = await bcrypt.hash(row.password, BCRYPT_ROUNDS);
+                await pool.query(`UPDATE ${table} SET password = $1 WHERE ${idCol} = $2`, [hashed, row[idCol]]);
+                console.log(`[migration] Hashed plain-text password for ${table} id=${row[idCol]}`);
+            }
+        }
+    }
+}
+
+// --- JWT helpers ---
+function signToken(payload) {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
+
+/**
+ * Reads and verifies the Bearer token from the Authorization header.
+ * Returns decoded payload or null if invalid/missing.
+ */
+function verifyToken(req) {
+    const auth = req.headers['authorization'] || '';
+    if (!auth.startsWith('Bearer ')) return null;
+    try {
+        return jwt.verify(auth.slice(7), JWT_SECRET);
+    } catch (_) {
+        return null;
+    }
+}
+
+/**
+ * Middleware-style helper: verifies the teacher JWT.
+ * Returns { teacherId, teacherName } or sends 401 and returns null.
+ */
+function authenticate(req, res) {
+    const payload = verifyToken(req);
+    if (!payload || payload.role !== 'teacher') {
+        send(res, 401, { error: 'Authentication required. Please log in again.' });
+        return null;
+    }
+    return payload;
+}
+
+/**
+ * Middleware-style helper: verifies the admin JWT.
+ * Returns { adminId, username } or sends 401/403 and returns null.
+ */
+function authenticateAdmin(req, res) {
+    const payload = verifyToken(req);
+    if (!payload) {
+        send(res, 401, { error: 'Authentication required. Please log in again.' });
+        return null;
+    }
+    if (payload.role !== 'admin') {
+        send(res, 403, { error: 'Forbidden: admin access only.' });
+        return null;
+    }
+    return payload;
 }
 
 // --- SSE clients (in-memory, per-process) ---
@@ -468,16 +559,21 @@ const server = http.createServer(async (req, res) => {
         // --- teacher auth ---
         if (req.method === 'POST' && pathname === '/api/login') {
             const { username, password } = await readBody(req);
-            const r = await pool.query('SELECT id, name FROM teachers WHERE username = $1 AND password = $2', [username, password]);
-            if (!r.rows.length) return send(res, 401, { error: 'invalid credentials' });
-            return send(res, 200, { ok: true, teacherId: r.rows[0].id, teacherName: r.rows[0].name });
+            if (!username || !password) return send(res, 400, { error: 'Username and password required' });
+            const r = await pool.query('SELECT id, name, password FROM teachers WHERE username = $1', [username]);
+            if (!r.rows.length) return send(res, 401, { error: 'Invalid credentials' });
+            const teacher = r.rows[0];
+            const match = await bcrypt.compare(password, teacher.password);
+            if (!match) return send(res, 401, { error: 'Invalid credentials' });
+            const token = signToken({ role: 'teacher', teacherId: teacher.id, teacherName: teacher.name });
+            return send(res, 200, { ok: true, teacherId: teacher.id, teacherName: teacher.name, token });
         }
 
         // --- teacher subjects: list ---
         if (req.method === 'GET' && pathname === '/api/teacher/subjects') {
-            const teacherId = searchParams.get('teacherId') || '';
-            const tR = await pool.query('SELECT 1 FROM teachers WHERE id = $1', [teacherId]);
-            if (!tR.rows.length) return send(res, 401, { error: 'not logged in' });
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
 
             const subjR = await pool.query('SELECT * FROM subjects WHERE teacher_id = $1 ORDER BY created_at ASC', [teacherId]);
             const sessR = await pool.query('SELECT id, subject, subject_id, active FROM sessions WHERE teacher_id = $1', [teacherId]);
@@ -516,9 +612,10 @@ const server = http.createServer(async (req, res) => {
 
         // --- teacher subjects: create ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects') {
-            const { teacherId, name, code, department, section } = await readBody(req);
-            const tR = await pool.query('SELECT 1 FROM teachers WHERE id = $1', [teacherId]);
-            if (!tR.rows.length) return send(res, 401, { error: 'not logged in' });
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
+            const { name, code, department, section } = await readBody(req);
 
             const sName = (name || '').trim();
             const sCode = (code || '').trim().toUpperCase();
@@ -548,7 +645,11 @@ const server = http.createServer(async (req, res) => {
 
         // --- teacher subjects: edit ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects/edit') {
-            const { teacherId, subjectId, name, code, department, section } = await readBody(req);
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
+            const { subjectId, name, code, department, section } = await readBody(req);
+
             const check = await pool.query('SELECT * FROM subjects WHERE id = $1 AND teacher_id = $2', [subjectId, teacherId]);
             if (!check.rows.length) return send(res, 404, { error: 'Subject not found' });
 
@@ -579,7 +680,10 @@ const server = http.createServer(async (req, res) => {
 
         // --- teacher subjects: delete ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects/delete') {
-            const { teacherId, subjectId } = await readBody(req);
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
+            const { subjectId } = await readBody(req);
             const del = await pool.query('DELETE FROM subjects WHERE id = $1 AND teacher_id = $2', [subjectId, teacherId]);
             if (del.rowCount === 0) return send(res, 404, { error: 'Subject not found' });
             return send(res, 200, { ok: true });
@@ -587,9 +691,12 @@ const server = http.createServer(async (req, res) => {
 
         // --- start session ---
         if (req.method === 'POST' && pathname === '/api/start-session') {
-            const { teacherId, subject, subjectId } = await readBody(req);
-            const tR = await pool.query('SELECT id, name FROM teachers WHERE id = $1', [teacherId]);
-            if (!tR.rows.length) return send(res, 401, { error: 'not logged in' });
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { subject, subjectId } = await readBody(req);
+            // Re-fetch teacher name from DB to ensure accuracy
+            const tR = await pool.query('SELECT id, name FROM teachers WHERE id = $1', [auth.teacherId]);
+            if (!tR.rows.length) return send(res, 401, { error: 'Teacher not found' });
             const teacher = tR.rows[0];
 
             // Close any previous active sessions for this teacher
@@ -624,7 +731,9 @@ const server = http.createServer(async (req, res) => {
 
         // --- close session ---
         if (req.method === 'POST' && pathname === '/api/close-session') {
-            const { teacherId } = await readBody(req);
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
             await pool.query('UPDATE sessions SET active = false, qr_token = NULL WHERE teacher_id = $1 AND active = true', [teacherId]);
             broadcastTo(teacherId, { type: 'closed' });
             return send(res, 200, { ok: true });
@@ -632,15 +741,26 @@ const server = http.createServer(async (req, res) => {
 
         // --- delete session ---
         if (req.method === 'POST' && pathname === '/api/delete-session') {
-            const { teacherId, sessionId } = await readBody(req);
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
+            const { sessionId } = await readBody(req);
             const r = await pool.query('DELETE FROM sessions WHERE id = $1 AND teacher_id = $2', [Number(sessionId), teacherId]);
             if (r.rowCount === 0) return send(res, 404, { error: 'not found or not your session' });
             return send(res, 200, { ok: true });
         }
 
         // --- SSE stream ---
+        // EventSource (browser) cannot send custom headers, so the JWT is passed as ?token=
         if (req.method === 'GET' && pathname === '/api/stream') {
-            const teacherId = searchParams.get('teacherId') || '';
+            const qToken = searchParams.get('token') || '';
+            let payload = null;
+            try { payload = qToken ? jwt.verify(qToken, JWT_SECRET) : null; } catch (_) {}
+            if (!payload || payload.role !== 'teacher') {
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ error: 'Authentication required.' }));
+            }
+            const { teacherId } = payload;
             res.writeHead(200, {
                 'Content-Type': 'text/event-stream',
                 'Cache-Control': 'no-cache',
@@ -684,7 +804,9 @@ const server = http.createServer(async (req, res) => {
 
         // --- history ---
         if (req.method === 'GET' && pathname === '/api/history') {
-            const teacherId = searchParams.get('teacherId') || '';
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
             const subjectFilter = (searchParams.get('subject') || '').trim();
             const subjectIdFilter = (searchParams.get('subjectId') || '').trim();
 
@@ -774,17 +896,23 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'POST' && pathname === '/api/admin/login') {
             const { username, password } = await readBody(req);
             if (!username || !password) return send(res, 400, { error: 'Username and password required' });
-            const r = await pool.query('SELECT id, username FROM superadmins WHERE username = $1 AND password = $2', [username, password]);
+            const r = await pool.query('SELECT id, username, password FROM superadmins WHERE username = $1', [username]);
             if (!r.rows.length) return send(res, 401, { error: 'Invalid credentials' });
-            return send(res, 200, { ok: true, adminId: r.rows[0].id, username: r.rows[0].username });
+            const admin = r.rows[0];
+            const match = await bcrypt.compare(password, admin.password);
+            if (!match) return send(res, 401, { error: 'Invalid credentials' });
+            const token = signToken({ role: 'admin', adminId: admin.id, username: admin.username });
+            return send(res, 200, { ok: true, adminId: admin.id, username: admin.username, token });
         }
 
         if (req.method === 'GET' && pathname === '/api/admin/teachers') {
+            if (!authenticateAdmin(req, res)) return;
             const r = await pool.query('SELECT id, name, username FROM teachers ORDER BY name ASC');
             return send(res, 200, r.rows);
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/teachers') {
+            if (!authenticateAdmin(req, res)) return;
             const { name, username, password } = await readBody(req);
             if (!name || !username || !password) return send(res, 400, { error: 'missing fields' });
 
@@ -794,22 +922,26 @@ const server = http.createServer(async (req, res) => {
             }
 
             const id = nodeCrypto.randomUUID();
-            await pool.query('INSERT INTO teachers (id, name, username, password) VALUES ($1, $2, $3, $4)', [id, name, username, password]);
+            const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+            await pool.query('INSERT INTO teachers (id, name, username, password) VALUES ($1, $2, $3, $4)', [id, name, username, hashedPassword]);
             return send(res, 200, { ok: true, id });
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/teachers/delete') {
+            if (!authenticateAdmin(req, res)) return;
             const { id } = await readBody(req);
             await pool.query('DELETE FROM teachers WHERE id = $1', [id]);
             return send(res, 200, { ok: true });
         }
 
         if (req.method === 'GET' && pathname === '/api/admin/students') {
+            if (!authenticateAdmin(req, res)) return;
             const r = await pool.query('SELECT enrollment, name, section FROM students ORDER BY name ASC');
             return send(res, 200, r.rows);
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/students/delete') {
+            if (!authenticateAdmin(req, res)) return;
             const { enrollment } = await readBody(req);
             if (!enrollment) return send(res, 400, { error: 'Enrollment is required' });
             await pool.query('DELETE FROM students WHERE enrollment = $1', [enrollment.trim().toUpperCase()]);
@@ -817,25 +949,29 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/change-password') {
-            const { username, currentPassword, newPassword } = await readBody(req);
-            if (!username || !currentPassword || !newPassword) return send(res, 400, { error: 'Missing required fields' });
-            const check = await pool.query('SELECT id FROM superadmins WHERE username = $1 AND password = $2', [username, currentPassword]);
-            if (!check.rows.length) return send(res, 401, { error: 'Current password incorrect' });
-            await pool.query('UPDATE superadmins SET password = $1 WHERE username = $2', [newPassword, username]);
+            const authPayload = authenticateAdmin(req, res);
+            if (!authPayload) return;
+            const { currentPassword, newPassword } = await readBody(req);
+            if (!currentPassword || !newPassword) return send(res, 400, { error: 'Missing required fields' });
+            const check = await pool.query('SELECT id, password FROM superadmins WHERE id = $1', [authPayload.adminId]);
+            if (!check.rows.length) return send(res, 404, { error: 'Admin not found' });
+            const matches = await bcrypt.compare(currentPassword, check.rows[0].password);
+            if (!matches) return send(res, 401, { error: 'Current password incorrect' });
+            const newHashed = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+            await pool.query('UPDATE superadmins SET password = $1 WHERE id = $2', [newHashed, authPayload.adminId]);
             return send(res, 200, { ok: true });
         }
 
         // --- edit student attendance ---
         if (req.method === 'POST' && /^\/api\/session\/\d+\/student\/edit$/.test(pathname)) {
+            const auth = authenticate(req, res);
+            if (!auth) return;
             const sessionId = Number(pathname.split('/')[3]);
-            const { teacherId: reqTeacherId, oldEnrollment, name, enrollment, section } = await readBody(req);
-
-            const tR = await pool.query('SELECT id FROM teachers WHERE id = $1', [reqTeacherId]);
-            if (!tR.rows.length) return send(res, 401, { error: 'Not authenticated' });
+            const { oldEnrollment, name, enrollment, section } = await readBody(req);
 
             const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
             if (!sessR.rows.length) return send(res, 404, { error: 'Session not found' });
-            if (sessR.rows[0].teacher_id !== reqTeacherId) return send(res, 403, { error: 'Not authorized to modify this session' });
+            if (sessR.rows[0].teacher_id !== auth.teacherId) return send(res, 403, { error: 'Not authorized to modify this session' });
 
             const v = validateStudentFields(name, enrollment, section);
             if (v.error) return send(res, 400, { error: v.error });
@@ -867,7 +1003,7 @@ const server = http.createServer(async (req, res) => {
                 client.release();
             }
 
-            broadcastTo(reqTeacherId, {
+            broadcastTo(auth.teacherId, {
                 type: 'student-updated',
                 oldEnrollment: normalizedOld,
                 student: { name: v.name, enrollment: v.enrollment, section: v.section, time: originalTime.toISOString() }
@@ -877,15 +1013,14 @@ const server = http.createServer(async (req, res) => {
 
         // --- delete student attendance ---
         if (req.method === 'POST' && /^\/api\/session\/\d+\/student\/delete$/.test(pathname)) {
+            const auth = authenticate(req, res);
+            if (!auth) return;
             const sessionId = Number(pathname.split('/')[3]);
-            const { teacherId: reqTeacherId, enrollment } = await readBody(req);
-
-            const tR = await pool.query('SELECT id FROM teachers WHERE id = $1', [reqTeacherId]);
-            if (!tR.rows.length) return send(res, 401, { error: 'Not authenticated' });
+            const { enrollment } = await readBody(req);
 
             const sessR = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
             if (!sessR.rows.length) return send(res, 404, { error: 'Session not found' });
-            if (sessR.rows[0].teacher_id !== reqTeacherId) return send(res, 403, { error: 'Not authorized to modify this session' });
+            if (sessR.rows[0].teacher_id !== auth.teacherId) return send(res, 403, { error: 'Not authorized to modify this session' });
 
             const normalizedEnrollment = (enrollment || '').trim().toUpperCase();
             if (!normalizedEnrollment) return send(res, 400, { error: 'Enrollment ID is required' });
@@ -893,7 +1028,7 @@ const server = http.createServer(async (req, res) => {
             const del = await pool.query('DELETE FROM attendance WHERE session_id = $1 AND enrollment = $2', [sessionId, normalizedEnrollment]);
             if (del.rowCount === 0) return send(res, 404, { error: 'Attendance record not found in this session' });
 
-            broadcastTo(reqTeacherId, {
+            broadcastTo(auth.teacherId, {
                 type: 'student-deleted',
                 enrollment: normalizedEnrollment
             });

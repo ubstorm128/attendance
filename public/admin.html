@@ -1706,7 +1706,7 @@
 
         setupPasswordToggles();
 
-        let teacherId = null, teacherName = null;
+        let teacherId = null, teacherName = null, teacherToken = null;
         let currentSessionId = null;
         let currentSelectedSubject = null;
         let teacherSubjects = [];
@@ -1714,6 +1714,13 @@
         let presentList = [];
         let sessionTimerInterval = null;
         let sessionStartTime = null;
+
+        // Helper: fetch() with Authorization header automatically attached
+        function apiFetch(url, options = {}) {
+            options.headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+            if (teacherToken) options.headers['Authorization'] = `Bearer ${teacherToken}`;
+            return fetch(url, options);
+        }
 
         function getInitials(name) {
             if (!name) return 'ST';
@@ -1754,7 +1761,8 @@
         const savedAuth = JSON.parse(localStorage.getItem('teacherAuth') || 'null');
         if (savedAuth) { 
             teacherId = savedAuth.teacherId; 
-            teacherName = savedAuth.teacherName; 
+            teacherName = savedAuth.teacherName;
+            teacherToken = savedAuth.token;
             enterDash(); 
         }
 
@@ -1770,7 +1778,8 @@
             if (r.ok) {
                 teacherId = data.teacherId; 
                 teacherName = data.teacherName;
-                localStorage.setItem('teacherAuth', JSON.stringify({ teacherId, teacherName }));
+                teacherToken = data.token;
+                localStorage.setItem('teacherAuth', JSON.stringify({ teacherId, teacherName, token: teacherToken }));
                 enterDash();
             } else {
                 document.getElementById('loginMsg').textContent = data.error || 'Invalid credentials';
@@ -1824,7 +1833,7 @@
         /* ── Subjects Management ── */
         async function loadSubjects() {
             try {
-                const r = await fetch(`/api/teacher/subjects?teacherId=${teacherId}`);
+                const r = await apiFetch(`/api/teacher/subjects`);
                 teacherSubjects = await r.json();
                 renderSubjectsGrid();
                 renderHistoryFilters();
@@ -1948,10 +1957,9 @@
             btn.textContent = 'Saving…';
 
             try {
-                const r = await fetch('/api/teacher/subjects', {
+                const r = await apiFetch('/api/teacher/subjects', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ teacherId, name, code, department, section })
+                    body: JSON.stringify({ name, code, department, section })
                 });
                 const data = await r.json();
                 if (!r.ok) {
@@ -2018,10 +2026,9 @@
             btn.textContent = 'Saving…';
 
             try {
-                const r = await fetch('/api/teacher/subjects/edit', {
+                const r = await apiFetch('/api/teacher/subjects/edit', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ teacherId, subjectId, name, code, department, section })
+                    body: JSON.stringify({ subjectId, name, code, department, section })
                 });
                 const data = await r.json();
                 if (!r.ok) {
@@ -2067,10 +2074,9 @@
             btn.textContent = 'Removing…';
 
             try {
-                const r = await fetch('/api/teacher/subjects/delete', {
+                const r = await apiFetch('/api/teacher/subjects/delete', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ teacherId, subjectId })
+                    body: JSON.stringify({ subjectId })
                 });
                 closeModal();
                 loadSubjects();
@@ -2179,10 +2185,9 @@
             const subject = document.getElementById('subject').value.trim();
             const subjectId = currentSelectedSubject ? currentSelectedSubject.id : null;
             
-            const r = await fetch('/api/start-session', { 
+            const r = await apiFetch('/api/start-session', { 
                 method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ teacherId, subject, subjectId }) 
+                body: JSON.stringify({ subject, subjectId }) 
             });
             const data = await r.json();
             renderQr(data.qrToken);
@@ -2197,10 +2202,9 @@
         }
 
         async function closeSession() {
-            await fetch('/api/close-session', { 
+            await apiFetch('/api/close-session', { 
                 method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ teacherId }) 
+                body: JSON.stringify({}) 
             });
             document.getElementById('closeBtn').style.display = 'none';
             renderQr(null);
@@ -2210,7 +2214,7 @@
         }
 
         function connectStream() {
-            const es = new EventSource(`/api/stream?teacherId=${teacherId}`);
+            const es = new EventSource(`/api/stream?token=${encodeURIComponent(teacherToken || '')}`);
             es.onmessage = (e) => {
                 const data = JSON.parse(e.data);
                 if (data.type === 'new-session') {
@@ -2297,7 +2301,7 @@
 
         async function refreshStats() {
             try {
-                const r = await fetch(`/api/history?teacherId=${teacherId}`);
+                const r = await apiFetch(`/api/history`);
                 const list = await r.json();
                 document.getElementById('statSessions').textContent = `${list.length} total`;
             } catch (e) {
@@ -2335,11 +2339,11 @@
 
         async function loadHistory() {
             try {
-                let url = `/api/history?teacherId=${teacherId}`;
+                let url = `/api/history`;
                 if (activeHistorySubjectFilter) {
-                    url += `&subjectId=${encodeURIComponent(activeHistorySubjectFilter)}`;
+                    url += `?subjectId=${encodeURIComponent(activeHistorySubjectFilter)}`;
                 }
-                const r = await fetch(url);
+                const r = await apiFetch(url);
                 const list = await r.json();
                 const el = document.getElementById('histList');
                 el.innerHTML = list.length ? '' : '<p style="color:var(--ink-2); text-align:center; padding:32px 0;">No sessions found for this selection.</p>';
@@ -2376,10 +2380,9 @@
 
         async function deleteSession(sessionId) {
             if (!confirm('Delete this session? This will permanently remove all attendance records for it.')) return;
-            await fetch('/api/delete-session', { 
+            await apiFetch('/api/delete-session', { 
                 method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ teacherId, sessionId }) 
+                body: JSON.stringify({ sessionId }) 
             });
             loadHistory();
             refreshStats();
@@ -2449,10 +2452,9 @@
             }
 
             try {
-                const r = await fetch(`/api/session/${currentSessionId}/student/edit`, {
+                const r = await apiFetch(`/api/session/${currentSessionId}/student/edit`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ teacherId, oldEnrollment, name, enrollment, section })
+                    body: JSON.stringify({ oldEnrollment, name, enrollment, section })
                 });
                 const data = await r.json();
                 if (!r.ok) {
@@ -2501,10 +2503,9 @@
             }
 
             try {
-                await fetch(`/api/session/${currentSessionId}/student/delete`, {
+                await apiFetch(`/api/session/${currentSessionId}/student/delete`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ teacherId, enrollment })
+                    body: JSON.stringify({ enrollment })
                 });
                 closeModal();
             } catch (e) {
