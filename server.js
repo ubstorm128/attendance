@@ -8,8 +8,6 @@ const { Pool } = require('pg');
 const DEFAULT_PORT = Number(process.env.PORT) || 3000;
 const MAX_PORT_ATTEMPTS = 10;
 let currentPort = DEFAULT_PORT;
-const SUPERADMIN_USER = process.env.SUPERADMIN_USER || 'admin';
-const SUPERADMIN_PASS = process.env.SUPERADMIN_PASS || 'admin123';
 
 const SUPABASE_DB_URL = 'postgresql://postgres.hddezwltrmtxizbxuvvf:reT5QVBJYaxrnxvx@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres';
 const DATABASE_URL = process.env.DATABASE_URL || SUPABASE_DB_URL;
@@ -23,6 +21,13 @@ const pool = new Pool({
 async function initDb() {
     try {
         await pool.query(`
+            CREATE TABLE IF NOT EXISTS superadmins (
+                id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+
             CREATE TABLE IF NOT EXISTS teachers (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -68,26 +73,16 @@ async function initDb() {
             );
         `);
 
-        // Seed default teacher if empty
-        const teacherCheck = await pool.query('SELECT 1 FROM teachers WHERE id = $1', ['teacher-default-1']);
-        if (teacherCheck.rows.length === 0) {
-            await pool.query(`
-                INSERT INTO teachers (id, name, username, password)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (id) DO NOTHING
-            `, ['teacher-default-1', 'Wanraplang Nongbri', 'WanraplangNongbri', 'teacher001']);
-        }
-
-        // Seed default subjects if empty
-        const subjCheck = await pool.query('SELECT 1 FROM subjects WHERE teacher_id = $1', ['teacher-default-1']);
-        if (subjCheck.rows.length === 0) {
-            await pool.query(`
-                INSERT INTO subjects (id, teacher_id, name, code, department, section)
-                VALUES 
-                    ('subj-1', 'teacher-default-1', 'Advance Application Development', '24BCAO3101R', 'BCA', 'C'),
-                    ('subj-2', 'teacher-default-1', 'UI UX Lab', '24BCAO3101R', 'BCA', 'C')
-                ON CONFLICT (id) DO NOTHING
-            `);
+        // If superadmins table is completely empty, insert initial superadmin account into Supabase
+        const adminCheck = await pool.query('SELECT 1 FROM superadmins LIMIT 1');
+        if (adminCheck.rows.length === 0) {
+            const initialUser = process.env.SUPERADMIN_USER || 'admin';
+            const initialPass = process.env.SUPERADMIN_PASS || 'admin123';
+            await pool.query(
+                'INSERT INTO superadmins (id, username, password) VALUES ($1, $2, $3)',
+                ['admin-1', initialUser, initialPass]
+            );
+            console.log(`Initial superadmin account initialized in Supabase table "superadmins" (${initialUser}).`);
         }
 
         console.log('PostgreSQL database initialized successfully in Supabase.');
@@ -653,10 +648,13 @@ const server = http.createServer(async (req, res) => {
             return res.end(toCsv(sess.subject, rows));
         }
 
-        // --- super-admin ---
+        // --- super-admin auth & management ---
         if (req.method === 'POST' && pathname === '/api/admin/login') {
             const { username, password } = await readBody(req);
-            return send(res, username === SUPERADMIN_USER && password === SUPERADMIN_PASS ? 200 : 401, { ok: true });
+            if (!username || !password) return send(res, 400, { error: 'Username and password required' });
+            const r = await pool.query('SELECT id, username FROM superadmins WHERE username = $1 AND password = $2', [username, password]);
+            if (!r.rows.length) return send(res, 401, { error: 'Invalid credentials' });
+            return send(res, 200, { ok: true, adminId: r.rows[0].id, username: r.rows[0].username });
         }
 
         if (req.method === 'GET' && pathname === '/api/admin/teachers') {
@@ -681,6 +679,27 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'POST' && pathname === '/api/admin/teachers/delete') {
             const { id } = await readBody(req);
             await pool.query('DELETE FROM teachers WHERE id = $1', [id]);
+            return send(res, 200, { ok: true });
+        }
+
+        if (req.method === 'GET' && pathname === '/api/admin/students') {
+            const r = await pool.query('SELECT enrollment, name, section FROM students ORDER BY name ASC');
+            return send(res, 200, r.rows);
+        }
+
+        if (req.method === 'POST' && pathname === '/api/admin/students/delete') {
+            const { enrollment } = await readBody(req);
+            if (!enrollment) return send(res, 400, { error: 'Enrollment is required' });
+            await pool.query('DELETE FROM students WHERE enrollment = $1', [enrollment.trim().toUpperCase()]);
+            return send(res, 200, { ok: true });
+        }
+
+        if (req.method === 'POST' && pathname === '/api/admin/change-password') {
+            const { username, currentPassword, newPassword } = await readBody(req);
+            if (!username || !currentPassword || !newPassword) return send(res, 400, { error: 'Missing required fields' });
+            const check = await pool.query('SELECT id FROM superadmins WHERE username = $1 AND password = $2', [username, currentPassword]);
+            if (!check.rows.length) return send(res, 401, { error: 'Current password incorrect' });
+            await pool.query('UPDATE superadmins SET password = $1 WHERE username = $2', [newPassword, username]);
             return send(res, 200, { ok: true });
         }
 

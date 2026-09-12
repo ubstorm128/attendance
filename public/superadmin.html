@@ -198,9 +198,38 @@
 
         .add-btn { width: 100%; margin-top: 18px; }
 
+        .segmented-control {
+            display: flex;
+            background: rgba(0, 0, 0, 0.06);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            gap: 4px;
+        }
+        .seg-btn {
+            flex: 1;
+            padding: 9px 12px;
+            background: transparent;
+            color: var(--ink-2);
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 140ms ease;
+            text-align: center;
+        }
+        .seg-btn:hover { color: var(--ink); }
+        .seg-btn.active {
+            background: #FFFFFF;
+            color: var(--ink);
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
         .list-heading {
             font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
-            color: var(--ink-3); margin: 30px 0 12px;
+            color: var(--ink-3); margin: 26px 0 12px;
         }
 
         .row {
@@ -215,7 +244,7 @@
         .row strong { font-weight: 600; font-size: 14px; }
         .row .handle { color: var(--ink-3); font-size: 12px; }
 
-        .empty { color: var(--ink-3); font-size: 13px; padding: 8px 2px; }
+        .empty { color: var(--ink-3); font-size: 13px; padding: 12px 4px; }
 
         .danger {
             background: var(--bad); color: #fff;
@@ -243,10 +272,10 @@
     <div id="loginBox" class="center">
         <div class="card" style="width:320px">
             <h1>Admin Login</h1>
-            <label>Username</label><input id="user">
+            <label>Username</label><input id="user" autocomplete="username">
             <label>Password</label>
             <div class="password-wrap">
-                <input id="pass" type="password">
+                <input id="pass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()">
                 <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" data-password-toggle>
                     <svg class="eye-open" viewBox="0 0 24 24">
                         <path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z" />
@@ -269,7 +298,7 @@
         <div class="ribbon">
             <div class="brand">
                 <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="white" stroke-width="2" stroke-linejoin="round" /><path d="M8 9h6M8 13h8" stroke="white" stroke-width="2" stroke-linecap="round" /></svg></div>
-                Register Admin
+                Superadmin Dashboard
             </div>
             <div class="ribbon-spacer"></div>
             <div class="logout" onclick="logout()">
@@ -279,22 +308,53 @@
         </div>
 
         <main>
-            <div class="panel">
-                <h2>Manage Teachers</h2>
-                <p class="sub">Add or remove teacher accounts for the register.</p>
+            <!-- Navigation Segments -->
+            <div class="segmented-control">
+                <button class="seg-btn active" id="tabTeachers" onclick="showTab('teachers')">Teachers</button>
+                <button class="seg-btn" id="tabStudents" onclick="showTab('students')">Students</button>
+                <button class="seg-btn" id="tabSecurity" onclick="showTab('security')">Security</button>
+            </div>
 
-                <label>Full name</label><input id="name">
-                <label>Username</label><input id="username">
-                <label>Password</label><input id="password">
+            <!-- Teachers Panel -->
+            <div class="panel" id="panelTeachers">
+                <h2>Manage Teachers</h2>
+                <p class="sub">Add or remove instructor accounts stored in Supabase.</p>
+
+                <label>Full name</label><input id="name" placeholder="Dr. John Smith">
+                <label>Username</label><input id="username" placeholder="john_smith">
+                <label>Password</label><input id="password" placeholder="••••••••">
                 <button class="add-btn" onclick="addTeacher()">Add Teacher</button>
 
-                <div class="list-heading">Teachers</div>
+                <div class="list-heading">Teachers in Database</div>
                 <div id="list"></div>
+            </div>
+
+            <!-- Students Panel -->
+            <div class="panel" id="panelStudents" style="display: none;">
+                <h2>Registered Students</h2>
+                <p class="sub">Students registered in Supabase database.</p>
+
+                <div class="list-heading">Students in Database</div>
+                <div id="studentList"></div>
+            </div>
+
+            <!-- Security Panel -->
+            <div class="panel" id="panelSecurity" style="display: none;">
+                <h2>Admin Security</h2>
+                <p class="sub">Update superadmin password stored in Supabase.</p>
+
+                <label>Current Password</label><input id="currPass" type="password">
+                <label>New Password</label><input id="newPass" type="password">
+                <label>Confirm New Password</label><input id="confPass" type="password">
+                <button class="add-btn" onclick="changeAdminPassword()">Update Password</button>
+                <p id="secMsg" style="font-size: 13px; margin-top: 12px;"></p>
             </div>
         </main>
     </div>
 
     <script>
+        let currentAdminUser = sessionStorage.getItem('adminUser') || 'admin';
+
         function setupPasswordToggles() {
             const toggles = document.querySelectorAll('[data-password-toggle]');
             toggles.forEach((toggle) => {
@@ -312,46 +372,160 @@
 
         if (sessionStorage.getItem('superAdmin')) enterDash();
 
-        async function login() {
-            const username = document.getElementById('user').value;
-            const password = document.getElementById('pass').value;
-            const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
-            if (r.ok) { sessionStorage.setItem('superAdmin', '1'); enterDash(); }
-            else document.getElementById('loginMsg').textContent = 'Invalid credentials';
+        function showTab(tab) {
+            document.getElementById('tabTeachers').classList.toggle('active', tab === 'teachers');
+            document.getElementById('tabStudents').classList.toggle('active', tab === 'students');
+            document.getElementById('tabSecurity').classList.toggle('active', tab === 'security');
+
+            document.getElementById('panelTeachers').style.display = tab === 'teachers' ? 'block' : 'none';
+            document.getElementById('panelStudents').style.display = tab === 'students' ? 'block' : 'none';
+            document.getElementById('panelSecurity').style.display = tab === 'security' ? 'block' : 'none';
+
+            if (tab === 'teachers') loadTeachers();
+            if (tab === 'students') loadStudents();
         }
-        function logout() { sessionStorage.removeItem('superAdmin'); location.reload(); }
+
+        async function login() {
+            const username = document.getElementById('user').value.trim();
+            const password = document.getElementById('pass').value.trim();
+            if (!username || !password) return document.getElementById('loginMsg').textContent = 'Enter username and password';
+            
+            const r = await fetch('/api/admin/login', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ username, password }) 
+            });
+            const data = await r.json();
+            if (r.ok) { 
+                sessionStorage.setItem('superAdmin', '1'); 
+                sessionStorage.setItem('adminUser', data.username || username);
+                currentAdminUser = data.username || username;
+                enterDash(); 
+            } else {
+                document.getElementById('loginMsg').textContent = data.error || 'Invalid credentials';
+            }
+        }
+
+        function logout() { 
+            sessionStorage.removeItem('superAdmin'); 
+            sessionStorage.removeItem('adminUser');
+            location.reload(); 
+        }
+
         function enterDash() {
             document.getElementById('loginBox').style.display = 'none';
             document.getElementById('dash').style.display = 'block';
             loadTeachers();
         }
+
         async function addTeacher() {
             const name = document.getElementById('name').value.trim();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
-            if (!name || !username || !password) return alert('fill all fields');
-            const r = await fetch('/api/admin/teachers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, username, password }) });
-            if (!r.ok) { const d = await r.json(); return alert(d.error); }
+            if (!name || !username || !password) return alert('Please fill all fields');
+            const r = await fetch('/api/admin/teachers', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ name, username, password }) 
+            });
+            if (!r.ok) { const d = await r.json(); return alert(d.error || 'Failed to add teacher'); }
             document.getElementById('name').value = document.getElementById('username').value = document.getElementById('password').value = '';
             loadTeachers();
         }
+
         async function removeTeacher(id) {
             if (!confirm('Remove this teacher?')) return;
-            await fetch('/api/admin/teachers/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+            await fetch('/api/admin/teachers/delete', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ id }) 
+            });
             loadTeachers();
         }
+
         async function loadTeachers() {
-            const r = await fetch('/api/admin/teachers');
-            const list = await r.json();
-            const el = document.getElementById('list');
-            el.innerHTML = list.length ? '' : '<p class="empty">No teachers yet.</p>';
-            list.forEach(t => {
-                const div = document.createElement('div');
-                div.className = 'row';
-                div.innerHTML = `<div><strong>${t.name}</strong><br><span class="handle">@${t.username}</span></div>
-      <button class="danger" onclick="removeTeacher('${t.id}')">Remove</button>`;
-                el.appendChild(div);
+            try {
+                const r = await fetch('/api/admin/teachers');
+                const list = await r.json();
+                const el = document.getElementById('list');
+                el.innerHTML = list.length ? '' : '<p class="empty">No teachers in database.</p>';
+                list.forEach(t => {
+                    const div = document.createElement('div');
+                    div.className = 'row';
+                    div.innerHTML = `<div><strong>${t.name}</strong><br><span class="handle">@${t.username}</span></div>
+          <button class="danger" onclick="removeTeacher('${t.id}')">Remove</button>`;
+                    el.appendChild(div);
+                });
+            } catch (e) {
+                console.error('Failed to load teachers:', e);
+            }
+        }
+
+        async function loadStudents() {
+            try {
+                const r = await fetch('/api/admin/students');
+                const list = await r.json();
+                const el = document.getElementById('studentList');
+                el.innerHTML = list.length ? '' : '<p class="empty">No registered students in database.</p>';
+                list.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'row';
+                    div.innerHTML = `<div><strong>${s.name}</strong><br><span class="handle">${s.enrollment}${s.section ? ' · Sec ' + s.section : ''}</span></div>
+          <button class="danger" onclick="removeStudent('${s.enrollment}')">Remove</button>`;
+                    el.appendChild(div);
+                });
+            } catch (e) {
+                console.error('Failed to load students:', e);
+            }
+        }
+
+        async function removeStudent(enrollment) {
+            if (!confirm(`Remove student ${enrollment}?`)) return;
+            const r = await fetch('/api/admin/students/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enrollment })
             });
+            if (r.ok) loadStudents();
+        }
+
+        async function changeAdminPassword() {
+            const currentPassword = document.getElementById('currPass').value;
+            const newPassword = document.getElementById('newPass').value;
+            const confPass = document.getElementById('confPass').value;
+            const msgEl = document.getElementById('secMsg');
+
+            if (!currentPassword || !newPassword) {
+                msgEl.style.color = 'var(--bad)';
+                msgEl.textContent = 'Please fill all password fields.';
+                return;
+            }
+            if (newPassword !== confPass) {
+                msgEl.style.color = 'var(--bad)';
+                msgEl.textContent = 'New passwords do not match.';
+                return;
+            }
+
+            const r = await fetch('/api/admin/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: currentAdminUser,
+                    currentPassword,
+                    newPassword
+                })
+            });
+            const data = await r.json();
+            if (r.ok) {
+                msgEl.style.color = '#248A3D';
+                msgEl.textContent = 'Password updated successfully in database.';
+                document.getElementById('currPass').value = '';
+                document.getElementById('newPass').value = '';
+                document.getElementById('confPass').value = '';
+            } else {
+                msgEl.style.color = 'var(--bad)';
+                msgEl.textContent = data.error || 'Failed to update password.';
+            }
         }
     </script>
 </body>
