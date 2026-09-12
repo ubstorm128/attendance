@@ -395,6 +395,10 @@ const server = http.createServer(async (req, res) => {
                 section: s.section,
                 avatar: s.avatar,
                 percentage: s.percentage,
+                attended: s.attended,
+                total: s.total,
+                totalAttended: s.attended,
+                totalHeld: s.total,
                 isCurrentStudent: s.enrollment === enrollment
             }));
 

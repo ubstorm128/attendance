@@ -88,18 +88,34 @@
                 var(--bg-0);
         }
 
-        /* ── Responsive Viewport Shell ── */
+        /* ── Responsive Viewport Shell (Mobile First to Ultra-Wide Desktop) ── */
         .viewport-shell {
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 440px;
+            max-width: 1180px;
             margin: 0 auto;
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 16px 18px 24px;
+            padding: 16px 24px 32px;
+            box-sizing: border-box;
+            transition: max-width 0.25s ease, padding 0.25s ease;
+        }
+
+        @media (max-width: 768px) {
+            .viewport-shell {
+                max-width: 480px;
+                padding: 12px 14px 20px;
+            }
+        }
+
+        /* Check-In / Scan / Receipt views remain focused, centered modals on wide screens */
+        #authView, #standbyView, #receiptView, #loadingView {
+            width: 100%;
+            max-width: 480px;
+            margin: 12px auto;
         }
 
         /* ── Top Header Navigation ── */
@@ -834,18 +850,27 @@
         }
 
         @media (min-width: 600px) {
-            .viewport-shell { padding-top: 48px; padding-bottom: 48px; }
-            .portal-card { padding: 34px 28px; }
+            .portal-card { padding: 32px 26px; }
         }
+
         /* ── Module Navigation Segmented Control ── */
         .nav-segment-cluster {
             display: flex;
             background: rgba(0, 0, 0, 0.06);
             padding: 4px;
             border-radius: var(--radius-pill);
-            margin-bottom: 16px;
+            margin: 0 auto 20px auto;
             gap: 4px;
             width: 100%;
+            max-width: 440px;
+            border: 0.5px solid var(--hair);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        @media (min-width: 920px) {
+            .nav-segment-cluster {
+                max-width: 480px;
+            }
         }
 
         .nav-seg-item {
@@ -854,7 +879,7 @@
             align-items: center;
             justify-content: center;
             gap: 7px;
-            padding: 9px 12px;
+            padding: 9px 14px;
             border-radius: var(--radius-pill);
             background: transparent;
             border: none;
@@ -880,12 +905,64 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
         }
 
+        /* ── Profile Dashboard Multi-Screen Responsive Grid ── */
+        .profile-dashboard-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 100%;
+        }
+
+        .dash-col-left {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .dash-col-right {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        @media (min-width: 920px) {
+            .profile-dashboard-grid {
+                display: grid;
+                grid-template-columns: 390px 1fr;
+                align-items: start;
+                gap: 24px;
+            }
+
+            .dash-col-left {
+                position: sticky;
+                top: 20px;
+                gap: 20px;
+            }
+
+            .dash-col-right {
+                gap: 20px;
+            }
+        }
+
+        @media (min-width: 1140px) {
+            .profile-dashboard-grid {
+                grid-template-columns: 420px 1fr;
+                gap: 28px;
+            }
+
+            .subjects-list-stack {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                gap: 14px;
+            }
+        }
+
         /* ── Module 2: Student Profile Card ── */
         .profile-hero-card {
             display: flex;
             flex-direction: column;
             gap: 16px;
-            margin-bottom: 16px;
         }
 
         .profile-hero-top {
@@ -950,6 +1027,25 @@
             flex-direction: column;
             gap: 4px;
             min-width: 0;
+        }
+
+        .btn-remove-avatar {
+            align-self: flex-start;
+            background: transparent;
+            border: none;
+            color: var(--bad);
+            font-size: 11.5px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 2px 0;
+            margin-top: 2px;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            transition: opacity 0.15s ease;
+        }
+
+        .btn-remove-avatar:hover {
+            opacity: 0.8;
         }
 
         .profile-student-name {
@@ -1800,132 +1896,143 @@
 
             <!-- STATE 4: Student Profile & Attendance Dashboard (Module Two) -->
             <main id="profileView" style="display:none">
-                <!-- 1. Hero Student Profile Card -->
-                <div class="portal-card profile-hero-card">
-                    <div class="profile-hero-top">
-                        <div class="profile-avatar-wrapper" onclick="triggerAvatarUpload()" title="Change Profile Picture">
-                            <div class="profile-avatar-img-box" id="profileAvatarBox">
-                                <span id="profileAvatarInitials">ST</span>
-                                <img id="profileAvatarImg" src="" alt="Profile Picture" style="display:none;">
+                <div class="profile-dashboard-grid">
+                    <!-- LEFT COLUMN: Student Identity & Overall Status -->
+                    <div class="dash-col-left">
+                        <!-- 1. Hero Student Profile Card -->
+                        <div class="portal-card profile-hero-card">
+                            <div class="profile-hero-top">
+                                <div class="profile-avatar-wrapper" onclick="triggerAvatarUpload()" title="Change Profile Picture">
+                                    <div class="profile-avatar-img-box" id="profileAvatarBox">
+                                        <span id="profileAvatarInitials">ST</span>
+                                        <img id="profileAvatarImg" src="" alt="Profile Picture" style="display:none;">
+                                    </div>
+                                    <div class="avatar-camera-badge" title="Upload Photo">
+                                        <svg viewBox="0 0 24 24" fill="none">
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+                                            <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/>
+                                        </svg>
+                                    </div>
+                                    <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarFileSelected(event)">
+                                </div>
+                                <div class="profile-meta-text">
+                                    <h2 class="profile-student-name" id="dashStudentName">Student Name</h2>
+                                    <div class="profile-enrollment-badge" id="dashEnrollment">ADTU/...</div>
+                                    <div class="profile-section-pill" id="dashSectionPill">Standard</div>
+                                    <button type="button" id="removeAvatarBtn" class="btn-remove-avatar" onclick="removeAvatarPhoto(event)" style="display:none;" title="Remove Photo">
+                                        ✕ Remove photo
+                                    </button>
+                                </div>
                             </div>
-                            <div class="avatar-camera-badge" title="Upload Photo">
-                                <svg viewBox="0 0 24 24" fill="none">
-                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
-                                    <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/>
-                                </svg>
-                            </div>
-                            <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarFileSelected(event)">
-                        </div>
-                        <div class="profile-meta-text">
-                            <h2 class="profile-student-name" id="dashStudentName">Student Name</h2>
-                            <div class="profile-enrollment-badge" id="dashEnrollment">ADTU/...</div>
-                            <div class="profile-section-pill" id="dashSectionPill">Standard</div>
-                        </div>
-                    </div>
 
-                    <!-- About Me Section -->
-                    <div class="profile-about-box">
-                        <div class="about-header-row">
-                            <span class="about-title-tag">About Me</span>
-                            <button class="about-edit-btn" id="editAboutBtn" onclick="toggleEditAbout()">✏️ Edit Bio</button>
-                        </div>
-                        <p class="about-text-content" id="aboutTextDisplay">No bio added yet. Tap edit to write about yourself, academic interests, or notes.</p>
-                        <div id="aboutEditBlock" style="display:none;">
-                            <textarea id="aboutTextInput" class="about-textarea" rows="3" placeholder="Write a short note about yourself..."></textarea>
-                            <div class="about-btn-row">
-                                <button class="btn-about-cancel" onclick="cancelEditAbout()">Cancel</button>
-                                <button class="btn-about-save" onclick="saveAbout()">Save Bio</button>
+                            <!-- About Me Section -->
+                            <div class="profile-about-box">
+                                <div class="about-header-row">
+                                    <span class="about-title-tag">About Me</span>
+                                    <button class="about-edit-btn" id="editAboutBtn" onclick="toggleEditAbout()">✏️ Edit Bio</button>
+                                </div>
+                                <p class="about-text-content" id="aboutTextDisplay">No bio added yet. Tap edit to write about yourself, academic interests, or notes.</p>
+                                <div id="aboutEditBlock" style="display:none;">
+                                    <textarea id="aboutTextInput" class="about-textarea" rows="3" placeholder="Write a short note about yourself..."></textarea>
+                                    <div class="about-btn-row">
+                                        <button class="btn-about-cancel" onclick="cancelEditAbout()">Cancel</button>
+                                        <button class="btn-about-save" onclick="saveAbout()">Save Bio</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- 2. Overall Attendance & Red Flag Notice Card -->
+                        <div class="portal-card overall-metric-card" id="overallCard">
+                            <div class="overall-gauge-header">
+                                <span class="gauge-caption">Overall Attendance</span>
+                                <div class="standing-pill good" id="overallStandingPill">
+                                    ✅ In Good Standing
+                                </div>
+                            </div>
+
+                            <div class="overall-big-percentage-row">
+                                <div class="big-percent-number good" id="overallPercentageText">--%</div>
+                                <div class="attendance-ratio-tag" id="overallRatioText">-- / -- sessions</div>
+                            </div>
+
+                            <!-- Red Flag Alert Callout (Shows if overall < 75%) -->
+                            <div class="red-flag-callout-box" id="overallRedFlagBox" style="display:none;">
+                                <div class="red-flag-icon-wrap">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"/>
+                                        <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="red-flag-text-content">
+                                    <strong>Attendance Shortage Alert</strong>
+                                    <p id="overallRedFlagDesc">Your overall attendance is below the 75% requirement.</p>
+                                </div>
+                            </div>
+
+                            <!-- Metric Counters Row -->
+                            <div class="metrics-trio-row">
+                                <div class="metric-trio-item">
+                                    <span class="trio-val" id="metricTotalClasses">0</span>
+                                    <span class="trio-lbl">Total Held</span>
+                                </div>
+                                <div class="metric-trio-divider"></div>
+                                <div class="metric-trio-item">
+                                    <span class="trio-val" id="metricAttended">0</span>
+                                    <span class="trio-lbl">Attended</span>
+                                </div>
+                                <div class="metric-trio-divider"></div>
+                                <div class="metric-trio-item">
+                                    <span class="trio-val" id="metricMissed">0</span>
+                                    <span class="trio-lbl">Missed</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Recent Check-Ins Timeline -->
+                        <div class="portal-card recent-timeline-card">
+                            <h3 class="timeline-title">🕒 Recent Verified Check-Ins</h3>
+                            <div id="timelineContainer" class="timeline-stack">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+
+                        <!-- Account Actions -->
+                        <button class="btn-action-secondary" onclick="switchMainTab('checkin')" style="margin-top:4px;">
+                            ← Back to QR Scanner
+                        </button>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Real-Time Leaderboard & Courses Breakdown -->
+                    <div class="dash-col-right">
+                        <!-- 3. Real-Time Leaderboard Card (Qualifying strictly > 75%) -->
+                        <div class="portal-card leaderboard-card" id="leaderboardCard">
+                            <div class="leaderboard-header-row">
+                                <div>
+                                    <h3 class="leaderboard-title">🏆 Real-Time Leaderboard</h3>
+                                    <p class="leaderboard-subtitle">Qualifying students with strictly &gt;75% attendance</p>
+                                </div>
+                                <span class="live-pulse-badge">Live</span>
+                            </div>
+
+                            <div id="leaderboardList" class="leaderboard-roster-list">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+
+                        <!-- 4. Course Breakdown & Subject Red Flags -->
+                        <div class="portal-card subjects-breakdown-card">
+                            <div class="subjects-header-row">
+                                <h3 class="subjects-title">📚 Course Attendance Breakdown</h3>
+                                <span class="subjects-sub">75% Target</span>
+                            </div>
+
+                            <div id="subjectsListContainer" class="subjects-list-stack">
+                                <!-- Dynamically populated with subject progress bars and red flags -->
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <!-- 2. Overall Attendance & Red Flag Notice Card -->
-                <div class="portal-card overall-metric-card" id="overallCard">
-                    <div class="overall-gauge-header">
-                        <span class="gauge-caption">Overall Attendance</span>
-                        <div class="standing-pill good" id="overallStandingPill">
-                            ✅ In Good Standing
-                        </div>
-                    </div>
-
-                    <div class="overall-big-percentage-row">
-                        <div class="big-percent-number good" id="overallPercentageText">--%</div>
-                        <div class="attendance-ratio-tag" id="overallRatioText">-- / -- sessions</div>
-                    </div>
-
-                    <!-- Red Flag Alert Callout (Shows if overall < 75%) -->
-                    <div class="red-flag-callout-box" id="overallRedFlagBox" style="display:none;">
-                        <div class="red-flag-icon-wrap">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"/>
-                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                        <div class="red-flag-text-content">
-                            <strong>Attendance Shortage Alert</strong>
-                            <p id="overallRedFlagDesc">Your overall attendance is below the 75% requirement.</p>
-                        </div>
-                    </div>
-
-                    <!-- Metric Counters Row -->
-                    <div class="metrics-trio-row">
-                        <div class="metric-trio-item">
-                            <span class="trio-val" id="metricTotalClasses">0</span>
-                            <span class="trio-lbl">Total Held</span>
-                        </div>
-                        <div class="metric-trio-divider"></div>
-                        <div class="metric-trio-item">
-                            <span class="trio-val" id="metricAttended">0</span>
-                            <span class="trio-lbl">Attended</span>
-                        </div>
-                        <div class="metric-trio-divider"></div>
-                        <div class="metric-trio-item">
-                            <span class="trio-val" id="metricMissed">0</span>
-                            <span class="trio-lbl">Missed</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Real-Time Leaderboard Card (Qualifying strictly > 75%) -->
-                <div class="portal-card leaderboard-card" id="leaderboardCard">
-                    <div class="leaderboard-header-row">
-                        <div>
-                            <h3 class="leaderboard-title">🏆 Real-Time Leaderboard</h3>
-                            <p class="leaderboard-subtitle">Qualifying students with strictly &gt;75% attendance</p>
-                        </div>
-                        <span class="live-pulse-badge">Live</span>
-                    </div>
-
-                    <div id="leaderboardList" class="leaderboard-roster-list">
-                        <!-- Dynamically populated -->
-                    </div>
-                </div>
-
-                <!-- 4. Course Breakdown & Subject Red Flags -->
-                <div class="portal-card subjects-breakdown-card">
-                    <div class="subjects-header-row">
-                        <h3 class="subjects-title">📚 Course Attendance Breakdown</h3>
-                        <span class="subjects-sub">75% Target</span>
-                    </div>
-
-                    <div id="subjectsListContainer" class="subjects-list-stack">
-                        <!-- Dynamically populated with subject progress bars and red flags -->
-                    </div>
-                </div>
-
-                <!-- 5. Recent Check-Ins Timeline -->
-                <div class="portal-card recent-timeline-card">
-                    <h3 class="timeline-title">🕒 Recent Verified Check-Ins</h3>
-                    <div id="timelineContainer" class="timeline-stack">
-                        <!-- Dynamically populated -->
-                    </div>
-                </div>
-
-                <!-- Account Actions -->
-                <button class="btn-action-secondary" onclick="switchMainTab('checkin')" style="margin-top:4px;">
-                    ← Back to QR Scanner
-                </button>
             </main>
 
         </div>
@@ -2425,16 +2532,20 @@
             }
 
             // Avatar Picture or Initials
-            if (p.avatar) {
+            const removeAvatarBtn = document.getElementById('removeAvatarBtn');
+            if (p.avatar && p.avatar.trim()) {
                 profileAvatarImg.src = p.avatar;
                 profileAvatarImg.style.display = 'block';
                 profileAvatarInitials.style.display = 'none';
+                if (removeAvatarBtn) removeAvatarBtn.style.display = 'inline-block';
             } else {
                 const parts = (p.name || profile.name || '').trim().split(/\s+/);
                 const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
                 profileAvatarInitials.textContent = initials.toUpperCase();
                 profileAvatarInitials.style.display = 'block';
                 profileAvatarImg.style.display = 'none';
+                profileAvatarImg.src = '';
+                if (removeAvatarBtn) removeAvatarBtn.style.display = 'none';
             }
 
             // About Me Bio
@@ -2499,6 +2610,10 @@
                         ? `<img src="${item.avatar}" alt="${escapeHtml(item.name)}">`
                         : inits.toUpperCase();
 
+                    const attCount = item.totalAttended ?? item.attended ?? 0;
+                    const totCount = item.totalHeld ?? item.total ?? 0;
+                    const sessionDesc = totCount > 0 ? `${attCount}/${totCount} attended` : `${item.percentage}% record`;
+
                     return `
                         <div class="leaderboard-item ${isMe ? 'is-me' : ''}">
                             <div class="leaderboard-left">
@@ -2509,7 +2624,7 @@
                                         <span>${escapeHtml(item.name)}</span>
                                         ${isMe ? '<span class="leaderboard-me-badge" style="font-size:10.5px; font-weight:700; background:var(--blue-tint-strong); color:var(--blue); padding:1px 6px; border-radius:6px;">YOU</span>' : ''}
                                     </div>
-                                    <div class="leaderboard-sec-tag">${item.section ? 'Sec ' + escapeHtml(item.section) : 'Student'} · ${item.totalAttended}/${item.totalHeld} attended</div>
+                                    <div class="leaderboard-sec-tag">${item.section ? 'Sec ' + escapeHtml(item.section) : 'Student'} · ${sessionDesc}</div>
                                 </div>
                             </div>
                             <div class="leaderboard-badge-right">
@@ -2635,11 +2750,35 @@
                     profile.avatar = base64Data;
                     localStorage.setItem('profile', JSON.stringify(profile));
 
+                    const removeBtn = document.getElementById('removeAvatarBtn');
+                    if (removeBtn) removeBtn.style.display = 'inline-block';
+
                     saveAvatarToServer(base64Data);
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        async function removeAvatarPhoto(event) {
+            if (event) event.stopPropagation();
+            if (!profile || !profile.enrollment) return;
+            if (!confirm('Remove profile picture and revert to initials?')) return;
+
+            profile.avatar = '';
+            localStorage.setItem('profile', JSON.stringify(profile));
+
+            profileAvatarImg.src = '';
+            profileAvatarImg.style.display = 'none';
+            profileAvatarInitials.style.display = 'block';
+
+            const removeBtn = document.getElementById('removeAvatarBtn');
+            if (removeBtn) removeBtn.style.display = 'none';
+
+            renderProfileChip();
+            updatePlaque();
+
+            await saveAvatarToServer('');
         }
 
         async function saveAvatarToServer(base64Data) {
