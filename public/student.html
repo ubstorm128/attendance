@@ -837,6 +837,725 @@
             .viewport-shell { padding-top: 48px; padding-bottom: 48px; }
             .portal-card { padding: 34px 28px; }
         }
+        /* ── Module Navigation Segmented Control ── */
+        .nav-segment-cluster {
+            display: flex;
+            background: rgba(0, 0, 0, 0.06);
+            padding: 4px;
+            border-radius: var(--radius-pill);
+            margin-bottom: 16px;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .nav-seg-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 9px 12px;
+            border-radius: var(--radius-pill);
+            background: transparent;
+            border: none;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink-2);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .nav-seg-item svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+        }
+
+        .nav-seg-item.active {
+            background: #FFFFFF;
+            color: var(--ink);
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ── Module 2: Student Profile Card ── */
+        .profile-hero-card {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .profile-hero-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .profile-avatar-wrapper {
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar-img-box {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #0077ED 0%, #005BB5 100%);
+            color: #FFFFFF;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 4px 14px -2px rgba(0, 102, 204, 0.35);
+            border: 2.5px solid #FFFFFF;
+        }
+
+        .profile-avatar-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .avatar-camera-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            color: var(--blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            border: 1.5px solid #FFFFFF;
+        }
+
+        .avatar-camera-badge svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .profile-meta-text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .profile-student-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.015em;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .profile-enrollment-badge {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink-2);
+            letter-spacing: 0.02em;
+        }
+
+        .profile-section-pill {
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 9px;
+            border-radius: var(--radius-pill);
+            background: rgba(0, 102, 204, 0.08);
+            color: var(--blue);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            margin-top: 2px;
+        }
+
+        /* Profile About Box */
+        .profile-about-box {
+            background: var(--bg-input);
+            border-radius: var(--radius-inset);
+            padding: 12px 14px;
+            border: 0.5px solid var(--hair);
+        }
+
+        .about-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .about-title-tag {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--ink-3);
+        }
+
+        .about-edit-btn {
+            background: none;
+            border: none;
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
+        .about-text-content {
+            font-size: 13.5px;
+            color: var(--ink-2);
+            line-height: 1.45;
+        }
+
+        .about-textarea {
+            width: 100%;
+            background: #FFFFFF;
+            border: 0.5px solid var(--hair-strong);
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-family: inherit;
+            font-size: 13.5px;
+            color: var(--ink);
+            outline: none;
+            resize: none;
+            margin-bottom: 8px;
+        }
+
+        .about-btn-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn-about-cancel {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(0, 0, 0, 0.05);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-about-save {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: none;
+            background: var(--blue);
+            color: #FFFFFF;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ── Overall Metric Card ── */
+        .overall-metric-card {
+            margin-bottom: 16px;
+            padding: 22px 20px;
+        }
+
+        .overall-gauge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .gauge-caption {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--ink-3);
+        }
+
+        .standing-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .standing-pill.good {
+            background: var(--green-tint);
+            color: var(--green-text);
+        }
+
+        .standing-pill.bad {
+            background: var(--bad-tint);
+            color: var(--bad);
+        }
+
+        .overall-big-percentage-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .big-percent-number {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            color: var(--ink);
+        }
+
+        .big-percent-number.good { color: var(--green); }
+        .big-percent-number.bad { color: var(--bad); }
+
+        .attendance-ratio-tag {
+            font-size: 14px;
+            color: var(--ink-3);
+            font-weight: 500;
+        }
+
+        /* Red Flag Callout Box */
+        .red-flag-callout-box {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(215, 0, 21, 0.08);
+            border: 1px solid rgba(215, 0, 21, 0.25);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            animation: pulseRed 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseRed {
+            0%, 100% { border-color: rgba(215, 0, 21, 0.25); }
+            50% { border-color: rgba(215, 0, 21, 0.5); }
+        }
+
+        .red-flag-icon-wrap {
+            color: var(--bad);
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .red-flag-text-content {
+            flex: 1;
+            font-size: 12.5px;
+            color: #900010;
+            line-height: 1.45;
+        }
+
+        .red-flag-text-content strong {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--bad);
+            margin-bottom: 2px;
+        }
+
+        .metrics-trio-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding-top: 12px;
+            border-top: 0.5px solid var(--hair);
+        }
+
+        .metric-trio-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .trio-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .trio-lbl {
+            font-size: 11px;
+            color: var(--ink-3);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            font-weight: 500;
+        }
+
+        .metric-trio-divider {
+            width: 0.5px;
+            height: 26px;
+            background: var(--hair-strong);
+        }
+
+        /* ── Real-Time Leaderboard Card ── */
+        .leaderboard-card {
+            margin-bottom: 16px;
+            padding: 22px 20px;
+        }
+
+        .leaderboard-header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .leaderboard-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+            margin-bottom: 2px;
+        }
+
+        .leaderboard-subtitle {
+            font-size: 12px;
+            color: var(--ink-3);
+        }
+
+        .live-pulse-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(36, 138, 61, 0.1);
+            color: var(--green-text);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .live-pulse-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: blinker 1.4s infinite ease-in-out;
+        }
+
+        @keyframes blinker {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.85); }
+        }
+
+        .leaderboard-roster-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.02);
+            border: 0.5px solid var(--hair);
+            transition: transform 0.12s ease;
+        }
+
+        .leaderboard-item.is-me {
+            background: rgba(0, 102, 204, 0.06);
+            border-color: rgba(0, 102, 204, 0.25);
+        }
+
+        .leaderboard-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .leaderboard-rank-badge {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .leaderboard-rank-badge.rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #FFFFFF; }
+        .leaderboard-rank-badge.rank-2 { background: linear-gradient(135deg, #D8D8D8, #A0A0A0); color: #FFFFFF; }
+        .leaderboard-rank-badge.rank-3 { background: linear-gradient(135deg, #E29B64, #B06020); color: #FFFFFF; }
+        .leaderboard-rank-badge.rank-default { background: rgba(0, 0, 0, 0.06); color: var(--ink-2); }
+
+        .leaderboard-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--blue-tint);
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .leaderboard-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .leaderboard-name-block {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .leaderboard-name {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .you-pill {
+            font-size: 10px;
+            font-weight: 700;
+            background: var(--blue);
+            color: #FFFFFF;
+            padding: 1px 6px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+        }
+
+        .leaderboard-sec-tag {
+            font-size: 11px;
+            color: var(--ink-3);
+        }
+
+        .leaderboard-badge-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--green-text);
+            background: var(--green-tint);
+            padding: 4px 8px;
+            border-radius: var(--radius-pill);
+            flex-shrink: 0;
+        }
+
+        .empty-leaderboard-box {
+            text-align: center;
+            padding: 24px 12px;
+            color: var(--ink-3);
+            font-size: 13px;
+        }
+
+        /* ── Subject Breakdown Stack ── */
+        .subjects-breakdown-card {
+            margin-bottom: 16px;
+            padding: 22px 20px;
+        }
+
+        .subjects-header-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .subjects-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+        }
+
+        .subjects-sub {
+            font-size: 11.5px;
+            color: var(--ink-3);
+            font-weight: 500;
+        }
+
+        .subjects-list-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .subject-item-box {
+            background: var(--bg-input);
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 0.5px solid var(--hair);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: transform 0.1s ease;
+        }
+
+        .subject-item-box.red-flag {
+            border-color: rgba(215, 0, 21, 0.35);
+            background: rgba(215, 0, 21, 0.03);
+        }
+
+        .subject-item-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .subject-item-meta {
+            min-width: 0;
+        }
+
+        .subject-item-title {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.3;
+            margin-bottom: 2px;
+        }
+
+        .subject-item-instructor {
+            font-size: 12px;
+            color: var(--ink-3);
+        }
+
+        .subject-percent-badge {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--ink);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .subject-percent-badge.safe { color: var(--green); }
+        .subject-percent-badge.danger { color: var(--bad); }
+
+        /* Progress Bar Track */
+        .subject-progress-track {
+            width: 100%;
+            height: 7px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .subject-progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .subject-progress-fill.safe {
+            background: linear-gradient(90deg, #34C759 0%, #248A3D 100%);
+        }
+
+        .subject-progress-fill.danger {
+            background: linear-gradient(90deg, #FF3B30 0%, #D70015 100%);
+        }
+
+        .subject-redflag-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(215, 0, 21, 0.1);
+            color: var(--bad);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .subject-redflag-pill svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        /* ── Recent Timeline ── */
+        .recent-timeline-card {
+            margin-bottom: 16px;
+            padding: 22px 20px;
+        }
+
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 14px;
+        }
+
+        .timeline-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .timeline-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .timeline-sub {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .timeline-teach {
+            font-size: 11.5px;
+            color: var(--ink-3);
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ink-3);
+            text-align: right;
+        }
     </style>
 </head>
 
@@ -873,6 +1592,26 @@
                 </button>
             </div>
         </header>
+
+        <!-- Cupertino 2-Segment Control (Shown when profile exists) -->
+        <div class="nav-segment-cluster" id="moduleNavCluster" style="display:none">
+            <button class="nav-seg-item active" id="navCheckInBtn" onclick="switchMainTab('checkin')">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                    <path d="M14 14h3v3M20 17v4M17 20h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Check-In</span>
+            </button>
+            <button class="nav-seg-item" id="navProfileBtn" onclick="switchMainTab('profile')">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>My Attendance & Profile</span>
+            </button>
+        </div>
 
         <!-- Dynamic Body Area -->
         <div class="content-body">
@@ -1001,6 +1740,13 @@
                         <span>When the instructor projects the QR code, point Google Lens or your phone camera to check in instantly.</span>
                     </div>
 
+                    <button class="btn-action-primary" onclick="switchMainTab('profile')" style="margin-bottom:10px;">
+                        <span>📊 View My Attendance & Profile</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+
                     <button class="btn-action-secondary" id="standbySwitchBtn">
                         Switch Student Profile
                     </button>
@@ -1042,10 +1788,144 @@
                         </div>
                     </div>
 
-                    <div class="sync-callout-card" style="margin-bottom:0; justify-content:center;">
+                    <div class="sync-callout-card" style="margin-bottom:12px; justify-content:center;">
                         <span style="font-size:12.5px; color:var(--green-text); font-weight:600;">✓ Synced with Teacher's Live Roster</span>
                     </div>
+
+                    <button class="btn-action-secondary" onclick="switchMainTab('profile')">
+                        📊 View Full Attendance Record
+                    </button>
                 </div>
+            </main>
+
+            <!-- STATE 4: Student Profile & Attendance Dashboard (Module Two) -->
+            <main id="profileView" style="display:none">
+                <!-- 1. Hero Student Profile Card -->
+                <div class="portal-card profile-hero-card">
+                    <div class="profile-hero-top">
+                        <div class="profile-avatar-wrapper" onclick="triggerAvatarUpload()" title="Change Profile Picture">
+                            <div class="profile-avatar-img-box" id="profileAvatarBox">
+                                <span id="profileAvatarInitials">ST</span>
+                                <img id="profileAvatarImg" src="" alt="Profile Picture" style="display:none;">
+                            </div>
+                            <div class="avatar-camera-badge" title="Upload Photo">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+                                    <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarFileSelected(event)">
+                        </div>
+                        <div class="profile-meta-text">
+                            <h2 class="profile-student-name" id="dashStudentName">Student Name</h2>
+                            <div class="profile-enrollment-badge" id="dashEnrollment">ADTU/...</div>
+                            <div class="profile-section-pill" id="dashSectionPill">Standard</div>
+                        </div>
+                    </div>
+
+                    <!-- About Me Section -->
+                    <div class="profile-about-box">
+                        <div class="about-header-row">
+                            <span class="about-title-tag">About Me</span>
+                            <button class="about-edit-btn" id="editAboutBtn" onclick="toggleEditAbout()">✏️ Edit Bio</button>
+                        </div>
+                        <p class="about-text-content" id="aboutTextDisplay">No bio added yet. Tap edit to write about yourself, academic interests, or notes.</p>
+                        <div id="aboutEditBlock" style="display:none;">
+                            <textarea id="aboutTextInput" class="about-textarea" rows="3" placeholder="Write a short note about yourself..."></textarea>
+                            <div class="about-btn-row">
+                                <button class="btn-about-cancel" onclick="cancelEditAbout()">Cancel</button>
+                                <button class="btn-about-save" onclick="saveAbout()">Save Bio</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Overall Attendance & Red Flag Notice Card -->
+                <div class="portal-card overall-metric-card" id="overallCard">
+                    <div class="overall-gauge-header">
+                        <span class="gauge-caption">Overall Attendance</span>
+                        <div class="standing-pill good" id="overallStandingPill">
+                            ✅ In Good Standing
+                        </div>
+                    </div>
+
+                    <div class="overall-big-percentage-row">
+                        <div class="big-percent-number good" id="overallPercentageText">--%</div>
+                        <div class="attendance-ratio-tag" id="overallRatioText">-- / -- sessions</div>
+                    </div>
+
+                    <!-- Red Flag Alert Callout (Shows if overall < 75%) -->
+                    <div class="red-flag-callout-box" id="overallRedFlagBox" style="display:none;">
+                        <div class="red-flag-icon-wrap">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"/>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="red-flag-text-content">
+                            <strong>Attendance Shortage Alert</strong>
+                            <p id="overallRedFlagDesc">Your overall attendance is below the 75% requirement.</p>
+                        </div>
+                    </div>
+
+                    <!-- Metric Counters Row -->
+                    <div class="metrics-trio-row">
+                        <div class="metric-trio-item">
+                            <span class="trio-val" id="metricTotalClasses">0</span>
+                            <span class="trio-lbl">Total Held</span>
+                        </div>
+                        <div class="metric-trio-divider"></div>
+                        <div class="metric-trio-item">
+                            <span class="trio-val" id="metricAttended">0</span>
+                            <span class="trio-lbl">Attended</span>
+                        </div>
+                        <div class="metric-trio-divider"></div>
+                        <div class="metric-trio-item">
+                            <span class="trio-val" id="metricMissed">0</span>
+                            <span class="trio-lbl">Missed</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Real-Time Leaderboard Card (Qualifying strictly > 75%) -->
+                <div class="portal-card leaderboard-card" id="leaderboardCard">
+                    <div class="leaderboard-header-row">
+                        <div>
+                            <h3 class="leaderboard-title">🏆 Real-Time Leaderboard</h3>
+                            <p class="leaderboard-subtitle">Qualifying students with strictly &gt;75% attendance</p>
+                        </div>
+                        <span class="live-pulse-badge">Live</span>
+                    </div>
+
+                    <div id="leaderboardList" class="leaderboard-roster-list">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- 4. Course Breakdown & Subject Red Flags -->
+                <div class="portal-card subjects-breakdown-card">
+                    <div class="subjects-header-row">
+                        <h3 class="subjects-title">📚 Course Attendance Breakdown</h3>
+                        <span class="subjects-sub">75% Target</span>
+                    </div>
+
+                    <div id="subjectsListContainer" class="subjects-list-stack">
+                        <!-- Dynamically populated with subject progress bars and red flags -->
+                    </div>
+                </div>
+
+                <!-- 5. Recent Check-Ins Timeline -->
+                <div class="portal-card recent-timeline-card">
+                    <h3 class="timeline-title">🕒 Recent Verified Check-Ins</h3>
+                    <div id="timelineContainer" class="timeline-stack">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Account Actions -->
+                <button class="btn-action-secondary" onclick="switchMainTab('checkin')" style="margin-top:4px;">
+                    ← Back to QR Scanner
+                </button>
             </main>
 
         </div>
@@ -1081,6 +1961,8 @@
         // ── State ──────────────────────────────────────────────────────────
         let token = new URLSearchParams(location.search).get('token');
         let profile = JSON.parse(localStorage.getItem('profile') || 'null');
+        let currentMainTab = 'checkin';
+        let latestAttendanceData = null;
 
         // ── Validation regex ───────────────────────────────────────────────
         const NAME_REGEX = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
@@ -1108,11 +1990,27 @@
             } catch (e) { }
         }
 
+        // ── Security Helper ────────────────────────────────────────────────
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // ── DOM Elements ───────────────────────────────────────────────────
+        const moduleNavCluster = document.getElementById('moduleNavCluster');
+        const navCheckInBtn = document.getElementById('navCheckInBtn');
+        const navProfileBtn = document.getElementById('navProfileBtn');
+
         const loadingView = document.getElementById('loadingView');
         const authView = document.getElementById('authView');
         const standbyView = document.getElementById('standbyView');
         const receiptView = document.getElementById('receiptView');
+        const profileView = document.getElementById('profileView');
 
         const profileChip = document.getElementById('profileChip');
         const chipAvatar = document.getElementById('chipAvatar');
@@ -1150,6 +2048,31 @@
         const receiptTime = document.getElementById('receiptTime');
         const receiptStudentId = document.getElementById('receiptStudentId');
 
+        // Module 2 Elements
+        const profileAvatarInitials = document.getElementById('profileAvatarInitials');
+        const profileAvatarImg = document.getElementById('profileAvatarImg');
+        const avatarFileInput = document.getElementById('avatarFileInput');
+        const dashStudentName = document.getElementById('dashStudentName');
+        const dashEnrollment = document.getElementById('dashEnrollment');
+        const dashSectionPill = document.getElementById('dashSectionPill');
+        const editAboutBtn = document.getElementById('editAboutBtn');
+        const aboutTextDisplay = document.getElementById('aboutTextDisplay');
+        const aboutEditBlock = document.getElementById('aboutEditBlock');
+        const aboutTextInput = document.getElementById('aboutTextInput');
+
+        const overallStandingPill = document.getElementById('overallStandingPill');
+        const overallPercentageText = document.getElementById('overallPercentageText');
+        const overallRatioText = document.getElementById('overallRatioText');
+        const overallRedFlagBox = document.getElementById('overallRedFlagBox');
+        const overallRedFlagDesc = document.getElementById('overallRedFlagDesc');
+        const metricTotalClasses = document.getElementById('metricTotalClasses');
+        const metricAttended = document.getElementById('metricAttended');
+        const metricMissed = document.getElementById('metricMissed');
+
+        const leaderboardList = document.getElementById('leaderboardList');
+        const subjectsListContainer = document.getElementById('subjectsListContainer');
+        const timelineContainer = document.getElementById('timelineContainer');
+
         // ── Input Focus Helpers ────────────────────────────────────────────
         nameInput.addEventListener('focus', () => nameCell.classList.add('focused'));
         nameInput.addEventListener('blur', () => nameCell.classList.remove('focused'));
@@ -1163,6 +2086,68 @@
             if (cur !== upper) e.target.value = upper;
             clearError();
         });
+
+        // Click top chip to open profile
+        profileChip.addEventListener('click', (e) => {
+            if (e.target.closest('#switchProfileBtn')) return;
+            switchMainTab('profile');
+        });
+
+        // ── Navigation Tab Switching ───────────────────────────────────────
+        function switchMainTab(tab) {
+            currentMainTab = tab;
+            if (tab === 'profile') {
+                if (!profile) {
+                    showError('Please register or enter your details first.');
+                    showView('auth');
+                    return;
+                }
+                navCheckInBtn.classList.remove('active');
+                navProfileBtn.classList.add('active');
+
+                loadingView.style.display = 'none';
+                authView.style.display = 'none';
+                standbyView.style.display = 'none';
+                receiptView.style.display = 'none';
+                profileView.style.display = 'block';
+
+                loadStudentAttendanceAndProfile();
+            } else {
+                // 'checkin'
+                navCheckInBtn.classList.add('active');
+                navProfileBtn.classList.remove('active');
+                profileView.style.display = 'none';
+
+                if (receiptCard && receiptCard.style.display === 'block') {
+                    showView('receipt');
+                } else if (profile) {
+                    showView('standby');
+                    updatePlaque();
+                } else {
+                    showView('auth');
+                }
+            }
+        }
+
+        function showView(view) {
+            if (view !== 'profile' && currentMainTab === 'profile') {
+                currentMainTab = 'checkin';
+                navCheckInBtn.classList.add('active');
+                navProfileBtn.classList.remove('active');
+            }
+
+            loadingView.style.display = view === 'loading' ? 'flex' : 'none';
+            authView.style.display = view === 'auth' ? 'block' : 'none';
+            standbyView.style.display = view === 'standby' ? 'block' : 'none';
+            receiptView.style.display = view === 'receipt' ? 'block' : 'none';
+            profileView.style.display = view === 'profile' ? 'block' : 'none';
+
+            if (profile) {
+                moduleNavCluster.style.display = 'flex';
+            } else {
+                moduleNavCluster.style.display = 'none';
+            }
+        }
 
         // ── Application Router (Classroom Google Lens Journey) ──────────────
         async function initApp() {
@@ -1201,13 +2186,6 @@
             }
         }
 
-        function showView(view) {
-            loadingView.style.display = view === 'loading' ? 'flex' : 'none';
-            authView.style.display = view === 'auth' ? 'block' : 'none';
-            standbyView.style.display = view === 'standby' ? 'block' : 'none';
-            receiptView.style.display = view === 'receipt' ? 'block' : 'none';
-        }
-
         async function loadSessionInfo(qrToken) {
             try {
                 const res = await fetch(`/api/session-info?token=${encodeURIComponent(qrToken)}`);
@@ -1227,20 +2205,32 @@
         function renderProfileChip() {
             if (!profile) {
                 profileChip.style.display = 'none';
+                moduleNavCluster.style.display = 'none';
                 return;
             }
             const parts = (profile.name || '').trim().split(/\s+/);
             const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
-            chipAvatar.textContent = initials.toUpperCase();
+            
+            if (profile.avatar) {
+                chipAvatar.innerHTML = `<img src="${profile.avatar}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                chipAvatar.textContent = initials.toUpperCase();
+            }
             chipName.textContent = parts[0] || 'Student';
             profileChip.style.display = 'flex';
+            moduleNavCluster.style.display = 'flex';
         }
 
         function updatePlaque() {
             if (!profile) return;
             const parts = (profile.name || '').trim().split(/\s+/);
             const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
-            plaqueAvatar.textContent = initials.toUpperCase();
+            
+            if (profile.avatar) {
+                plaqueAvatar.innerHTML = `<img src="${profile.avatar}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                plaqueAvatar.textContent = initials.toUpperCase();
+            }
             plaqueName.textContent = profile.name || 'Student';
             plaqueEnrollment.textContent = profile.enrollment || '';
         }
@@ -1399,6 +2389,316 @@
 
         switchProfileBtn.addEventListener('click', handleSwitchProfile);
         standbySwitchBtn.addEventListener('click', handleSwitchProfile);
+
+        // ── Module Two: Attendance Dashboard & Profile System ───────────────
+        async function loadStudentAttendanceAndProfile() {
+            if (!profile || !profile.enrollment) return;
+
+            try {
+                const res = await fetch(`/api/my-attendance?enrollment=${encodeURIComponent(profile.enrollment)}`);
+                if (!res.ok) {
+                    console.error('Failed to fetch attendance data');
+                    return;
+                }
+                const data = await res.json();
+                latestAttendanceData = data;
+                renderAttendanceDashboard(data);
+            } catch (err) {
+                console.error('Network error loading attendance dashboard:', err);
+            }
+        }
+
+        function renderAttendanceDashboard(data) {
+            // 1. Profile Hero Section
+            const p = data.profile || {};
+            dashStudentName.textContent = p.name || profile.name || 'Student';
+            dashEnrollment.textContent = p.enrollment || profile.enrollment || '';
+            dashSectionPill.textContent = p.section ? `Section ${p.section}` : 'General Cohort';
+
+            // Sync updated profile to localStorage
+            if (p.name && profile) {
+                profile.name = p.name;
+                if (p.avatar) profile.avatar = p.avatar;
+                if (p.section) profile.section = p.section;
+                localStorage.setItem('profile', JSON.stringify(profile));
+                renderProfileChip();
+            }
+
+            // Avatar Picture or Initials
+            if (p.avatar) {
+                profileAvatarImg.src = p.avatar;
+                profileAvatarImg.style.display = 'block';
+                profileAvatarInitials.style.display = 'none';
+            } else {
+                const parts = (p.name || profile.name || '').trim().split(/\s+/);
+                const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
+                profileAvatarInitials.textContent = initials.toUpperCase();
+                profileAvatarInitials.style.display = 'block';
+                profileAvatarImg.style.display = 'none';
+            }
+
+            // About Me Bio
+            if (p.about && p.about.trim()) {
+                aboutTextDisplay.textContent = p.about.trim();
+            } else {
+                aboutTextDisplay.textContent = 'No bio added yet. Tap edit to write about yourself, academic interests, or notes.';
+            }
+
+            // 2. Overall Attendance & Red Flag Notice
+            const ov = data.overall || { totalHeld: 0, totalAttended: 0, percentage: 0, isRedFlag: false, classesToRecover: 0 };
+            overallPercentageText.textContent = `${ov.percentage}%`;
+            overallRatioText.textContent = `${ov.totalAttended} of ${ov.totalHeld} session${ov.totalHeld === 1 ? '' : 's'} attended`;
+
+            metricTotalClasses.textContent = ov.totalHeld;
+            metricAttended.textContent = ov.totalAttended;
+            metricMissed.textContent = Math.max(0, ov.totalHeld - ov.totalAttended);
+
+            if (ov.isRedFlag) {
+                overallPercentageText.classList.remove('good');
+                overallPercentageText.classList.add('bad');
+                overallStandingPill.className = 'standing-pill bad';
+                overallStandingPill.innerHTML = '⚠️ Attendance Shortage (&lt; 75%)';
+                overallRedFlagBox.style.display = 'flex';
+                
+                const recText = ov.classesToRecover > 0 
+                    ? `You must attend the next <strong>${ov.classesToRecover} consecutive lecture${ov.classesToRecover > 1 ? 's' : ''}</strong> without absence to recover your overall attendance above the mandatory 75% threshold.`
+                    : 'Your overall attendance is currently below the mandatory 75% university requirement.';
+                overallRedFlagDesc.innerHTML = `Your overall attendance is at <strong>${ov.percentage}%</strong>. ${recText}`;
+            } else {
+                overallPercentageText.classList.remove('bad');
+                overallPercentageText.classList.add('good');
+                overallStandingPill.className = 'standing-pill good';
+                overallStandingPill.innerHTML = '✅ In Good Standing (≥ 75%)';
+                overallRedFlagBox.style.display = 'none';
+            }
+
+            // 3. Real-Time Leaderboard (strictly students with attendance > 75%)
+            const lbData = data.leaderboard || [];
+            if (lbData.length === 0) {
+                leaderboardList.innerHTML = `
+                    <div class="empty-leaderboard-box">
+                        <div style="font-size:26px; margin-bottom:6px;">🌟</div>
+                        <strong>No students above 75% yet</strong>
+                        <p style="margin-top:4px;">Only students maintaining strictly &gt;75% attendance qualify for the leaderboard. Attend upcoming classes to take the lead!</p>
+                    </div>
+                `;
+            } else {
+                leaderboardList.innerHTML = lbData.map((item, idx) => {
+                    const rank = idx + 1;
+                    let rankBadgeClass = 'rank-default';
+                    let rankContent = `#${rank}`;
+                    if (rank === 1) { rankBadgeClass = 'rank-1'; rankContent = '🥇'; }
+                    else if (rank === 2) { rankBadgeClass = 'rank-2'; rankContent = '🥈'; }
+                    else if (rank === 3) { rankBadgeClass = 'rank-3'; rankContent = '🥉'; }
+
+                    const isMe = item.isCurrentStudent;
+                    const nameParts = (item.name || '').trim().split(/\s+/);
+                    const inits = nameParts.length > 1 ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]) : (nameParts[0] ? nameParts[0].slice(0, 2) : 'ST');
+                    
+                    const avatarHtml = item.avatar 
+                        ? `<img src="${item.avatar}" alt="${escapeHtml(item.name)}">`
+                        : inits.toUpperCase();
+
+                    return `
+                        <div class="leaderboard-item ${isMe ? 'is-me' : ''}">
+                            <div class="leaderboard-left">
+                                <div class="leaderboard-rank-badge ${rankBadgeClass}">${rankContent}</div>
+                                <div class="leaderboard-avatar">${avatarHtml}</div>
+                                <div class="leaderboard-name-block">
+                                    <div class="leaderboard-name">
+                                        <span>${escapeHtml(item.name)}</span>
+                                        ${isMe ? '<span class="leaderboard-me-badge" style="font-size:10.5px; font-weight:700; background:var(--blue-tint-strong); color:var(--blue); padding:1px 6px; border-radius:6px;">YOU</span>' : ''}
+                                    </div>
+                                    <div class="leaderboard-sec-tag">${item.section ? 'Sec ' + escapeHtml(item.section) : 'Student'} · ${item.totalAttended}/${item.totalHeld} attended</div>
+                                </div>
+                            </div>
+                            <div class="leaderboard-badge-right">
+                                <div style="font-size:14.5px; font-weight:700; color:var(--green); font-family:var(--font-mono);">${item.percentage}%</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 4. Course Breakdown & Subject Red Flags
+            const subjects = data.bySubject || [];
+            if (subjects.length === 0) {
+                subjectsListContainer.innerHTML = `
+                    <div style="text-align:center; padding:20px; color:var(--ink-3); font-size:13px;">
+                        No enrolled subjects recorded for this section yet.
+                    </div>
+                `;
+            } else {
+                subjectsListContainer.innerHTML = subjects.map(s => {
+                    const isRed = s.isRedFlag;
+                    const pctClass = isRed ? 'danger' : 'safe';
+                    const fillWidth = Math.min(100, Math.max(0, s.percentage));
+
+                    const redFlagNotice = isRed ? `
+                        <div class="subject-redflag-pill">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"/>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Low Attendance Warning (${s.percentage}%): Attend next <strong>${s.classesToRecover}</strong> lecture${s.classesToRecover > 1 ? 's' : ''} to reach 75%</span>
+                        </div>
+                    ` : '';
+
+                    return `
+                        <div class="subject-item-box ${isRed ? 'red-flag' : ''}">
+                            <div class="subject-item-top">
+                                <div class="subject-item-meta">
+                                    <div class="subject-item-title">${escapeHtml(s.name)} ${s.code ? `<span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-3); font-weight:500;">(${escapeHtml(s.code)})</span>` : ''}</div>
+                                    <div class="subject-item-instructor">${s.teacherName ? 'Instructor: ' + escapeHtml(s.teacherName) : 'Course Module'} · ${s.attended} of ${s.totalHeld} attended</div>
+                                </div>
+                                <div class="subject-percent-badge ${pctClass}">
+                                    ${isRed ? '🚩' : '✓'} ${s.percentage}%
+                                </div>
+                            </div>
+
+                            <div class="subject-progress-track">
+                                <div class="subject-progress-fill ${pctClass}" style="width: ${fillWidth}%;"></div>
+                            </div>
+
+                            ${redFlagNotice}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 5. Recent Verified Check-Ins Timeline
+            const recents = data.recent || [];
+            if (recents.length === 0) {
+                timelineContainer.innerHTML = `
+                    <div style="text-align:center; padding:16px; color:var(--ink-3); font-size:12.5px;">
+                        No check-in history recorded yet.
+                    </div>
+                `;
+            } else {
+                timelineContainer.innerHTML = recents.map(r => {
+                    const d = new Date(r.timestamp);
+                    const timeStr = isNaN(d.getTime()) ? 'Recently' : (d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                    return `
+                        <div class="timeline-row">
+                            <div class="timeline-left">
+                                <div class="timeline-sub">${escapeHtml(r.subject)} ${r.code ? `<span style="font-family:var(--font-mono); font-size:10.5px; opacity:0.7;">(${escapeHtml(r.code)})</span>` : ''}</div>
+                                <div class="timeline-teach">${r.teacherName ? escapeHtml(r.teacherName) : 'Class Session'}</div>
+                            </div>
+                            <div class="timeline-time">${timeStr}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // ── Profile Photo Upload System (Canvas Downscaled Base64) ───────────
+        function triggerAvatarUpload() {
+            if (avatarFileInput) avatarFileInput.click();
+        }
+
+        function handleAvatarFileSelected(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file || !profile) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file (PNG, JPG, WebP).');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 200;
+                    let width = img.width;
+                    let height = img.height;
+
+                    const minDim = Math.min(width, height);
+                    const sx = (width - minDim) / 2;
+                    const sy = (height - minDim) / 2;
+
+                    canvas.width = maxDim;
+                    canvas.height = maxDim;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, maxDim, maxDim);
+
+                    const base64Data = canvas.toDataURL('image/jpeg', 0.82);
+
+                    profileAvatarImg.src = base64Data;
+                    profileAvatarImg.style.display = 'block';
+                    profileAvatarInitials.style.display = 'none';
+
+                    chipAvatar.innerHTML = `<img src="${base64Data}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                    plaqueAvatar.innerHTML = `<img src="${base64Data}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+
+                    profile.avatar = base64Data;
+                    localStorage.setItem('profile', JSON.stringify(profile));
+
+                    saveAvatarToServer(base64Data);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveAvatarToServer(base64Data) {
+            if (!profile || !profile.enrollment) return;
+            try {
+                await fetch('/api/student/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enrollment: profile.enrollment,
+                        avatar: base64Data
+                    })
+                });
+            } catch (err) {
+                console.error('Error saving avatar to server:', err);
+            }
+        }
+
+        // ── About Me Bio Editing System ─────────────────────────────────────
+        function toggleEditAbout() {
+            aboutEditBlock.style.display = 'block';
+            aboutTextDisplay.style.display = 'none';
+            editAboutBtn.style.display = 'none';
+            const cur = aboutTextDisplay.textContent;
+            aboutTextInput.value = (cur && !cur.startsWith('No bio added yet')) ? cur : '';
+            aboutTextInput.focus();
+        }
+
+        function cancelEditAbout() {
+            aboutEditBlock.style.display = 'none';
+            aboutTextDisplay.style.display = 'block';
+            editAboutBtn.style.display = 'inline-block';
+        }
+
+        async function saveAbout() {
+            const text = aboutTextInput.value.trim();
+            if (!profile || !profile.enrollment) return;
+
+            try {
+                const res = await fetch('/api/student/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enrollment: profile.enrollment,
+                        about: text
+                    })
+                });
+
+                if (res.ok) {
+                    aboutTextDisplay.textContent = text || 'No bio added yet. Tap edit to write about yourself, academic interests, or notes.';
+                    cancelEditAbout();
+                } else {
+                    alert('Failed to save bio. Please check your connection.');
+                }
+            } catch (e) {
+                console.error('Error saving bio:', e);
+                alert('Network error while saving bio.');
+            }
+        }
 
         // ── Handle Scanned Link Re-Entry ───────────────────────────────────
         function checkUrlToken() {

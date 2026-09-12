@@ -48,8 +48,12 @@ async function initDb() {
             CREATE TABLE IF NOT EXISTS students (
                 enrollment TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
-                section TEXT DEFAULT ''
+                section TEXT DEFAULT '',
+                avatar TEXT DEFAULT '',
+                about TEXT DEFAULT ''
             );
+            ALTER TABLE students ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
+            ALTER TABLE students ADD COLUMN IF NOT EXISTS about TEXT DEFAULT '';
 
             CREATE TABLE IF NOT EXISTS sessions (
                 id SERIAL PRIMARY KEY,
@@ -186,17 +190,18 @@ const server = http.createServer(async (req, res) => {
             const v = validateStudentFields(body.name, body.enrollment, body.section);
             if (v.error) return send(res, 400, { error: v.error });
 
-            const existing = await pool.query('SELECT 1 FROM students WHERE enrollment = $1', [v.enrollment]);
+            const existing = await pool.query('SELECT * FROM students WHERE enrollment = $1', [v.enrollment]);
             if (existing.rows.length) {
-                return send(res, 409, { error: 'Student with this enrollment ID is already registered' });
+                const st = existing.rows[0];
+                return send(res, 409, { error: 'Student with this enrollment ID is already registered', student: st });
             }
 
             await pool.query(
-                'INSERT INTO students (enrollment, name, section) VALUES ($1, $2, $3)',
-                [v.enrollment, v.name, v.section || '']
+                'INSERT INTO students (enrollment, name, section, avatar, about) VALUES ($1, $2, $3, $4, $5)',
+                [v.enrollment, v.name, v.section || '', body.avatar || '', body.about || '']
             );
 
-            return send(res, 200, { ok: true, student: { name: v.name, enrollment: v.enrollment, section: v.section || '' } });
+            return send(res, 200, { ok: true, student: { name: v.name, enrollment: v.enrollment, section: v.section || '', avatar: body.avatar || '', about: body.about || '' } });
         }
 
         // --- get session info by token ---
@@ -294,52 +299,163 @@ const server = http.createServer(async (req, res) => {
             return send(res, 200, { ok: true });
         }
 
-        // --- student: my attendance summary ---
+        // --- student: my attendance summary & leaderboard ---
         if (req.method === 'GET' && pathname === '/api/my-attendance') {
             const enrollment = (searchParams.get('enrollment') || '').trim().toUpperCase();
             if (!enrollment) return send(res, 400, { error: 'enrollment is required' });
 
-            const stCheck = await pool.query('SELECT 1 FROM students WHERE enrollment = $1', [enrollment]);
+            const stCheck = await pool.query('SELECT * FROM students WHERE enrollment = $1', [enrollment]);
             if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
+            const currentStudent = stCheck.rows[0];
 
-            const sessQuery = await pool.query(`
-                SELECT s.id, s.subject, s.teacher_name, s.created_at,
-                       a.time AS attended_time
-                FROM sessions s
-                LEFT JOIN attendance a ON a.session_id = s.id AND a.enrollment = $1
-                ORDER BY s.id DESC
-            `, [enrollment]);
+            const subjectsRes = await pool.query('SELECT * FROM subjects ORDER BY name ASC');
+            const allSessionsRes = await pool.query('SELECT id, subject, subject_id, teacher_name, created_at FROM sessions ORDER BY id ASC');
+            const allAttendanceRes = await pool.query('SELECT session_id, enrollment, name, time FROM attendance');
 
-            const map = {};
-            const recent = [];
+            const allSessions = allSessionsRes.rows;
+            const allAtt = allAttendanceRes.rows;
 
-            for (const row of sessQuery.rows) {
-                const subKey = row.subject || 'No subject';
-                if (!map[subKey]) {
-                    map[subKey] = {
-                        subject: subKey,
-                        teacherName: row.teacher_name || 'Instructor',
-                        totalSessions: 0,
-                        presentSessions: 0
-                    };
-                }
-                map[subKey].totalSessions++;
+            // Compute subject breakdown for this student
+            const bySubject = subjectsRes.rows.map(subj => {
+                const matchingSessions = allSessions.filter(s =>
+                    s.subject_id === subj.id || s.subject === subj.name || s.subject === `${subj.code} ${subj.name}`
+                );
+                const totalHeld = matchingSessions.length;
+                const studentAttended = allAtt.filter(a =>
+                    a.enrollment === enrollment && matchingSessions.some(s => s.id === a.session_id)
+                ).length;
 
-                if (row.attended_time) {
-                    map[subKey].presentSessions++;
-                    recent.push({
-                        subject: subKey,
-                        teacherName: row.teacher_name || 'Instructor',
-                        time: row.attended_time.toISOString()
-                    });
+                const percentage = totalHeld > 0 ? Math.round((studentAttended / totalHeld) * 100) : 100;
+                const isRedFlag = totalHeld > 0 && percentage < 75;
+                const classesToRecover = isRedFlag ? Math.max(1, Math.ceil((0.75 * totalHeld - studentAttended) / 0.25)) : 0;
+
+                return {
+                    id: subj.id,
+                    name: subj.name,
+                    code: subj.code,
+                    department: subj.department,
+                    section: subj.section,
+                    teacherName: matchingSessions[0]?.teacher_name || 'Instructor',
+                    totalHeld,
+                    attended: studentAttended,
+                    percentage,
+                    isRedFlag,
+                    classesToRecover
+                };
+            });
+
+            // Overall attendance for this student
+            const totalHeldOverall = allSessions.length;
+            const totalAttendedOverall = allAtt.filter(a => a.enrollment === enrollment).length;
+            const overallPercentage = totalHeldOverall > 0 ? Math.round((totalAttendedOverall / totalHeldOverall) * 100) : 100;
+            const isOverallRedFlag = totalHeldOverall > 0 && overallPercentage < 75;
+            const overallClassesToRecover = isOverallRedFlag ? Math.max(1, Math.ceil((0.75 * totalHeldOverall - totalAttendedOverall) / 0.25)) : 0;
+
+            // Recent check-in history for this student
+            const studentAttRows = allAtt.filter(a => a.enrollment === enrollment);
+            const recent = studentAttRows.map(a => {
+                const s = allSessions.find(sess => sess.id === a.session_id);
+                return {
+                    sessionId: a.session_id,
+                    subject: s ? s.subject : 'Class Session',
+                    teacherName: s ? s.teacher_name : 'Instructor',
+                    time: a.time.toISOString()
+                };
+            }).sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 15);
+
+            // Real-time Leaderboard:
+            // "real time leaderboard of students who has most attendance percentage but only if their attendance is greater than 75% and not according to the whole class greatest percentage."
+            const allStudentsRes = await pool.query('SELECT enrollment, name, section, avatar FROM students');
+            const qualifyingStudents = [];
+
+            if (totalHeldOverall > 0) {
+                for (const st of allStudentsRes.rows) {
+                    const stAttCount = allAtt.filter(a => a.enrollment === st.enrollment).length;
+                    const stPct = Math.round((stAttCount / totalHeldOverall) * 100);
+                    // Must be strictly greater than 75%
+                    if (stPct > 75) {
+                        qualifyingStudents.push({
+                            enrollment: st.enrollment,
+                            name: st.name,
+                            section: st.section,
+                            avatar: st.avatar || '',
+                            attended: stAttCount,
+                            total: totalHeldOverall,
+                            percentage: stPct
+                        });
+                    }
                 }
             }
 
-            recent.sort((a, b) => new Date(b.time) - new Date(a.time));
+            qualifyingStudents.sort((a, b) => b.percentage - a.percentage || b.attended - a.attended || a.name.localeCompare(b.name));
+
+            const leaderboard = qualifyingStudents.map((s, idx) => ({
+                rank: idx + 1,
+                name: s.name,
+                section: s.section,
+                avatar: s.avatar,
+                percentage: s.percentage,
+                isCurrentStudent: s.enrollment === enrollment
+            }));
 
             return send(res, 200, {
-                bySubject: Object.values(map),
-                recent: recent.slice(0, 15)
+                ok: true,
+                profile: {
+                    name: currentStudent.name,
+                    enrollment: currentStudent.enrollment,
+                    section: currentStudent.section,
+                    avatar: currentStudent.avatar || '',
+                    about: currentStudent.about || ''
+                },
+                student: {
+                    name: currentStudent.name,
+                    enrollment: currentStudent.enrollment,
+                    section: currentStudent.section,
+                    avatar: currentStudent.avatar || '',
+                    about: currentStudent.about || ''
+                },
+                overall: {
+                    totalHeld: totalHeldOverall,
+                    totalAttended: totalAttendedOverall,
+                    percentage: overallPercentage,
+                    isRedFlag: isOverallRedFlag,
+                    classesToRecover: overallClassesToRecover
+                },
+                bySubject,
+                leaderboard,
+                recent
+            });
+        }
+
+        // --- student: update profile (avatar, about) ---
+        if (req.method === 'POST' && pathname === '/api/student/profile') {
+            const { enrollment, name, avatar, about } = await readBody(req);
+            const normEnrollment = (enrollment || '').trim().toUpperCase();
+            if (!normEnrollment) return send(res, 400, { error: 'enrollment is required' });
+
+            const stCheck = await pool.query('SELECT * FROM students WHERE enrollment = $1', [normEnrollment]);
+            if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
+            const current = stCheck.rows[0];
+
+            const newName = name && name.trim() ? name.trim() : current.name;
+            const newAvatar = avatar !== undefined ? avatar : (current.avatar || '');
+            const newAbout = about !== undefined ? about : (current.about || '');
+
+            const upd = await pool.query(
+                'UPDATE students SET name = $1, avatar = $2, about = $3 WHERE enrollment = $4 RETURNING *',
+                [newName, newAvatar, newAbout, normEnrollment]
+            );
+            const row = upd.rows[0];
+
+            return send(res, 200, {
+                ok: true,
+                student: {
+                    name: row.name,
+                    enrollment: row.enrollment,
+                    section: row.section,
+                    avatar: row.avatar,
+                    about: row.about
+                }
             });
         }
 
