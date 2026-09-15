@@ -1061,11 +1061,73 @@
             font-weight: 600;
         }
 
+        .subject-semester-tag {
+            font-size: 11px;
+            font-weight: 600;
+            color: #3730A3;
+            background: rgba(99, 102, 241, 0.12);
+            border-radius: 6px;
+            padding: 2px 7px;
+            display: inline-block;
+            margin-left: 6px;
+        }
+
+        .subject-stat-capsule {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--ink-3);
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        .subject-stat-capsule strong {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
         /* ── Recent Check-Ins Timeline ── */
         .recent-timeline-card {
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        .timeline-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            margin-top: -2px;
+            margin-bottom: 4px;
+            scrollbar-width: thin;
+        }
+
+        .timeline-chip {
+            border: 0.5px solid var(--hair);
+            background: #FFFFFF;
+            border-radius: var(--radius-pill);
+            padding: 3px 10px;
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--ink-2);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+
+        .timeline-chip:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+
+        .timeline-chip.active {
+            background: var(--blue);
+            color: #FFFFFF;
+            border-color: var(--blue);
+            font-weight: 600;
         }
 
         .timeline-title {
@@ -1321,7 +1383,10 @@
 
                     <!-- 5. Recent Check-Ins Timeline -->
                     <div class="portal-card recent-timeline-card">
-                        <h3 class="timeline-title">🕒 Recent Verified Check-Ins</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <h3 class="timeline-title" style="margin:0;">🕒 Recent Verified Check-Ins</h3>
+                        </div>
+                        <div id="timelineFilterChips" class="timeline-filter-bar" style="display:none;"></div>
                         <div id="timelineContainer" class="timeline-stack">
                             <!-- Dynamically populated -->
                         </div>
@@ -1383,6 +1448,7 @@
         // ── State ──────────────────────────────────────────────────────────
         let profile = JSON.parse(localStorage.getItem('profile') || 'null');
         let latestAttendanceData = null;
+        let currentTimelineFilter = 'ALL';
 
         // ── DOM Elements ───────────────────────────────────────────────────
         const lookupView = document.getElementById('lookupView');
@@ -1729,8 +1795,20 @@
                         <div class="subject-item-box ${isRed ? 'red-flag' : ''}">
                             <div class="subject-item-top">
                                 <div class="subject-item-meta">
-                                    <div class="subject-item-title">${escapeHtml(s.name)} ${s.code ? `<span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-3); font-weight:500;">(${escapeHtml(s.code)})</span>` : ''}</div>
-                                    <div class="subject-item-instructor">${s.teacherName ? 'Instructor: ' + escapeHtml(s.teacherName) : 'Course Module'} · ${s.attended} of ${s.totalHeld} attended</div>
+                                    <div class="subject-item-title">
+                                        ${escapeHtml(s.name)} 
+                                        ${s.code ? `<span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-3); font-weight:500;">(${escapeHtml(s.code)})</span>` : ''}
+                                        ${s.semester ? `<span class="subject-semester-tag">${escapeHtml(s.semester)}</span>` : ''}
+                                    </div>
+                                    <div class="subject-item-instructor">
+                                        ${s.teacherName ? 'Instructor: ' + escapeHtml(s.teacherName) : 'Course Module'}${s.section ? ' · Sec ' + escapeHtml(s.section) : ''}
+                                    </div>
+                                    <div class="subject-stat-capsule">
+                                        <span>Total: <strong>${s.totalHeld}</strong></span>
+                                        <span>Attended: <strong style="color:var(--green);">${s.attended}</strong></span>
+                                        <span>Absent: <strong style="color:${s.absent > 0 ? 'var(--bad)' : 'var(--ink-3)'};">${s.absent}</strong></span>
+                                        <span>Attendance: <strong>${s.percentage}%</strong></span>
+                                    </div>
                                 </div>
                                 <div class="subject-percent-badge ${pctClass}">
                                     ${isRed ? '🚩' : '✓'} ${s.percentage}%
@@ -1747,29 +1825,68 @@
                 }).join('');
             }
 
-            // 5. Recent Verified Check-Ins Timeline
+            // 5. Recent Verified Check-Ins Timeline & Subject Filter Chips
             const recents = data.recent || [];
-            if (recents.length === 0) {
-                timelineContainer.innerHTML = `
-                    <div style="text-align:center; padding:16px; color:var(--ink-3); font-size:12.5px;">
-                        No check-in history recorded yet.
-                    </div>
-                `;
-            } else {
-                timelineContainer.innerHTML = recents.map(r => {
-                    const d = new Date(r.timestamp);
-                    const timeStr = isNaN(d.getTime()) ? 'Recently' : (d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-                    return `
-                        <div class="timeline-row">
-                            <div class="timeline-left">
-                                <div class="timeline-sub">${escapeHtml(r.subject)} ${r.code ? `<span style="font-family:var(--font-mono); font-size:10.5px; opacity:0.7;">(${escapeHtml(r.code)})</span>` : ''}</div>
-                                <div class="timeline-teach">${r.teacherName ? escapeHtml(r.teacherName) : 'Class Session'}</div>
-                            </div>
-                            <div class="timeline-time">${timeStr}</div>
+            const filterChipsEl = document.getElementById('timelineFilterChips');
+
+            const subjectMap = new Map();
+            recents.forEach(r => {
+                const key = r.subjectId || r.subject;
+                if (key && !subjectMap.has(key)) {
+                    subjectMap.set(key, { key, name: r.subject, code: r.code });
+                }
+            });
+
+            function renderFilteredTimeline() {
+                const filtered = (currentTimelineFilter === 'ALL')
+                    ? recents
+                    : recents.filter(r => (r.subjectId === currentTimelineFilter || r.subject === currentTimelineFilter));
+
+                if (filtered.length === 0) {
+                    timelineContainer.innerHTML = `
+                        <div style="text-align:center; padding:16px; color:var(--ink-3); font-size:12.5px;">
+                            ${recents.length === 0 ? 'No check-in history recorded yet.' : 'No check-ins found for the selected subject filter.'}
                         </div>
                     `;
-                }).join('');
+                } else {
+                    timelineContainer.innerHTML = filtered.map(r => {
+                        const d = new Date(r.timestamp);
+                        const timeStr = isNaN(d.getTime()) ? 'Recently' : (d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                        return `
+                            <div class="timeline-row">
+                                <div class="timeline-left">
+                                    <div class="timeline-sub">${escapeHtml(r.subject)} ${r.code ? `<span style="font-family:var(--font-mono); font-size:10.5px; opacity:0.7;">(${escapeHtml(r.code)})</span>` : ''}</div>
+                                    <div class="timeline-teach">${r.teacherName ? escapeHtml(r.teacherName) : 'Class Session'}</div>
+                                </div>
+                                <div class="timeline-time">${timeStr}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
             }
+
+            if (filterChipsEl) {
+                if (subjectMap.size > 1) {
+                    filterChipsEl.style.display = 'flex';
+                    let chipsHtml = `<button type="button" class="timeline-chip ${currentTimelineFilter === 'ALL' ? 'active' : ''}" data-filter="ALL">All Subjects (${recents.length})</button>`;
+                    subjectMap.forEach(s => {
+                        const label = s.code ? `${s.code}` : s.name;
+                        chipsHtml += `<button type="button" class="timeline-chip ${currentTimelineFilter === s.key ? 'active' : ''}" data-filter="${escapeHtml(s.key)}">${escapeHtml(label)}</button>`;
+                    });
+                    filterChipsEl.innerHTML = chipsHtml;
+                    filterChipsEl.querySelectorAll('.timeline-chip').forEach(btn => {
+                        btn.onclick = () => {
+                            currentTimelineFilter = btn.getAttribute('data-filter');
+                            filterChipsEl.querySelectorAll('.timeline-chip').forEach(b => b.classList.toggle('active', b.getAttribute('data-filter') === currentTimelineFilter));
+                            renderFilteredTimeline();
+                        };
+                    });
+                } else {
+                    filterChipsEl.style.display = 'none';
+                }
+            }
+
+            renderFilteredTimeline();
         }
 
         // ── Profile Photo Upload System (Canvas Downscaled Base64) ───────────

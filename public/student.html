@@ -1284,7 +1284,9 @@
                 const res = await fetch(`/api/session-info?token=${encodeURIComponent(qrToken)}`);
                 const data = await res.json();
                 if (res.ok && data.subject) {
-                    detectedSubjectText.textContent = data.subject + (data.section ? ` (Sec ${data.section})` : '');
+                    const secPart = data.section ? ` (Sec ${data.section})` : '';
+                    const semPart = data.semester ? ` · ${data.semester}` : '';
+                    detectedSubjectText.textContent = `${data.subject}${secPart}${semPart}`;
                     detectedTeacherText.textContent = data.teacherName ? `Instructor: ${data.teacherName}` : 'Live Class Session';
                     sessionDetectedBanner.style.display = 'block';
                 } else {
@@ -1439,6 +1441,7 @@
                         subject: data.subject || 'Lecture Session',
                         teacherName: data.teacherName || 'Course Instructor',
                         section: data.section || 'General',
+                        semester: data.semester || '',
                         time: data.time || new Date().toISOString(),
                         already: data.already || false
                     });
@@ -1459,7 +1462,7 @@
             receiptStatusSub.textContent = info.already ? 'You have already checked in to this session.' : 'Attendance verified & recorded digitally.';
             receiptSubject.textContent = info.subject;
             receiptTeacher.textContent = info.teacherName;
-            receiptSection.textContent = info.section ? `Section ${info.section}` : 'Standard';
+            receiptSection.textContent = (info.section ? `Section ${info.section}` : 'Standard') + (info.semester ? ` · ${info.semester}` : '');
             
             const d = new Date(info.time);
             receiptTime.textContent = isNaN(d.getTime()) ? 'Just now' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });

@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Teacher Register · Apple Design</title>
+    <title>Teacher Register</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -120,6 +120,7 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
+
             .card,
             .stat,
             .panel,
@@ -590,6 +591,75 @@
             color: var(--ink-2);
             letter-spacing: 0.02em;
             margin-left: 6px;
+        }
+
+        .semester-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(142, 68, 173, 0.12);
+            color: #8E44AD;
+            letter-spacing: 0.02em;
+            margin-left: 6px;
+        }
+
+        .modal-card.wide {
+            max-width: 860px;
+            width: 95%;
+        }
+
+        .roster-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 14px;
+        }
+
+        .roster-table th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--ink-2);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid var(--hair);
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .roster-table td {
+            padding: 10px 12px;
+            border-bottom: 0.5px solid var(--hair);
+            color: var(--ink);
+            vertical-align: middle;
+        }
+
+        .roster-table tr:hover td {
+            background: rgba(0, 102, 204, 0.02);
+        }
+
+        .pct-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
+            font-size: 11.5px;
+            font-weight: 700;
+            font-family: var(--font-mono, monospace);
+        }
+
+        .pct-badge.good {
+            background: rgba(46, 125, 50, 0.12);
+            color: #2E7D32;
+        }
+
+        .pct-badge.warn {
+            background: rgba(211, 47, 47, 0.12);
+            color: #D32F2F;
         }
 
         .subject-card-title {
@@ -1091,10 +1161,12 @@
                 opacity: 0;
                 transform: scale(1.4);
             }
+
             60% {
                 opacity: 1;
                 transform: scale(0.95);
             }
+
             100% {
                 opacity: 1;
                 transform: scale(1);
@@ -1260,8 +1332,13 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         .modal-card {
@@ -1382,6 +1459,7 @@
             .stage-grid {
                 grid-template-columns: 1fr;
             }
+
             .stats {
                 grid-template-columns: 1fr;
             }
@@ -1393,14 +1471,17 @@
                 flex-wrap: wrap;
                 gap: 10px;
             }
+
             main {
                 padding: 18px 16px 40px;
             }
+
             .tabs {
                 order: 3;
                 width: 100%;
                 justify-content: center;
             }
+
             .tab-pill,
             .nav-item {
                 width: 33.333%;
@@ -1418,8 +1499,10 @@
     <div id="loginBox" class="center">
         <div class="card" style="width: 360px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom: 12px;">
-                <div class="brand-mark" style="width:32px; height:32px; border-radius:10px; background:linear-gradient(145deg, #2F88FF, #0066CC); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+                <div class="brand-mark"
+                    style="width:32px; height:32px; border-radius:10px; background:linear-gradient(145deg, #2F88FF, #0066CC); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linejoin="round">
                         <path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" />
                         <path d="M8 9h6M8 13h8" stroke-linecap="round" />
                     </svg>
@@ -1428,14 +1511,17 @@
             </div>
             <h1>Teacher Login</h1>
             <p class="sub">Sign in with your instructor account to launch class registers.</p>
-            
+
             <label for="user">Username</label>
-            <input id="user" autocomplete="username" placeholder="e.g. prof_smith" onkeydown="if(event.key==='Enter') document.getElementById('pass').focus()">
-            
+            <input id="user" autocomplete="username" placeholder="e.g. prof_smith"
+                onkeydown="if(event.key==='Enter') document.getElementById('pass').focus()">
+
             <label for="pass">Password</label>
             <div class="password-wrap">
-                <input id="pass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') login()">
-                <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" data-password-toggle>
+                <input id="pass" type="password" autocomplete="current-password" placeholder="••••••••"
+                    onkeydown="if(event.key==='Enter') login()">
+                <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false"
+                    data-password-toggle>
                     <svg class="eye-open" viewBox="0 0 24 24">
                         <path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z" />
                         <circle cx="12" cy="12" r="3" />
@@ -1447,7 +1533,7 @@
                     </svg>
                 </button>
             </div>
-            
+
             <div style="height: 14px;"></div>
             <button onclick="login()" style="width: 100%;">Sign In</button>
             <p id="loginMsg"></p>
@@ -1473,8 +1559,8 @@
                 <div class="tab-pill" id="tabPill"></div>
                 <div class="nav-item active" id="tabSubj" data-tab="subjects" onclick="showTab('subjects')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                     </svg>
                     My Subjects
                 </div>
@@ -1487,7 +1573,8 @@
                 </div>
                 <div class="nav-item" id="tabHist" data-tab="history" onclick="showTab('history')">
                     <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M3 8h18M3 12h18M3 16h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M3 8h18M3 12h18M3 16h12" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
                     </svg>
                     History
                 </div>
@@ -1500,7 +1587,8 @@
                 </div>
                 <button class="logout" onclick="logout()" title="Sign Out">
                     <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                     Sign out
                 </button>
@@ -1520,10 +1608,15 @@
                 <div class="section-header">
                     <div>
                         <h2 class="section-title">Your Courses & Subjects</h2>
-                        <p class="section-subtitle">Select a subject to launch its attendance register, or manage courses across departments.</p>
+                        <p class="section-subtitle">Select a subject to launch its attendance register, or manage
+                            courses across departments.</p>
                     </div>
                     <button onclick="openAddSubjectModal()">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
                         Add Subject
                     </button>
                 </div>
@@ -1536,14 +1629,18 @@
                 <div class="subject-banner" id="subjectBanner">
                     <div class="subject-banner-left">
                         <button class="back-btn" onclick="showTab('subjects')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M19 12H5M12 19l-7-7 7-7" />
+                            </svg>
                             All Subjects
                         </button>
                         <span class="subject-crumb-divider">/</span>
                         <span class="subject-crumb-title" id="crumbSubjectName">General Session</span>
                         <span class="dept-pill" id="crumbSubjectDept">CSE</span>
                     </div>
-                    <button class="secondary" style="padding: 5px 11px; font-size: 12px;" onclick="showTab('subjects')">Switch Subject</button>
+                    <button class="secondary" style="padding: 5px 11px; font-size: 12px;"
+                        onclick="showTab('subjects')">Switch Subject</button>
                 </div>
 
                 <!-- Three Metric Summary Cards -->
@@ -1553,13 +1650,18 @@
                             <div class="label">Present Students</div>
                             <span class="count-pill" id="statPresentBadge">Live</span>
                         </div>
-                        <div class="val"><span id="statPresent">0</span> <span style="font-size:15px; font-weight:400; color:var(--ink-2);">Students</span></div>
+                        <div class="val"><span id="statPresent">0</span> <span
+                                style="font-size:15px; font-weight:400; color:var(--ink-2);">Students</span></div>
                     </div>
 
                     <div class="stat">
                         <div class="stat-top">
                             <div class="label">Current Subject</div>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)"
+                                stroke-width="2">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                            </svg>
                         </div>
                         <div class="val" id="statSubject" style="font-size: 20px; font-weight: 600;">–</div>
                     </div>
@@ -1570,7 +1672,8 @@
                             <div class="stat-indicator" id="statSessionDot"></div>
                         </div>
                         <div class="val" id="statSessionStatusText" style="font-size: 18px; font-weight: 500;">
-                            Inactive · <span id="statSessions" style="font-size:14px; color:var(--ink-2);">0 total</span>
+                            Inactive · <span id="statSessions" style="font-size:14px; color:var(--ink-2);">0
+                                total</span>
                         </div>
                     </div>
                 </div>
@@ -1581,32 +1684,48 @@
                     <div class="panel qr-card">
                         <div class="panel-header">
                             <h2 class="panel-title">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3M20 17v4M17 20h4"/></svg>
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                                    <path d="M14 14h3v3M20 17v4M17 20h4" />
+                                </svg>
                                 Session QR Code
                             </h2>
                             <span class="count-pill" id="qrStatusPill">Idle</span>
                         </div>
 
                         <div class="field-row">
-                            <div class="field">
-                                <label for="subject">Course Subject</label>
-                                <input id="subject" placeholder="e.g. CS-204 Data Structures" onkeydown="if(event.key==='Enter') generateSession()">
+                            <div class="field" style="flex:2;">
+                                <label for="liveSubjectSelect">Select Course Subject</label>
+                                <select id="liveSubjectSelect" onchange="onLiveSubjectSelectChange()"
+                                    style="width:100%; height:42px; border-radius:12px; border:1px solid var(--hair); padding:0 12px; font-size:13.5px; background:#fff; color:var(--ink); outline:none;">
+                                    <option value="">-- Choose Subject to Launch Register --</option>
+                                </select>
+                                <input id="subject" type="hidden">
                             </div>
-                            <div class="session-actions">
+                            <div class="session-actions" style="margin-top:22px;">
                                 <button onclick="generateSession()" id="startBtn">Start Session</button>
-                                <button class="danger" id="closeBtn" onclick="closeSession()" style="display: none;">Close Session</button>
+                                <button class="danger" id="closeBtn" onclick="closeSession()"
+                                    style="display: none;">Close Session</button>
                             </div>
                         </div>
 
                         <div class="qr-shell" id="qrShell">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <svg viewBox="0 0 24 24" fill="none">
-                                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" />
-                                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" />
-                                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" />
-                                    <path d="M14 14h3v3M20 17v4M17 20h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor"
+                                        stroke-width="1.6" />
+                                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor"
+                                        stroke-width="1.6" />
+                                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor"
+                                        stroke-width="1.6" />
+                                    <path d="M14 14h3v3M20 17v4M17 20h4" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" />
                                 </svg>
-                                Enter a subject name and click Start Session to project the QR code for students.
+                                Choose a course subject from the dropdown and click Start Session to project the QR code
+                                for students.
                             </div>
 
                             <div class="qr-live" id="qrLive" style="display: none;">
@@ -1620,7 +1739,10 @@
                                 </div>
                                 <div class="qr-controls-row">
                                     <button class="secondary" id="expandQrBtn" onclick="openProjectorModal()">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                                        </svg>
                                         Projector Mode
                                     </button>
                                 </div>
@@ -1632,7 +1754,13 @@
                     <div class="panel">
                         <div class="panel-header">
                             <h2 class="panel-title">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
                                 Real-Time Incoming Attendance
                             </h2>
                             <span class="count-pill"><span id="rosterCount">0</span> checked in</span>
@@ -1653,7 +1781,8 @@
                                 <tbody id="rows"></tbody>
                             </table>
                             <div id="emptyRosterMsg" class="empty-roster">
-                                No check-ins recorded yet. As students scan the QR code, their check-ins will stream in here live.
+                                No check-ins recorded yet. As students scan the QR code, their check-ins will stream in
+                                here live.
                             </div>
                         </div>
                     </div>
@@ -1664,7 +1793,11 @@
             <div id="historyTab" style="display: none;" class="panel">
                 <div class="panel-header">
                     <h2 class="panel-title">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
                         Previous Class Sessions
                     </h2>
                 </div>
@@ -1678,7 +1811,10 @@
     <!-- Fullscreen Projector Modal (Lecture Hall View) -->
     <div id="projectorModal" class="projector-modal" style="display: none;">
         <button class="projector-close" onclick="closeProjectorModal()" aria-label="Exit Projector Mode">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
         </button>
         <h2 class="projector-title" id="projectorSubjectTitle">CS-204 Data Structures</h2>
         <div class="projector-qr-container">
@@ -1744,7 +1880,7 @@
             const tbody = document.getElementById('rows');
             const emptyMsg = document.getElementById('emptyRosterMsg');
             tbody.innerHTML = '';
-            
+
             if (presentList.length === 0) {
                 if (emptyMsg) emptyMsg.style.display = 'block';
             } else {
@@ -1759,24 +1895,24 @@
         }
 
         const savedAuth = JSON.parse(localStorage.getItem('teacherAuth') || 'null');
-        if (savedAuth) { 
-            teacherId = savedAuth.teacherId; 
+        if (savedAuth) {
+            teacherId = savedAuth.teacherId;
             teacherName = savedAuth.teacherName;
             teacherToken = savedAuth.token;
-            enterDash(); 
+            enterDash();
         }
 
         async function login() {
             const username = document.getElementById('user').value;
             const password = document.getElementById('pass').value;
-            const r = await fetch('/api/login', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ username, password }) 
+            const r = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
             });
             const data = await r.json();
             if (r.ok) {
-                teacherId = data.teacherId; 
+                teacherId = data.teacherId;
                 teacherName = data.teacherName;
                 teacherToken = data.token;
                 localStorage.setItem('teacherAuth', JSON.stringify({ teacherId, teacherName, token: teacherToken }));
@@ -1786,9 +1922,9 @@
             }
         }
 
-        function logout() { 
-            localStorage.removeItem('teacherAuth'); 
-            location.reload(); 
+        function logout() {
+            localStorage.removeItem('teacherAuth');
+            location.reload();
         }
 
         function enterDash() {
@@ -1797,11 +1933,11 @@
             document.getElementById('hello').textContent = `Welcome, ${teacherName}`;
             document.getElementById('teacherBadgeName').textContent = teacherName;
             document.getElementById('teacherAvatar').textContent = getInitials(teacherName);
-            document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+            document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
             connectStream();
             refreshStats();
@@ -1813,11 +1949,11 @@
             document.getElementById('subjectsTab').style.display = tab === 'subjects' ? 'block' : 'none';
             document.getElementById('liveTab').style.display = tab === 'live' ? 'block' : 'none';
             document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
-            
+
             document.getElementById('tabSubj').classList.toggle('active', tab === 'subjects');
             document.getElementById('tabLive').classList.toggle('active', tab === 'live');
             document.getElementById('tabHist').classList.toggle('active', tab === 'history');
-            
+
             const pill = document.getElementById('tabPill');
             const tabs = ['subjects', 'live', 'history'];
             const idx = tabs.indexOf(tab);
@@ -1825,7 +1961,7 @@
             const itemWidth = 118;
             const offset = isMobile ? (idx * (pill.parentElement.clientWidth / 3)) : (idx * itemWidth);
             pill.style.transform = `translateX(${offset}px)`;
-            
+
             if (tab === 'subjects') loadSubjects();
             if (tab === 'history') loadHistory();
         }
@@ -1842,9 +1978,44 @@
             }
         }
 
+        function populateLiveSubjectDropdown() {
+            const select = document.getElementById('liveSubjectSelect');
+            if (!select) return;
+            const currentVal = select.value || (currentSelectedSubject ? currentSelectedSubject.id : '');
+            select.innerHTML = '<option value="">-- Choose Subject to Launch Register --</option>';
+            teacherSubjects.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                const secPart = s.section ? ` (Sec ${s.section})` : '';
+                const semPart = s.semester ? ` · ${s.semester}` : '';
+                opt.textContent = `${s.code ? s.code + ' ' : ''}${s.name}${secPart}${semPart}`;
+                select.appendChild(opt);
+            });
+            if (currentVal && teacherSubjects.some(s => s.id === currentVal)) {
+                select.value = currentVal;
+            }
+        }
+
+        function onLiveSubjectSelectChange() {
+            const select = document.getElementById('liveSubjectSelect');
+            const sid = select.value;
+            if (!sid) {
+                currentSelectedSubject = null;
+                document.getElementById('subject').value = '';
+                document.getElementById('crumbSubjectName').textContent = 'General Session';
+                document.getElementById('crumbSubjectDept').textContent = '';
+                document.getElementById('subjectBanner').style.display = 'none';
+                document.getElementById('statSubject').textContent = '–';
+                return;
+            }
+            const subj = teacherSubjects.find(s => s.id === sid);
+            if (subj) selectSubject(subj);
+        }
+
         function renderSubjectsGrid() {
             const grid = document.getElementById('subjectsGrid');
             grid.innerHTML = '';
+            populateLiveSubjectDropdown();
 
             if (!teacherSubjects || teacherSubjects.length === 0) {
                 grid.innerHTML = `
@@ -1867,6 +2038,7 @@
                             <div>
                                 <span class="dept-pill">${esc(s.department || 'GENERAL')}</span>
                                 ${s.section ? `<span class="section-pill">Sec ${esc(s.section)}</span>` : ''}
+                                ${s.semester ? `<span class="semester-pill">${esc(s.semester)}</span>` : ''}
                                 <span class="code-tag">${esc(s.code || '')}</span>
                             </div>
                             <div style="display:flex; gap:4px;">
@@ -1884,8 +2056,12 @@
                             ${s.isActive ? '<span class="live-session-badge"><span class="dot-live"></span> Live Session</span>' : ''}
                         </div>
                     </div>
-                    <div class="subject-card-footer">
-                        <button class="${s.isActive ? 'primary' : 'secondary'}" style="flex:1; font-size:13px; padding:10px 16px;" onclick="selectSubjectById('${esc(s.id)}')">
+                    <div class="subject-card-footer" style="display:flex; gap:8px;">
+                        <button class="secondary" style="flex:1; font-size:12.5px; padding:9px 10px;" onclick="openSubjectAttendanceModal('${esc(s.id)}')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:-2px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                            View Attendance
+                        </button>
+                        <button class="${s.isActive ? 'primary' : 'secondary'}" style="flex:1; font-size:12.5px; padding:9px 10px;" onclick="selectSubjectById('${esc(s.id)}')">
                             ${s.isActive ? 'Resume Session' : 'Launch Session'}
                         </button>
                     </div>
@@ -1904,10 +2080,160 @@
             currentSelectedSubject = subject;
             const fullTitle = `${subject.code ? subject.code + ' ' : ''}${subject.name}${subject.section ? ' (Sec ' + subject.section + ')' : ''}`;
             document.getElementById('subject').value = fullTitle;
+            const liveSelect = document.getElementById('liveSubjectSelect');
+            if (liveSelect) liveSelect.value = subject.id;
             document.getElementById('crumbSubjectName').textContent = subject.name;
-            document.getElementById('crumbSubjectDept').textContent = `${subject.department || 'GENERAL'}${subject.section ? ' · Sec ' + subject.section : ''}`;
+            const metaParts = [subject.department || 'GENERAL'];
+            if (subject.section) metaParts.push('Sec ' + subject.section);
+            if (subject.semester) metaParts.push(subject.semester);
+            document.getElementById('crumbSubjectDept').textContent = metaParts.join(' · ');
             document.getElementById('subjectBanner').style.display = 'flex';
+            document.getElementById('statSubject').textContent = subject.name;
             showTab('live');
+        }
+
+        /* ── Subject Attendance Modal (Subject-Wise Records & Analytics) ── */
+        async function openSubjectAttendanceModal(subjectId) {
+            closeModal();
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+            overlay.innerHTML = `
+                <div class="modal-card wide" style="max-height: 90vh; overflow-y: auto;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <h2 style="margin:0; font-size:19px;" id="modalSubjTitle">Loading Subject Attendance…</h2>
+                            </div>
+                            <p class="sub" style="margin:0;" id="modalSubjMeta">Subject Attendance Report</p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <label style="font-size:12px; margin:0; color:var(--ink-2); font-weight:600;">Subject:</label>
+                            <select id="modalSubjectSwitcher" onchange="openSubjectAttendanceModal(this.value)" style="height:32px; border-radius:8px; border:1px solid var(--hair); padding:0 8px; font-size:12.5px; background:#fff; outline:none;">
+                                ${teacherSubjects.map(s => `<option value="${esc(s.id)}" ${s.id === subjectId ? 'selected' : ''}>${esc(s.code ? s.code + ' ' : '')}${esc(s.name)}${s.section ? ' (Sec ' + esc(s.section) + ')' : ''}</option>`).join('')}
+                            </select>
+                            <button class="projector-close" style="position:static; width:30px; height:30px; margin-left:4px;" onclick="closeModal()">✕</button>
+                        </div>
+                    </div>
+
+                    <div id="modalRosterContent" style="padding:14px 0;">
+                        <p style="text-align:center; color:var(--ink-2);">Fetching subject records…</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            try {
+                const r = await apiFetch(`/api/teacher/subject-attendance?subjectId=${encodeURIComponent(subjectId)}`);
+                const data = await r.json();
+                if (!r.ok) {
+                    document.getElementById('modalRosterContent').innerHTML = `<p style="color:var(--bad); text-align:center;">${esc(data.error || 'Failed to load subject records')}</p>`;
+                    return;
+                }
+
+                const s = data.subject;
+                const metaParts = [s.department || 'GENERAL'];
+                if (s.section) metaParts.push('Sec ' + s.section);
+                if (s.semester) metaParts.push(s.semester);
+                if (s.code) metaParts.push(s.code);
+
+                document.getElementById('modalSubjTitle').textContent = s.name;
+                document.getElementById('modalSubjMeta').textContent = metaParts.join(' · ');
+
+                const students = data.students || [];
+                const totalHeld = data.totalHeld || 0;
+                const totalPresentAgg = students.reduce((acc, st) => acc + (st.attended || 0), 0);
+                const avgPct = (students.length > 0 && totalHeld > 0)
+                    ? Math.round((totalPresentAgg / (students.length * totalHeld)) * 100)
+                    : 0;
+
+                const contentEl = document.getElementById('modalRosterContent');
+                contentEl.innerHTML = `
+                    <!-- 3 KPI Cards -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:18px;">
+                        <div style="background:rgba(0,0,0,0.02); padding:12px 14px; border-radius:12px; border:1px solid var(--hair);">
+                            <div style="font-size:11px; color:var(--ink-2); text-transform:uppercase; font-weight:600; letter-spacing:0.03em;">Total Classes Held</div>
+                            <div style="font-size:22px; font-weight:700; color:var(--ink); margin-top:2px;">${totalHeld} <span style="font-size:12px; font-weight:400; color:var(--ink-2);">Sessions</span></div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.02); padding:12px 14px; border-radius:12px; border:1px solid var(--hair);">
+                            <div style="font-size:11px; color:var(--ink-2); text-transform:uppercase; font-weight:600; letter-spacing:0.03em;">Students Recorded</div>
+                            <div style="font-size:22px; font-weight:700; color:var(--ink); margin-top:2px;">${students.length} <span style="font-size:12px; font-weight:400; color:var(--ink-2);">Students</span></div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.02); padding:12px 14px; border-radius:12px; border:1px solid var(--hair);">
+                            <div style="font-size:11px; color:var(--ink-2); text-transform:uppercase; font-weight:600; letter-spacing:0.03em;">Average Attendance</div>
+                            <div style="font-size:22px; font-weight:700; color:${avgPct >= 75 ? 'var(--green-text)' : 'var(--bad)'}; margin-top:2px;">${totalHeld > 0 ? avgPct + '%' : 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    <!-- Search filter bar -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+                        <div style="font-size:13.5px; font-weight:600; color:var(--ink);">Student Attendance Records for this Subject</div>
+                        <input id="rosterSearchInput" oninput="filterRosterTable()" placeholder="Search student name or enrollment…" style="max-width:260px; height:32px; font-size:12px; padding:0 10px; margin:0; border-radius:8px;">
+                    </div>
+
+                    <!-- Roster Table -->
+                    <div style="max-height:340px; overflow-y:auto; border:1px solid var(--hair); border-radius:10px; background:#fff;">
+                        <table class="roster-table" style="margin-top:0;" id="rosterTable">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Enrollment ID</th>
+                                    <th>Section</th>
+                                    <th>Attended</th>
+                                    <th>Absent</th>
+                                    <th>Total Classes</th>
+                                    <th>Attendance %</th>
+                                    <th>Last Attended</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rosterTableBody">
+                                ${students.length === 0 ? `
+                                    <tr>
+                                        <td colspan="8" style="text-align:center; padding:24px; color:var(--ink-2);">No attendance records recorded for this subject yet.</td>
+                                    </tr>
+                                ` : students.map(st => {
+                    const isSafe = st.percentage >= 75;
+                    const dateStr = st.lastAttended ? new Date(st.lastAttended).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
+                    return `
+                                        <tr class="roster-row" data-search="${esc((st.name + ' ' + st.enrollment + ' ' + st.section).toLowerCase())}">
+                                            <td><strong>${esc(st.name)}</strong></td>
+                                            <td style="font-family:ui-monospace, monospace; font-size:12px; color:var(--ink-2);">${esc(st.enrollment)}</td>
+                                            <td><span class="cell-section">${esc(st.section || '–')}</span></td>
+                                            <td><strong style="color:var(--green);">${st.attended}</strong></td>
+                                            <td><span style="color:${st.absent > 0 ? 'var(--bad)' : 'var(--ink-2)'}; font-weight:600;">${st.absent}</span></td>
+                                            <td>${st.totalHeld}</td>
+                                            <td>
+                                                <span class="pct-badge ${isSafe ? 'good' : 'warn'}">
+                                                    ${isSafe ? '✓' : '🚩'} ${st.percentage}%
+                                                </span>
+                                            </td>
+                                            <td style="font-size:12px; color:var(--ink-2);">${dateStr}</td>
+                                        </tr>
+                                    `;
+                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                        <button class="secondary" onclick="closeModal()">Close</button>
+                        <button onclick="closeModal(); selectSubjectById('${esc(s.id)}')">Launch Live Session</button>
+                    </div>
+                `;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('modalRosterContent').innerHTML = `<p style="color:var(--bad); text-align:center;">Network error loading subject attendance.</p>`;
+            }
+        }
+
+        function filterRosterTable() {
+            const query = (document.getElementById('rosterSearchInput')?.value || '').trim().toLowerCase();
+            const rows = document.querySelectorAll('#rosterTableBody .roster-row');
+            rows.forEach(r => {
+                const text = r.getAttribute('data-search') || '';
+                r.style.display = (!query || text.includes(query)) ? '' : 'none';
+            });
         }
 
         /* ── Subject Modals ── */
@@ -1916,7 +2242,7 @@
             overlay.className = 'modal-overlay';
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
             overlay.innerHTML = `
-                <div class="modal-card">
+                <div class="modal-card" style="max-height:90vh; overflow-y:auto;">
                     <h2>Add Course Subject</h2>
                     <p class="sub">Add a subject to your teaching catalog across your departments.</p>
                     <label>Course / Subject Name</label>
@@ -1925,6 +2251,18 @@
                     <input id="newSubjCode" placeholder="e.g. CS-204">
                     <label>Department / Stream</label>
                     <input id="newSubjDept" placeholder="e.g. CSE, IT, BCA">
+                    <label>Semester</label>
+                    <input id="newSubjSemester" list="semesterList" placeholder="e.g. 1st Sem, 3rd Sem, 5th Sem">
+                    <datalist id="semesterList">
+                        <option value="1st Sem">
+                        <option value="2nd Sem">
+                        <option value="3rd Sem">
+                        <option value="4th Sem">
+                        <option value="5th Sem">
+                        <option value="6th Sem">
+                        <option value="7th Sem">
+                        <option value="8th Sem">
+                    </datalist>
                     <label>Section / Batch</label>
                     <input id="newSubjSection" placeholder="e.g. A, B, Sec-1">
                     <p class="modal-error" id="newSubjError"></p>
@@ -1946,6 +2284,7 @@
             const name = document.getElementById('newSubjName').value.trim();
             const code = document.getElementById('newSubjCode').value.trim();
             const department = document.getElementById('newSubjDept').value.trim();
+            const semester = document.getElementById('newSubjSemester').value.trim();
             const section = document.getElementById('newSubjSection').value.trim();
 
             if (!name) {
@@ -1959,7 +2298,7 @@
             try {
                 const r = await apiFetch('/api/teacher/subjects', {
                     method: 'POST',
-                    body: JSON.stringify({ name, code, department, section })
+                    body: JSON.stringify({ name, code, department, section, semester })
                 });
                 const data = await r.json();
                 if (!r.ok) {
@@ -1985,7 +2324,7 @@
             overlay.className = 'modal-overlay';
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
             overlay.innerHTML = `
-                <div class="modal-card">
+                <div class="modal-card" style="max-height:90vh; overflow-y:auto;">
                     <h2>Edit Course Subject</h2>
                     <p class="sub">Update subject details and department information.</p>
                     <label>Course / Subject Name</label>
@@ -1994,6 +2333,18 @@
                     <input id="editSubjCode" value="${esc(subj.code || '')}">
                     <label>Department / Stream</label>
                     <input id="editSubjDept" value="${esc(subj.department || '')}">
+                    <label>Semester</label>
+                    <input id="editSubjSemester" list="semesterList" value="${esc(subj.semester || '')}" placeholder="e.g. 1st Sem, 3rd Sem, 5th Sem">
+                    <datalist id="semesterList">
+                        <option value="1st Sem">
+                        <option value="2nd Sem">
+                        <option value="3rd Sem">
+                        <option value="4th Sem">
+                        <option value="5th Sem">
+                        <option value="6th Sem">
+                        <option value="7th Sem">
+                        <option value="8th Sem">
+                    </datalist>
                     <label>Section / Batch</label>
                     <input id="editSubjSection" value="${esc(subj.section || '')}" placeholder="e.g. A, B, Sec-1">
                     <p class="modal-error" id="editSubjError"></p>
@@ -2015,6 +2366,7 @@
             const name = document.getElementById('editSubjName').value.trim();
             const code = document.getElementById('editSubjCode').value.trim();
             const department = document.getElementById('editSubjDept').value.trim();
+            const semester = document.getElementById('editSubjSemester').value.trim();
             const section = document.getElementById('editSubjSection').value.trim();
 
             if (!name) {
@@ -2028,7 +2380,7 @@
             try {
                 const r = await apiFetch('/api/teacher/subjects/edit', {
                     method: 'POST',
-                    body: JSON.stringify({ subjectId, name, code, department, section })
+                    body: JSON.stringify({ subjectId, name, code, department, section, semester })
                 });
                 const data = await r.json();
                 if (!r.ok) {
@@ -2089,19 +2441,19 @@
         function startSessionTimer(startTime) {
             sessionStartTime = startTime ? new Date(startTime) : new Date();
             if (sessionTimerInterval) clearInterval(sessionTimerInterval);
-            
+
             function updateTimer() {
                 const diffMs = Math.max(0, new Date() - sessionStartTime);
                 const mins = Math.floor(diffMs / 60000);
                 const secs = Math.floor((diffMs % 60000) / 1000);
                 const timeStr = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
-                
+
                 const dot = document.getElementById('statSessionDot');
                 if (dot) dot.className = 'stat-indicator live';
                 const text = document.getElementById('statSessionStatusText');
                 if (text) text.innerHTML = `<span style="color:var(--green-text); font-weight:600;">Live</span> · ${timeStr}`;
             }
-            
+
             updateTimer();
             sessionTimerInterval = setInterval(updateTimer, 1000);
         }
@@ -2125,7 +2477,7 @@
             const live = document.getElementById('qrLive');
             const statusPill = document.getElementById('qrStatusPill');
             const projBox = document.getElementById('projectorQrBox');
-            
+
             box.innerHTML = '';
             if (projBox) projBox.innerHTML = '';
             document.getElementById('qrHint').style.display = 'none';
@@ -2144,11 +2496,11 @@
             }
 
             const url = `${location.origin}/student.html?token=${qrToken}`;
-            new QRCode(box, { 
-                text: url, 
-                width: 200, 
-                height: 200, 
-                colorDark: '#1D1D1F', 
+            new QRCode(box, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark: '#1D1D1F',
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.M
             });
@@ -2182,29 +2534,49 @@
         }
 
         async function generateSession() {
-            const subject = document.getElementById('subject').value.trim();
-            const subjectId = currentSelectedSubject ? currentSelectedSubject.id : null;
-            
-            const r = await apiFetch('/api/start-session', { 
-                method: 'POST', 
-                body: JSON.stringify({ subject, subjectId }) 
-            });
-            const data = await r.json();
-            renderQr(data.qrToken);
-            currentSessionId = data.sessionId;
-            presentList = [];
-            renderRows();
-            document.getElementById('closeBtn').style.display = 'inline-flex';
-            document.getElementById('statSubject').textContent = subject || 'General';
-            startSessionTimer(new Date());
-            refreshStats();
-            loadSubjects();
+            const liveSelect = document.getElementById('liveSubjectSelect');
+            let subjectId = currentSelectedSubject ? currentSelectedSubject.id : (liveSelect ? liveSelect.value : null);
+            if (!subjectId && liveSelect && liveSelect.value) {
+                subjectId = liveSelect.value;
+                currentSelectedSubject = teacherSubjects.find(s => s.id === subjectId) || null;
+            }
+            if (!subjectId && teacherSubjects && teacherSubjects.length > 0) {
+                alert('Please choose a subject from your catalog before launching attendance.');
+                if (liveSelect) liveSelect.focus();
+                return;
+            }
+
+            const subject = document.getElementById('subject').value.trim() || (currentSelectedSubject ? `${currentSelectedSubject.code ? currentSelectedSubject.code + ' ' : ''}${currentSelectedSubject.name}${currentSelectedSubject.section ? ' (Sec ' + currentSelectedSubject.section + ')' : ''}` : 'General Session');
+
+            try {
+                const r = await apiFetch('/api/start-session', {
+                    method: 'POST',
+                    body: JSON.stringify({ subject, subjectId })
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    alert(data.error || 'Failed to start session');
+                    return;
+                }
+                renderQr(data.qrToken);
+                currentSessionId = data.sessionId;
+                presentList = [];
+                renderRows();
+                document.getElementById('closeBtn').style.display = 'inline-flex';
+                document.getElementById('statSubject').textContent = (currentSelectedSubject ? currentSelectedSubject.name : subject) || 'General';
+                startSessionTimer(new Date());
+                refreshStats();
+                loadSubjects();
+            } catch (err) {
+                console.error(err);
+                alert('Network error while starting attendance session.');
+            }
         }
 
         async function closeSession() {
-            await apiFetch('/api/close-session', { 
-                method: 'POST', 
-                body: JSON.stringify({}) 
+            await apiFetch('/api/close-session', {
+                method: 'POST',
+                body: JSON.stringify({})
             });
             document.getElementById('closeBtn').style.display = 'none';
             renderQr(null);
@@ -2255,9 +2627,9 @@
                     presentList.push(data.student);
                     renderRows();
                     const newTr = document.getElementById('rows').querySelector(`tr[data-enrollment="${CSS.escape(data.student.enrollment)}"]`);
-                    if (newTr) { 
-                        const stamp = newTr.querySelector('.stamp'); 
-                        if (stamp) stamp.classList.add('animate'); 
+                    if (newTr) {
+                        const stamp = newTr.querySelector('.stamp');
+                        if (stamp) stamp.classList.add('animate');
                     }
                 }
                 if (data.type === 'init' && data.session) {
@@ -2299,10 +2671,10 @@
         }
 
 
-        function esc(str) { 
-            const d = document.createElement('div'); 
-            d.textContent = str || ''; 
-            return d.innerHTML; 
+        function esc(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '';
+            return d.innerHTML;
         }
 
         function addRow(s, animate) {
@@ -2310,7 +2682,7 @@
             tr.setAttribute('data-enrollment', s.enrollment);
             const initials = getInitials(s.name);
             const timeFormatted = new Date(s.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
+
             tr.innerHTML = `
                 <td>
                     <div class="student-cell">
@@ -2378,15 +2750,15 @@
                 const list = await r.json();
                 const el = document.getElementById('histList');
                 el.innerHTML = list.length ? '' : '<p style="color:var(--ink-2); text-align:center; padding:32px 0;">No sessions found for this selection.</p>';
-                
+
                 renderHistoryFilters();
 
                 list.forEach(s => {
                     const div = document.createElement('div');
                     div.className = 'hist-row';
-                    const dateStr = new Date(s.createdAt).toLocaleDateString([], { 
-                        weekday: 'short', 
-                        month: 'short', 
+                    const dateStr = new Date(s.createdAt).toLocaleDateString([], {
+                        weekday: 'short',
+                        month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
@@ -2411,9 +2783,9 @@
 
         async function deleteSession(sessionId) {
             if (!confirm('Delete this session? This will permanently remove all attendance records for it.')) return;
-            await apiFetch('/api/delete-session', { 
-                method: 'POST', 
-                body: JSON.stringify({ sessionId }) 
+            await apiFetch('/api/delete-session', {
+                method: 'POST',
+                body: JSON.stringify({ sessionId })
             });
             loadHistory();
             refreshStats();

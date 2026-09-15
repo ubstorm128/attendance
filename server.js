@@ -15,7 +15,7 @@ try {
         const k = line.slice(0, eqIdx).trim();
         const v = line.slice(eqIdx + 1).trim();
         if (k) process.env[k] = v;
-    });
+    }); 
 } catch (_) {}
 
 const DEFAULT_PORT = Number(process.env.PORT) || 3000;
@@ -24,7 +24,7 @@ let currentPort = DEFAULT_PORT;
 
 // Credentials must live in environment variables, never in source code.
 // Priority: SUPABASE_DB_URL for local dev, DATABASE_URL for Render deployment.
-const DATABASE_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+const DATABASE_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || process.env.SUPERBASE_DB_URL;
 if (!DATABASE_URL) { console.error('FATAL: No DATABASE_URL or SUPABASE_DB_URL set in environment.'); process.exit(1); }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production';
@@ -77,8 +77,10 @@ async function initDb() {
                 code TEXT DEFAULT 'GEN',
                 department TEXT DEFAULT 'GENERAL',
                 section TEXT DEFAULT '',
+                semester TEXT DEFAULT '',
                 created_at TIMESTAMPTZ NOT NULL DEFAULT now()
             );
+            ALTER TABLE subjects ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT '';
 
             CREATE TABLE IF NOT EXISTS students (
                 enrollment TEXT PRIMARY KEY,
@@ -117,6 +119,7 @@ async function initDb() {
         // sequential table scans. CREATE INDEX IF NOT EXISTS is idempotent.
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_sessions_teacher_id  ON sessions (teacher_id);
+            CREATE INDEX IF NOT EXISTS idx_sessions_subject_id  ON sessions (subject_id);
             CREATE INDEX IF NOT EXISTS idx_sessions_qr_token    ON sessions (qr_token) WHERE qr_token IS NOT NULL;
             CREATE INDEX IF NOT EXISTS idx_sessions_active      ON sessions (active)   WHERE active = true;
             CREATE INDEX IF NOT EXISTS idx_attendance_session   ON attendance (session_id);
@@ -124,6 +127,24 @@ async function initDb() {
             CREATE INDEX IF NOT EXISTS idx_subjects_teacher     ON subjects (teacher_id);
         `);
         console.log('Database indexes ensured.');
+
+        // Reconcile legacy sessions where subject_id is NULL by linking them to matching teacher subjects
+        try {
+            await pool.query(`
+                UPDATE sessions s
+                SET subject_id = sub.id
+                FROM subjects sub
+                WHERE s.subject_id IS NULL
+                  AND s.teacher_id = sub.teacher_id
+                  AND (
+                      s.subject = sub.name
+                      OR s.subject LIKE '%' || sub.name || '%'
+                      OR s.subject LIKE '%' || sub.code || '%'
+                  );
+            `);
+        } catch (mErr) {
+            console.warn('Note on legacy session reconciliation:', mErr.message);
+        }
 
         // If superadmins table is completely empty, insert initial superadmin account
         const adminCheck = await pool.query('SELECT 1 FROM superadmins LIMIT 1');
@@ -335,10 +356,12 @@ const server = http.createServer(async (req, res) => {
             let file = pathname === '/' ? 'student.html' : pathname.slice(1);
             if (file === 'profile') file = 'profile.html';
             if (file === 'checkin.html') file = 'student.html';
-            const headers = { 'Content-Type': 'text/html' };
-            if (file === 'student.html' || file === 'profile.html') headers['Cache-Control'] = 'no-store';
+            const headers = { 'Content-Type': 'text/html', 'Cache-Control': 'no-cache, no-store, must-revalidate' };
             res.writeHead(200, headers);
-            return res.end(staticCache.get(file) ?? fs.readFileSync(path.join(__dirname, 'public', file)));
+            const content = (process.env.NODE_ENV === 'production' && staticCache.has(file))
+                ? staticCache.get(file)
+                : fs.readFileSync(path.join(__dirname, 'public', file));
+            return res.end(content);
         }
 
         // --- student registration ---
@@ -372,10 +395,12 @@ const server = http.createServer(async (req, res) => {
             const session = sessR.rows[0];
 
             let resolvedSection = '';
+            let resolvedSemester = '';
             if (session.subject_id) {
-                const subjR = await pool.query('SELECT section FROM subjects WHERE id = $1', [session.subject_id]);
-                if (subjR.rows.length && subjR.rows[0].section) {
-                    resolvedSection = subjR.rows[0].section;
+                const subjR = await pool.query('SELECT section, semester FROM subjects WHERE id = $1', [session.subject_id]);
+                if (subjR.rows.length) {
+                    if (subjR.rows[0].section) resolvedSection = subjR.rows[0].section;
+                    if (subjR.rows[0].semester) resolvedSemester = subjR.rows[0].semester;
                 }
             }
 
@@ -383,7 +408,8 @@ const server = http.createServer(async (req, res) => {
                 ok: true,
                 subject: session.subject || 'Class Session',
                 teacherName: session.teacher_name || 'Instructor',
-                section: resolvedSection
+                section: resolvedSection,
+                semester: resolvedSemester
             });
         }
 
@@ -408,12 +434,18 @@ const server = http.createServer(async (req, res) => {
             if (!sessR.rows.length) return send(res, 401, { error: 'QR code is invalid or expired' });
             const session = sessR.rows[0];
 
-            // Auto-resolve section from active teacher subject if student section is blank
+            // Auto-resolve section and semester from active teacher subject if student section is blank
             let resolvedSection = student.section || '';
-            if (!resolvedSection && session.subject_id) {
-                const subjR = await pool.query('SELECT section FROM subjects WHERE id = $1', [session.subject_id]);
-                if (subjR.rows.length && subjR.rows[0].section) {
-                    resolvedSection = subjR.rows[0].section;
+            let resolvedSemester = '';
+            if (session.subject_id) {
+                const subjR = await pool.query('SELECT section, semester FROM subjects WHERE id = $1', [session.subject_id]);
+                if (subjR.rows.length) {
+                    if (!resolvedSection && subjR.rows[0].section) {
+                        resolvedSection = subjR.rows[0].section;
+                    }
+                    if (subjR.rows[0].semester) {
+                        resolvedSemester = subjR.rows[0].semester;
+                    }
                 }
             }
 
@@ -429,7 +461,8 @@ const server = http.createServer(async (req, res) => {
                     subject: session.subject || 'Class Session',
                     teacherName: session.teacher_name || 'Instructor',
                     time: existing.time.toISOString(),
-                    section: existing.section || resolvedSection
+                    section: existing.section || resolvedSection,
+                    semester: resolvedSemester
                 });
             }
 
@@ -457,7 +490,8 @@ const server = http.createServer(async (req, res) => {
                 subject: session.subject || 'Class Session',
                 teacherName: session.teacher_name || 'Instructor',
                 time: record.time.toISOString(),
-                section: resolvedSection
+                section: resolvedSection,
+                semester: resolvedSemester
             });
         }
 
@@ -468,6 +502,7 @@ const server = http.createServer(async (req, res) => {
             return send(res, 200, { ok: true });
         }
 
+        // --- student: my attendance summary & leaderboard ---
         // --- student: my attendance summary & leaderboard ---
         if (req.method === 'GET' && pathname === '/api/my-attendance') {
             const enrollment = (searchParams.get('enrollment') || '').trim().toUpperCase();
@@ -480,8 +515,9 @@ const server = http.createServer(async (req, res) => {
             );
             if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
             const currentStudent = stCheck.rows[0];
+            const studentSection = currentStudent.section || '';
 
-            // 2. Per-subject attendance breakdown — all done in SQL
+            // 2. Per-subject attendance breakdown — strictly filtered by subject_id
             const bySubjectRows = await pool.query(`
                 SELECT
                     subj.id,
@@ -489,75 +525,94 @@ const server = http.createServer(async (req, res) => {
                     subj.code,
                     subj.department,
                     subj.section,
+                    subj.semester,
                     COUNT(DISTINCT sess.id)::int                                          AS "totalHeld",
                     COUNT(DISTINCT CASE WHEN a.enrollment = $1 THEN a.session_id END)::int AS "attended",
                     MIN(sess.teacher_name)                                                 AS "teacherName"
                 FROM subjects subj
                 LEFT JOIN sessions sess
                     ON sess.subject_id = subj.id
-                    OR sess.subject    = subj.name
-                    OR sess.subject    = subj.code || ' ' || subj.name
                 LEFT JOIN attendance a
                     ON a.session_id = sess.id
-                GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section
+                WHERE (
+                    ($2 != '' AND subj.section != '' AND subj.section = $2)
+                    OR subj.section = ''
+                    OR $2 = ''
+                    OR EXISTS (
+                        SELECT 1 FROM attendance att2
+                        JOIN sessions s2 ON att2.session_id = s2.id
+                        WHERE att2.enrollment = $1 AND s2.subject_id = subj.id
+                    )
+                )
+                GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section, subj.semester
                 ORDER BY subj.name ASC
-            `, [enrollment]);
+            `, [enrollment, studentSection]);
+
+            let totalHeldOverall = 0;
+            let totalAttendedOverall = 0;
 
             const bySubject = bySubjectRows.rows.map(row => {
                 const totalHeld = row.totalHeld;
                 const attended  = row.attended;
+                const absent    = Math.max(0, totalHeld - attended);
                 const percentage = totalHeld > 0 ? Math.round((attended / totalHeld) * 100) : 100;
                 const isRedFlag  = totalHeld > 0 && percentage < 75;
                 const classesToRecover = isRedFlag
                     ? Math.max(1, Math.ceil((0.75 * totalHeld - attended) / 0.25))
                     : 0;
+
+                totalHeldOverall += totalHeld;
+                totalAttendedOverall += attended;
+
                 return {
                     id: row.id,
                     name: row.name,
                     code: row.code,
                     department: row.department,
                     section: row.section,
+                    semester: row.semester || '',
                     teacherName: row.teacherName || 'Instructor',
                     totalHeld,
                     attended,
+                    absent,
                     percentage,
                     isRedFlag,
                     classesToRecover
                 };
             });
 
-            // 3. Overall stats — single aggregated query
-            const overallRow = await pool.query(`
-                SELECT
-                    COUNT(DISTINCT sess.id)::int                                          AS "totalHeld",
-                    COUNT(DISTINCT CASE WHEN a.enrollment = $1 THEN a.session_id END)::int AS "totalAttended"
-                FROM sessions sess
-                LEFT JOIN attendance a ON a.session_id = sess.id
-            `, [enrollment]);
-
-            const totalHeldOverall     = overallRow.rows[0].totalHeld;
-            const totalAttendedOverall = overallRow.rows[0].totalAttended;
-            const overallPercentage    = totalHeldOverall > 0
+            // 3. Overall stats — strictly computed from the sum of the student's relevant subjects
+            const overallAbsent = Math.max(0, totalHeldOverall - totalAttendedOverall);
+            const overallPercentage = totalHeldOverall > 0
                 ? Math.round((totalAttendedOverall / totalHeldOverall) * 100)
                 : 100;
-            const isOverallRedFlag     = totalHeldOverall > 0 && overallPercentage < 75;
+            const isOverallRedFlag = totalHeldOverall > 0 && overallPercentage < 75;
             const overallClassesToRecover = isOverallRedFlag
                 ? Math.max(1, Math.ceil((0.75 * totalHeldOverall - totalAttendedOverall) / 0.25))
                 : 0;
 
-            // 4. Recent check-in history — sorted & limited in SQL
+            // 4. Recent check-in history — with subjectId and code for subject filtering
             const recentRows = await pool.query(`
-                SELECT a.session_id AS "sessionId", sess.subject, sess.teacher_name AS "teacherName", a.time
+                SELECT
+                    a.session_id AS "sessionId",
+                    sess.subject_id AS "subjectId",
+                    COALESCE(sub.name, sess.subject, 'Class Session') AS "subject",
+                    COALESCE(sub.code, '') AS "code",
+                    sess.teacher_name AS "teacherName",
+                    a.time
                 FROM attendance a
                 JOIN sessions sess ON sess.id = a.session_id
+                LEFT JOIN subjects sub ON sub.id = sess.subject_id
                 WHERE a.enrollment = $1
                 ORDER BY a.time DESC
-                LIMIT 15
+                LIMIT 30
             `, [enrollment]);
 
             const recent = recentRows.rows.map(r => ({
                 sessionId:   r.sessionId,
+                subjectId:   r.subjectId || '',
                 subject:     r.subject || 'Class Session',
+                code:        r.code || '',
                 teacherName: r.teacherName || 'Instructor',
                 time:        r.time.toISOString()
             }));
@@ -611,6 +666,7 @@ const server = http.createServer(async (req, res) => {
                 overall: {
                     totalHeld:        totalHeldOverall,
                     totalAttended:    totalAttendedOverall,
+                    absent:           overallAbsent,
                     percentage:       overallPercentage,
                     isRedFlag:        isOverallRedFlag,
                     classesToRecover: overallClassesToRecover
@@ -675,7 +731,7 @@ const server = http.createServer(async (req, res) => {
             if (!auth) return;
             const { teacherId } = auth;
 
-            // Single SQL query: join subjects → sessions → attendance, aggregate in DB
+            // Single SQL query: join subjects → sessions → attendance, strictly by subject_id
             const r = await pool.query(`
                 SELECT
                     subj.id,
@@ -683,6 +739,7 @@ const server = http.createServer(async (req, res) => {
                     subj.code,
                     subj.department,
                     subj.section,
+                    subj.semester,
                     subj.created_at,
                     COUNT(DISTINCT sess.id)::int                        AS "totalSessions",
                     COUNT(DISTINCT a.id)::int                           AS "totalPresent",
@@ -691,12 +748,10 @@ const server = http.createServer(async (req, res) => {
                 FROM subjects subj
                 LEFT JOIN sessions sess
                     ON  sess.teacher_id = $1
-                    AND (sess.subject_id = subj.id
-                         OR sess.subject  = subj.name
-                         OR sess.subject  = subj.code || ' ' || subj.name)
+                    AND sess.subject_id = subj.id
                 LEFT JOIN attendance a ON a.session_id = sess.id
                 WHERE subj.teacher_id = $1
-                GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section, subj.created_at
+                GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section, subj.semester, subj.created_at
                 ORDER BY subj.created_at ASC
             `, [teacherId]);
 
@@ -706,6 +761,7 @@ const server = http.createServer(async (req, res) => {
                 code:            s.code,
                 department:      s.department,
                 section:         s.section,
+                semester:        s.semester || '',
                 createdAt:       s.created_at.toISOString(),
                 totalSessions:   s.totalSessions,
                 totalPresent:    s.totalPresent,
@@ -716,23 +772,101 @@ const server = http.createServer(async (req, res) => {
             return send(res, 200, subjects);
         }
 
+        // --- teacher: subject attendance details & student roster ---
+        if (req.method === 'GET' && pathname === '/api/teacher/subject-attendance') {
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
+            const subjectId = (searchParams.get('subjectId') || '').trim();
+            if (!subjectId) return send(res, 400, { error: 'subjectId is required' });
+
+            const sCheck = await pool.query(
+                'SELECT id, name, code, department, section, semester, created_at FROM subjects WHERE id = $1 AND teacher_id = $2',
+                [subjectId, teacherId]
+            );
+            if (!sCheck.rows.length) return send(res, 404, { error: 'Subject not found' });
+            const subject = sCheck.rows[0];
+
+            // All sessions strictly for this subject
+            const sessR = await pool.query(
+                'SELECT id, subject, active, created_at FROM sessions WHERE subject_id = $1 ORDER BY id DESC',
+                [subjectId]
+            );
+            const sessions = sessR.rows;
+            const totalHeld = sessions.length;
+
+            // Attendance roster strictly for this subject
+            const attR = await pool.query(`
+                SELECT
+                    a.enrollment,
+                    COALESCE(st.name, a.name)                           AS name,
+                    COALESCE(st.section, a.section)                     AS section,
+                    COUNT(DISTINCT a.session_id)::int                   AS attended,
+                    MAX(a.time)                                         AS "lastAttended"
+                FROM attendance a
+                JOIN sessions s ON s.id = a.session_id
+                LEFT JOIN students st ON st.enrollment = a.enrollment
+                WHERE s.subject_id = $1
+                GROUP BY a.enrollment, COALESCE(st.name, a.name), COALESCE(st.section, a.section)
+                ORDER BY attended DESC, name ASC
+            `, [subjectId]);
+
+            const students = attR.rows.map(row => {
+                const attended = row.attended;
+                const absent = Math.max(0, totalHeld - attended);
+                const percentage = totalHeld > 0 ? Math.round((attended / totalHeld) * 100) : 100;
+                return {
+                    enrollment: row.enrollment,
+                    name: row.name,
+                    section: row.section,
+                    attended,
+                    absent,
+                    totalHeld,
+                    percentage,
+                    lastAttended: row.lastAttended ? row.lastAttended.toISOString() : null
+                };
+            });
+
+            return send(res, 200, {
+                ok: true,
+                subject: {
+                    id: subject.id,
+                    name: subject.name,
+                    code: subject.code,
+                    department: subject.department,
+                    section: subject.section,
+                    semester: subject.semester || '',
+                    createdAt: subject.created_at.toISOString()
+                },
+                totalHeld,
+                sessions: sessions.map(s => ({
+                    id: s.id,
+                    subject: s.subject,
+                    active: s.active,
+                    createdAt: s.created_at.toISOString()
+                })),
+                students
+            });
+        }
+
         // --- teacher subjects: create ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects') {
             const auth = authenticate(req, res);
             if (!auth) return;
             const { teacherId } = auth;
-            const { name, code, department, section } = await readBody(req);
+            const { name, code, department, section, semester } = await readBody(req);
 
             const sName = (name || '').trim();
             const sCode = (code || '').trim().toUpperCase();
             const sDept = (department || '').trim().toUpperCase();
             const sSection = (section || '').trim().toUpperCase();
+            const sSemester = (semester || '').trim();
             if (!sName) return send(res, 400, { error: 'Subject name is required' });
 
             const id = 'subj-' + nodeCrypto.randomUUID().slice(0, 8);
             const ins = await pool.query(
-                'INSERT INTO subjects (id, teacher_id, name, code, department, section, created_at) VALUES ($1, $2, $3, $4, $5, $6, now()) RETURNING *',
-                [id, teacherId, sName, sCode || 'GEN', sDept || 'GENERAL', sSection || '']
+                'INSERT INTO subjects (id, teacher_id, name, code, department, section, semester, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, now()) RETURNING *',
+                [id, teacherId, sName, sCode || 'GEN', sDept || 'GENERAL', sSection || '', sSemester]
             );
             const row = ins.rows[0];
 
@@ -744,6 +878,7 @@ const server = http.createServer(async (req, res) => {
                     code: row.code,
                     department: row.department,
                     section: row.section,
+                    semester: row.semester || '',
                     createdAt: row.created_at.toISOString()
                 }
             });
@@ -754,7 +889,7 @@ const server = http.createServer(async (req, res) => {
             const auth = authenticate(req, res);
             if (!auth) return;
             const { teacherId } = auth;
-            const { subjectId, name, code, department, section } = await readBody(req);
+            const { subjectId, name, code, department, section, semester } = await readBody(req);
 
             const check = await pool.query('SELECT * FROM subjects WHERE id = $1 AND teacher_id = $2', [subjectId, teacherId]);
             if (!check.rows.length) return send(res, 404, { error: 'Subject not found' });
@@ -764,10 +899,11 @@ const server = http.createServer(async (req, res) => {
             const newCode = code && code.trim() ? code.trim().toUpperCase() : cur.code;
             const newDept = department && department.trim() ? department.trim().toUpperCase() : cur.department;
             const newSec = section !== undefined ? (section || '').trim().toUpperCase() : cur.section;
+            const newSem = semester !== undefined ? (semester || '').trim() : (cur.semester || '');
 
             const upd = await pool.query(
-                'UPDATE subjects SET name = $1, code = $2, department = $3, section = $4 WHERE id = $5 AND teacher_id = $6 RETURNING *',
-                [newName, newCode, newDept, newSec, subjectId, teacherId]
+                'UPDATE subjects SET name = $1, code = $2, department = $3, section = $4, semester = $5 WHERE id = $6 AND teacher_id = $7 RETURNING *',
+                [newName, newCode, newDept, newSec, newSem, subjectId, teacherId]
             );
             const row = upd.rows[0];
 
@@ -779,6 +915,7 @@ const server = http.createServer(async (req, res) => {
                     code: row.code,
                     department: row.department,
                     section: row.section,
+                    semester: row.semester || '',
                     createdAt: row.created_at.toISOString()
                 }
             });
@@ -808,12 +945,43 @@ const server = http.createServer(async (req, res) => {
             // Close any previous active sessions for this teacher
             await pool.query('UPDATE sessions SET active = false, qr_token = NULL WHERE teacher_id = $1 AND active = true', [teacher.id]);
 
-            const qrToken = nodeCrypto.randomBytes(32).toString('hex');
-            const subjectVal = subject && subject.trim() ? subject.trim() : null;
+            let resolvedSubjectId = subjectId || null;
+            let resolvedSubjectTitle = subject && subject.trim() ? subject.trim() : null;
 
+            if (resolvedSubjectId) {
+                const sCheck = await pool.query('SELECT * FROM subjects WHERE id = $1 AND teacher_id = $2', [resolvedSubjectId, teacher.id]);
+                if (sCheck.rows.length) {
+                    const sRow = sCheck.rows[0];
+                    if (!resolvedSubjectTitle) {
+                        resolvedSubjectTitle = `${sRow.code ? sRow.code + ' ' : ''}${sRow.name}${sRow.section ? ' (Sec ' + sRow.section + ')' : ''}`;
+                    }
+                } else {
+                    resolvedSubjectId = null;
+                }
+            }
+            if (!resolvedSubjectId && resolvedSubjectTitle) {
+                // Try matching an existing subject for this teacher
+                const sMatch = await pool.query(
+                    'SELECT id FROM subjects WHERE teacher_id = $1 AND (name = $2 OR code || \' \' || name = $2 OR $2 LIKE \'%\' || name || \'%\') LIMIT 1',
+                    [teacher.id, resolvedSubjectTitle]
+                );
+                if (sMatch.rows.length) {
+                    resolvedSubjectId = sMatch.rows[0].id;
+                } else {
+                    // Auto-create a subject entry for this teacher
+                    const newSubjId = 'subj-' + nodeCrypto.randomUUID().slice(0, 8);
+                    await pool.query(
+                        'INSERT INTO subjects (id, teacher_id, name, code, department, section, semester, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, now())',
+                        [newSubjId, teacher.id, resolvedSubjectTitle, 'GEN', 'GENERAL', '', '']
+                    );
+                    resolvedSubjectId = newSubjId;
+                }
+            }
+
+            const qrToken = nodeCrypto.randomBytes(32).toString('hex');
             const ins = await pool.query(
                 'INSERT INTO sessions (teacher_id, teacher_name, subject, subject_id, qr_token, active, created_at) VALUES ($1, $2, $3, $4, $5, true, now()) RETURNING *',
-                [teacher.id, teacher.name, subjectVal, subjectId || null, qrToken]
+                [teacher.id, teacher.name, resolvedSubjectTitle, resolvedSubjectId, qrToken]
             );
             const session = ins.rows[0];
 
@@ -933,8 +1101,18 @@ const server = http.createServer(async (req, res) => {
             const subjectIdFilter = (searchParams.get('subjectId') || '').trim();
 
             let query = `
-                SELECT s.id, s.subject, s.subject_id, s.created_at, s.active, COUNT(a.id)::int AS count
+                SELECT
+                    s.id,
+                    s.subject,
+                    s.subject_id,
+                    sub.code,
+                    sub.section,
+                    sub.semester,
+                    s.created_at,
+                    s.active,
+                    COUNT(a.id)::int AS count
                 FROM sessions s
+                LEFT JOIN subjects sub ON sub.id = s.subject_id
                 LEFT JOIN attendance a ON a.session_id = s.id
                 WHERE s.teacher_id = $1
             `;
@@ -948,13 +1126,16 @@ const server = http.createServer(async (req, res) => {
                 query += ` AND (s.subject = $${params.length} OR s.subject_id = $${params.length})`;
             }
 
-            query += ` GROUP BY s.id ORDER BY s.id DESC`;
+            query += ` GROUP BY s.id, sub.code, sub.section, sub.semester ORDER BY s.id DESC`;
 
             const r = await pool.query(query, params);
             const mapped = r.rows.map(s => ({
                 id: s.id,
                 subject: s.subject,
                 subjectId: s.subject_id,
+                code: s.code || '',
+                section: s.section || '',
+                semester: s.semester || '',
                 createdAt: s.created_at.toISOString(),
                 count: s.count,
                 active: s.active
