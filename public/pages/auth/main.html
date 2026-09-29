@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Select Role · Attendance</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="/styles/shared/main.css">
+    <link rel="stylesheet" href="/styles/auth/auth.css">
+</head>
+<body class="auth-page">
+    <div class="ambient-glow top"></div>
+    <div class="ambient-glow bottom"></div>
+
+    <div class="center auth-container">
+        <!-- ROLE SELECTION VIEW -->
+        <div class="card auth-card" id="roleSelectionView">
+            <h1>Welcome Back</h1>
+            <p class="auth-subtitle">Select your role to continue</p>
+            
+            <div class="role-cards">
+                <div class="role-card" onclick="window.location.href='/login?role=student'">
+                    <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    </div>
+                    <h3>Student</h3>
+                    <p>Access your student dashboard and attendance information.</p>
+                </div>
+                <div class="role-card" onclick="window.location.href='/login?role=teacher'">
+                    <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><path d="M2 3h20M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3M10 21h4M12 16v5"/></svg>
+                    </div>
+                    <h3>Teacher</h3>
+                    <p>Manage attendance sessions and student attendance.</p>
+                </div>
+                <div class="role-card" onclick="window.location.href='/login?role=admin'">
+                    <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <h3>Admin</h3>
+                    <p>Manage and monitor the attendance system.</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <script>
+        if (window.location.hash.includes('type=recovery')) {
+            window.location.href = '/reset-password' + window.location.hash;
+        } else if (window.location.hash.includes('error=access_denied') || window.location.search.includes('error=access_denied')) {
+            alert('This password reset link has expired or has already been used. Please request a new one.');
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    </script>
+</body>
+</html>

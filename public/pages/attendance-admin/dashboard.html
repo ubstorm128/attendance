@@ -1,0 +1,89 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Attendance Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+
+    <link rel="stylesheet" href="/styles/shared/main.css">
+</head>
+
+<body>
+
+    <div class="blob a"></div>
+    <div class="blob b"></div>
+    <div class="blob c"></div>
+
+    <div id="dash">
+        <div class="global-navbar">
+            <div class="brand">
+                <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="white" stroke-width="2" stroke-linejoin="round"></path><path d="M8 9h6M8 13h8" stroke="white" stroke-width="2" stroke-linecap="round"></path></svg></div>
+                Attendance Admin Dashboard
+            </div>
+            <div class="ribbon-spacer"></div>
+            <div class="logout" onclick="logout()">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                Logout
+            </div>
+        </div>
+
+        <main>
+            <!-- Navigation Segments -->
+            <div class="segmented-control">
+                <button class="seg-btn active" id="tabTeachers" onclick="showTab('teachers')">Teachers</button>
+                <button class="seg-btn" id="tabStudents" onclick="showTab('students')">Students</button>
+                <button class="seg-btn" id="tabSecurity" onclick="showTab('security')">Security</button>
+            </div>
+
+            <!-- Teachers Panel -->
+            <div class="card" id="panelTeachers">
+                <h2>Manage Teachers</h2>
+                <p class="sub">Add or remove instructor accounts stored in Supabase.</p>
+
+                <label for="name">Full name</label><input id="name" placeholder="Dr. John Smith" class="form-control">
+                <label for="username">Username</label><input id="username" placeholder="john_smith" class="form-control">
+                <label for="email">Email (Optional)</label><input id="email" type="email" placeholder="john@university.edu" class="form-control">
+                <label for="password">Password</label><input id="password" type="password" placeholder="••••••••" class="form-control">
+                <button class="btn btn-primary add-btn" onclick="addTeacher()">Add Teacher</button>
+
+                <div class="list-heading">Teachers in Database</div>
+                <div id="list"></div>
+            </div>
+
+            <!-- Students Panel -->
+            <div class="card is-hidden" id="panelStudents">
+                <h2>Registered Students</h2>
+                <p class="sub">Students registered in Supabase database.</p>
+
+                <label for="studentName">Full name</label><input id="studentName" placeholder="Student Name" class="form-control">
+                <label for="studentEnrollment">Enrollment ID</label><input id="studentEnrollment" placeholder="ADTU/1/2023-26/BCAO/012" class="form-control">
+                <label for="studentSection">Section</label><input id="studentSection" placeholder="A" class="form-control">
+                <label for="studentEmail">Email</label><input id="studentEmail" type="email" placeholder="student@university.edu" class="form-control">
+                <label for="studentPassword">Password</label><input id="studentPassword" type="password" placeholder="••••••••" class="form-control">
+                <button class="btn btn-primary add-btn" onclick="addStudent()">Add Student</button>
+
+                <div class="list-heading">Students in Database</div>
+                <div id="studentList"></div>
+            </div>
+
+            <!-- Security Panel -->
+            <div class="card is-hidden" id="panelSecurity">
+                <h2>Admin Security</h2>
+                <p class="sub">Update attendance admin password stored in Supabase.</p>
+
+                <label for="currPass">Current Password</label><input id="currPass" type="password" class="form-control">
+                <label for="newPass">New Password</label><input id="newPass" type="password" class="form-control">
+                <label for="confPass">Confirm New Password</label><input id="confPass" type="password" class="form-control">
+                <button class="btn btn-primary add-btn" onclick="changeAdminPassword()">Update Password</button>
+                <p id="secMsg" class="status-message"></p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/scripts/attendance-admin/dashboard.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+
+</body></html>

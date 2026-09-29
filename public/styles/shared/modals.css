@@ -1,0 +1,130 @@
+/* Modals & Alerts */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+.modal-dialog {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop);
+    width: 100%;
+    max-width: 400px;
+    padding: 24px;
+    transform: scale(0.95);
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.modal-overlay.active .modal-dialog {
+    transform: scale(1);
+}
+.modal-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.modal-desc { font-size: 14px; color: var(--ink-2); margin-bottom: 24px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+
+/* Premium Subject Modals CSS extracted from inline styles */
+.add-subject-dialog, .edit-subject-dialog {
+    max-width: 600px;
+    border-radius: 16px;
+    padding: 32px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 24px 48px rgba(0,0,0,0.1);
+}
+
+.add-subject-dialog h2, .edit-subject-dialog h2 {
+    margin-bottom: 8px;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+.add-subject-dialog p.sub, .edit-subject-dialog p.sub {
+    margin-bottom: 24px;
+    color: #64748b;
+}
+
+.add-subject-grid, .edit-subject-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.add-subject-field:first-child, .edit-subject-field:first-child {
+    grid-column: span 2;
+}
+
+.add-subject-field label, .edit-subject-field label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #475569;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.add-subject-field .form-control, .edit-subject-field .form-control {
+    width: 100%;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+}
+
+.semester-custom-input {
+    margin-top: 8px;
+}
+
+.modal-error {
+    color: #ef4444;
+    margin-top: 16px;
+    font-size: 0.9rem;
+}
+
+.modal-actions {
+    margin-top: 32px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-actions .btn-secondary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.modal-actions .btn-secondary:hover {
+    background: #f1f5f9;
+}
+
+.modal-actions .btn-primary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: #0878F9;
+    color: white;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 4px 12px rgba(8,120,249,0.3);
+}
+.modal-actions .btn-primary:hover {
+    background: #0666d6;
+}

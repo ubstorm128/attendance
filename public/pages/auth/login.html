@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Unified Login · Attendance</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="/styles/shared/main.css">
+    <link rel="stylesheet" href="/styles/auth/auth.css">
+</head>
+<body class="auth-page">
+    <div class="ambient-glow top"></div>
+    <div class="ambient-glow bottom"></div>
+
+        <div class="center auth-container">
+        <!-- INDIVIDUAL LOGIN VIEW -->
+        <div class="card auth-card" id="loginFormView">
+
+            <h1 id="loginHeading">Student Login</h1>
+            <p class="auth-subtitle" id="loginSubtitle">Sign in to access your student dashboard.</p>
+            
+            <div id="studentForm" class="auth-form hidden">
+                <label for="studentIdentifier">Email or Enrollment ID</label>
+                <input id="studentIdentifier" type="text" placeholder="e.g. ADTU/1/... or email" class="form-control">
+                
+                <label for="studentPass">Password</label>
+                <div class="password-wrap">
+                    <input id="studentPass" type="password" placeholder="••••••••" class="form-control" onkeydown="if(event.key==='Enter') loginStudent()">
+                    <button type="button" class="password-toggle" style="display: flex; align-items: center; justify-content: center;" aria-label="Show password" onclick="togglePassword('studentPass', this)">
+                        <svg class="eye-open" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <svg class="eye-slashed" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><path d="M3 3l18 18"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                
+                <button onclick="loginStudent()" id="btnStudent" class="btn btn-primary btn-block mt-24">Login</button>
+            </div>
+
+            <div id="staffForm" class="auth-form hidden">
+                <label for="staffUser">Email or Username</label>
+                <input id="staffUser" autocomplete="username" type="text" placeholder="Enter email or username" class="form-control">
+                
+                <label for="staffPass">Password</label>
+                <div class="password-wrap">
+                    <input id="staffPass" type="password" autocomplete="current-password" placeholder="••••••••" class="form-control" onkeydown="if(event.key==='Enter') loginStaff()">
+                    <button type="button" class="password-toggle" style="display: flex; align-items: center; justify-content: center;" aria-label="Show password" onclick="togglePassword('staffPass', this)">
+                        <svg class="eye-open" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <svg class="eye-slashed" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><path d="M3 3l18 18"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                
+                <button onclick="loginStaff()" id="btnStaff" class="btn btn-primary btn-block mt-24">Login</button>
+            </div>
+            
+            <p id="loginMsg" class="auth-msg"></p>
+            
+            <div class="auth-footer" id="loginFooter">
+                Don't have an account? <a href="/register">Register here</a>
+            </div>
+        </div>
+    </div>
+    <script src="/scripts/auth/login.js"></script>
+</body>
+</html>

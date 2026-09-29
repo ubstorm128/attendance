@@ -1,0 +1,12 @@
+@import "variables.css";
+@import "reset.css";
+@import "typography.css";
+@import "layout.css";
+@import "components.css";
+@import "buttons.css";
+@import "forms.css";
+@import "modals.css";
+@import "animations.css";
+@import "domain.css";
+
+@import "/styles/student/premium.css";

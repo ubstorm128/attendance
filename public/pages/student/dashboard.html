@@ -1,0 +1,424 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Student Attendance · Campus Check-In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+    
+
+    <link rel="stylesheet" href="/styles/shared/main.css">
+</head>
+
+<body>
+    <!- Ambient Canvas Glow ->
+    <div class="ambient-canvas"></div>
+
+    <!- Main Viewport Shell ->
+    <div class="viewport-shell">
+
+        <!- Top Header / Campus Navigation (Preserved but restyled globally) ->
+        <header class="campus-header-pill header-pill-container">
+            <div class="brand-cluster brand-cluster-flex">
+                <div class="campus-app-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="campus-app-text">
+                    <h1 class="campus-app-title">Campus Check-In</h1>
+                    <p class="campus-app-subtitle">University Attendance</p>
+                </div>
+            </div>
+
+            <!- Header Actions (Visible when student profile is stored) ->
+            <div class="header-actions">
+                <a href="/profile.html" class="header-profile-link hidden" id="headerProfileLink" title="Open Attendance &amp; Profile Portal">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+                <div id="profileChip" class="profile-chip hidden" title="View Profile">
+                    <div class="avatar-glyph" id="chipAvatar">ST</div>
+                    <span class="chip-name" id="chipName">Student</span>
+                    <button class="chip-switch-btn" id="switchProfileBtn" title="Switch Student Profile" aria-label="Switch Student Profile">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!- Dynamic Body Area ->
+        <div class="content-body">
+
+            <!- STATE 0: Verifying Loading State (when opened with QR token) ->
+            <div id="loadingView" class="verifying-loader">
+                <div class="spinner-ring"></div>
+                <h2 class="loading-title">Verifying Attendance…</h2>
+                <p class="loading-subtitle">Syncing with your classroom session</p>
+            </div>
+
+                        <!- STATE 0.2: Login View ->
+            <main id="loginView" class="auth-view hidden">
+                <div class="portal-card modern-auth-card">
+                    <div class="modern-envelope-icon">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </div>
+                    <h1 class="modern-card-title">Student Login</h1>
+                    <p class="modern-card-subtitle">Login with your Email or Enrollment ID.</p>
+                    
+                    <div class="modern-input-group">
+                        <div class="modern-input-body pl-4">
+                            <label for="loginIdentifierInput">EMAIL OR ENROLLMENT ID</label>
+                            <input id="loginIdentifierInput" type="text" placeholder="student@example.com or ADTU/...">
+                        </div>
+                    </div>
+                    
+                    <div class="modern-input-group mt-12">
+                        <div class="modern-input-body pl-4">
+                            <label for="loginPasswordInput">PASSWORD</label>
+                            <input id="loginPasswordInput" type="password" placeholder="********">
+                        </div>
+                    </div>
+                    
+                    <button class="modern-btn-primary" onclick="handleLogin()" id="loginBtn" class="modern-btn-primary mt-24">
+                        Login
+                    </button>
+                    <p id="loginErrorMsg" class="modern-error-msg" style="display:none;"></p>
+
+                    <button class="modern-btn-secondary" onclick="showView('email')">
+                        Don't have an account? Register
+                    </button>
+                    <button class="modern-btn-secondary mt-8 btn-outline-primary" onclick="handleForgotPassword()">
+                        Forgot Password?
+                    </button>
+                </div>
+            </main>
+
+            <!- STATE 0.3: Reset Password View ->
+            <main id="resetPasswordView" class="auth-view hidden" style="display:none;">
+                <div class="portal-card modern-auth-card">
+                    <h1 class="modern-card-title">Set New Password</h1>
+                    <p class="modern-card-subtitle">Choose a new password for your account.</p>
+                    
+                    <div class="modern-input-group mt-24">
+                        <div class="modern-input-body pl-4">
+                            <label for="newPasswordInput">NEW PASSWORD</label>
+                            <input id="newPasswordInput" type="password" placeholder="********">
+                        </div>
+                    </div>
+                    
+                    <button class="modern-btn-primary mt-24" onclick="submitNewPassword()" id="submitNewPasswordBtn">
+                        Update Password
+                    </button>
+                    <p id="resetErrorMsg" class="modern-error-msg" style="display:none;"></p>
+                </div>
+            </main>
+
+            <!- STATE 0.5: Email Auth (Required before anything else) ->
+            <main id="emailAuthView" class="auth-view hidden">
+
+                <!- Main Check-In Card ->
+                <div class="portal-card modern-auth-card" id="combinedAuthCard">
+                    <!- Email Verification Section ->
+                    <div id="emailStep1">
+                        <div class="modern-envelope-icon">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M22 6l-10 7L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </div>
+                        <h1 class="modern-card-title">Check-in with Email</h1>
+                        <p class="modern-card-subtitle">Enter your email to receive a one-time verification code.</p>
+                        
+                        <div class="modern-input-group" id="modernEmailGroup">
+                            <div class="modern-input-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M22 6l-10 7L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </svg>
+                            </div>
+                            <div class="modern-input-body">
+                                <label for="emailInput">EMAIL ADDRESS</label>
+                                <input id="emailInput" type="email" placeholder="student@example.com">
+                            </div>
+                        </div>
+                        
+                        <button class="modern-btn-primary" onclick="checkEmail()" id="sendOtpBtn">
+                            Send Code
+                        </button>
+                        <button class="modern-btn-secondary mt-12 btn-outline-secondary" onclick="showView('login')" type="button">
+                            Back to Login
+                        </button>
+                        <p id="emailLoginError" class="modern-error-msg" style="display:none;"></p>
+                    </div>
+
+                    <!- OTP Verification Section ->
+                    <div id="emailStep2" class="hidden">
+                        <hr class="modern-divider">
+                        
+                        <h1 class="modern-card-title">Verify Code</h1>
+                        <p class="modern-card-subtitle" id="verifySubtitle">Enter the 6-digit code sent to your email.</p>
+                        
+                        <div class="otp-boxes-container" id="otpBoxContainer">
+                            <input type="text" class="otp-box" maxlength="1" data-index="0" autocomplete="off">
+                            <input type="text" class="otp-box" maxlength="1" data-index="1" autocomplete="off">
+                            <input type="text" class="otp-box" maxlength="1" data-index="2" autocomplete="off">
+                            <input type="text" class="otp-box" maxlength="1" data-index="3" autocomplete="off">
+                            <input type="text" class="otp-box" maxlength="1" data-index="4" autocomplete="off">
+                            <input type="text" class="otp-box" maxlength="1" data-index="5" autocomplete="off">
+                        </div>
+                        <input type="hidden" id="otpInput">
+                        
+                        <button class="modern-btn-primary" onclick="verifyOtp()" id="verifyOtpBtn">
+                            Verify & Continue
+                        </button>
+                        <button class="modern-btn-secondary" onclick="resetEmailAuth()" id="changeEmailBtn">
+                            Use a different email
+                        </button>
+                        <p id="otpError" class="modern-error-msg" style="display:none;"></p>
+                    </div>
+                </div>
+            </main>
+
+            <!- STATE 1: Registration Form (Shown when token present + first-time student, or standby setup) ->
+            <main id="authView" class="auth-view hidden">
+                <div class="portal-card reg-card-padding" id="regCard">
+                    <!- Dynamic banner showing the scanned class ->
+                    <div class="session-detected-banner" id="sessionDetectedBanner">
+                        <div class="detected-label">
+                            <div class="pulse-emerald-dot"></div>
+                            <span>Class Session Active</span>
+                        </div>
+                        <div class="detected-subject" id="detectedSubjectText">Lecture Session</div>
+                        <div class="detected-teacher" id="detectedTeacherText">Instructor</div>
+                    </div>
+
+                    <div class="card-top-cluster">
+                        <span class="step-pill" id="stepPillLabel">1-Time Student Setup</span>
+                        <div class="hero-badge-container">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="8" r="4.5" stroke="currentColor" stroke-width="2"></circle>
+                                <path d="M4 20.5c0-3.5 3.5-5.5 8-5.5s8 2 8 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                            </svg>
+                        </div>
+                        <h1 class="card-title" id="regHeading">Confirm Attendance</h1>
+                        <p class="card-subtitle" id="regSubtitle">Enter your name and enrollment ID to record your attendance.</p>
+                    </div>
+
+                    <!- Input Cells ->
+                    <div class="grouped-inset-container" id="regGroup">
+                        <!- Full Name ->
+                        <div class="input-cell" id="nameCell">
+                            <div class="cell-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"></circle>
+                                </svg>
+                            </div>
+                            <div class="cell-body">
+                                <label class="cell-label" for="nameInput">Full Name</label>
+                                <input class="cell-input name-input" id="nameInput" type="text" autocomplete="name" placeholder="e.g. Chandrachur Chouhan" spellcheck="false">
+                            </div>
+                        </div>
+
+                                                <!- Enrollment ID ->
+                        <div class="input-cell" id="enrollmentCell">
+                            <div class="cell-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="2"></rect>
+                                    <path d="M7 8h10M7 12h6M7 16h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                </svg>
+                            </div>
+                            <div class="cell-body">
+                                <label class="cell-label" for="enrollmentInput">Enrollment ID</label>
+                                <input class="cell-input mono enrollment-input" id="enrollmentInput" type="text" autocomplete="off" placeholder="ADTU/1/2024-27/BCAO/012" spellcheck="false">
+                            </div>
+                        </div>
+
+                        <!- Password ->
+                        <div class="input-cell" id="regPasswordCell">
+                            <div class="cell-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2"></path>
+                                </svg>
+                            </div>
+                            <div class="cell-body">
+                                <label class="cell-label" for="regPasswordInput">Password</label>
+                                <input class="cell-input" id="regPasswordInput" type="password" placeholder="Create a password">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!- Field Error Callout ->
+                    <div class="field-error-callout" id="fieldErrorMsg">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
+                            <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                        </svg>
+                        <span id="fieldErrorText">Invalid input</span>
+                    </div>
+
+                    <!- Automated Section Sync Note ->
+                    <div class="sync-callout-card">
+                        <svg class="sync-callout-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                        <div class="sync-callout-text">
+                            <strong>Section is automatic</strong>: Resolved directly from your teacher's active subject session.
+                        </div>
+                    </div>
+
+                    <!- Submit CTA ->
+                    <button class="btn-action-primary" id="regSubmitBtn">
+                        <span id="regBtnLabel">Mark Me Present</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                </div>
+            </main>
+
+            <!- STATE 2: Standby View (When visiting directly without scanning a QR code) ->
+            <main id="standbyView" class="auth-view hidden">
+                <div class="portal-card standby-card">
+                    <div class="standby-scanner-art">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"></rect>
+                            <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"></rect>
+                            <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"></rect>
+                            <path d="M14 14h3v3M20 17v4M17 20h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                        </svg>
+                    </div>
+
+                    <h1 class="card-title">Ready for Class</h1>
+                    <p class="card-subtitle">Use your phone's Camera, Google Lens, or scanner app to scan the classroom QR code.</p>
+
+                    <!- Student Plaque ->
+                    <div class="student-id-plaque">
+                        <div class="plaque-avatar" id="plaqueAvatar">UB</div>
+                        <div class="plaque-info">
+                            <div class="plaque-name" id="plaqueName">Udit</div>
+                            <div class="plaque-enrollment" id="plaqueEnrollment">ADTU/...</div>
+                        </div>
+                    </div>
+
+                    <div class="scan-instruction-box">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" stroke-width="2"></rect>
+                            <path d="M12 18h.01M9 7h6M9 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                        </svg>
+                        <span>When the instructor projects the QR code, point Google Lens or your phone camera to check in instantly.</span>
+                    </div>
+
+                    <a href="/profile.html" class="btn-action-primary standby-link">
+                        <span class="standby-link-inner"><i data-lucide="bar-chart-2" class="btn-icon"></i> View My Attendance &amp; Profile</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </a>
+
+                    <button class="btn-action-secondary" id="standbySwitchBtn">
+                        Switch Student Profile
+                    </button>
+                </div>
+            </main>
+
+            <!- STATE 3: Attendance Receipt Card (Immediate confirmation after scan) ->
+            <main id="receiptView" class="auth-view hidden">
+                <div class="portal-card receipt-card-body" id="receiptCard">
+                    <div class="receipt-shield-halo">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </div>
+
+                    <h1 class="receipt-heading" id="receiptHeading">Marked Present!</h1>
+                    <div class="receipt-tagline" id="receiptStatusSub">Attendance verified &amp; recorded digitally</div>
+
+                    <div class="receipt-meta-grouped">
+                        <div class="meta-row">
+                            <span class="meta-label">Subject</span>
+                            <span class="meta-value" id="receiptSubject">—</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Instructor</span>
+                            <span class="meta-value" id="receiptTeacher">—</span>
+                        </div>
+                        <div class="meta-row" id="receiptSectionRow">
+                            <span class="meta-label">Section</span>
+                            <span class="meta-value tag" id="receiptSection">Class Section</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Time</span>
+                            <span class="meta-value" id="receiptTime">—</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Student</span>
+                            <span class="meta-value mono" id="receiptStudentId">—</span>
+                        </div>
+                    </div>
+
+                    <div class="sync-callout-card receipt-callout-card">
+                        <span class="receipt-callout-text"><i data-lucide="check" class="receipt-callout-icon"></i> Synced with Teacher's Live Roster</span>
+                    </div>
+
+                    <a href="/profile.html" class="btn-action-secondary receipt-link">
+                        <i data-lucide="bar-chart-2" class="btn-icon"></i> View Attendance &amp; Profile Record
+                    </a>
+                </div>
+            </main>
+
+        </div>
+
+        <!- Trust Badges Footer ->
+        <footer class="footer-badges-cluster">
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span>Instant Check-In</span>
+            </div>
+            <span>•</span>
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" stroke-width="2"></rect>
+                    <path d="M12 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                </svg>
+                <span>Google Lens Ready</span>
+            </div>
+            <span>•</span>
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span>Encrypted</span>
+            </div>
+        </footer>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/scripts/student/dashboard.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+
+
+</body></html>
+
+
+
+
+

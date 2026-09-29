@@ -1,0 +1,212 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Student Profile &amp; Attendance Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+
+    <link rel="stylesheet" href="/styles/shared/main.css">
+</head>
+
+<body class="profile-dashboard">
+    <div class="ambient-canvas"></div>
+
+    <div class="viewport-shell">
+        <!-- Header -->
+        <header class="global-navbar">
+            <div class="brand-cluster">
+                <div class="brand-icon-shield">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </div>
+                <div class="brand-text-block">
+                    <span class="brand-title">Student Portal</span>
+                    <span class="brand-sub">Academic Attendance &amp; Analytics</span>
+                </div>
+            </div>
+
+            <!-- Profile Chip -->
+            <div id="profileChip" class="profile-chip" hidden>
+                <div class="avatar-glyph" id="chipAvatar">ST</div>
+                <span class="chip-name" id="chipName">Student</span>
+                <button class="chip-switch-btn" id="switchProfileBtn" title="Switch Student / Sign Out" aria-label="Switch Student / Sign Out">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                        <path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- STATE 2: Student Profile & Attendance Dashboard (Module Two) -->
+        <main id="dashboardView">
+            <div class="profile-dashboard-grid">
+                <!-- LEFT COLUMN: Student Identity & Overall Status -->
+                <div class="dash-col-left">
+                    <!-- 1. Hero Student Profile Card -->
+                    <div class="portal-card profile-hero-card">
+                        <div class="profile-hero-top">
+                            <div class="profile-avatar-wrapper" onclick="triggerAvatarUpload()" title="Change Profile Picture">
+                                <div class="profile-avatar-img-box" id="profileAvatarBox">
+                                    <span id="profileAvatarInitials">ST</span>
+                                    <img id="profileAvatarImg" src="" alt="Profile Picture" hidden>
+                                </div>
+                                <div class="avatar-camera-badge" title="Upload Photo">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"></path>
+                                        <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"></circle>
+                                    </svg>
+                                </div>
+                                <input type="file" id="avatarFileInput" accept="image/*" hidden onchange="handleAvatarFileSelected(event)" class="form-control">
+                            </div>
+                            <div class="profile-meta-text">
+                                <h2 class="profile-student-name" id="dashStudentName">Student Name</h2>
+                                <div class="profile-enrollment-badge" id="dashEnrollment">ADTU/...</div>
+                                <div class="profile-section-pill" id="dashSectionPill">Standard</div>
+                                <button type="button" id="removeAvatarBtn" class="btn-remove-avatar" onclick="removeAvatarPhoto(event)" hidden title="Remove Photo">
+                                    <i class="small-control-icon" data-lucide="x"></i> Remove photo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- About Me Section -->
+                        <div class="profile-about-box">
+                            <div class="about-header-row">
+                                <span class="about-title-tag">About Me</span>
+                                <button class="about-edit-btn about-edit-action" id="editAboutBtn" onclick="toggleEditAbout()"><i class="small-control-icon" data-lucide="pencil"></i> Edit Bio</button>
+                            </div>
+                            <p class="about-text-content" id="aboutTextDisplay">No bio added yet. Tap edit to write about yourself, academic interests, or notes.</p>
+                            <div id="aboutEditBlock" hidden>
+                                <textarea id="aboutTextInput" class="about-textarea" rows="3" placeholder="Write a short note about yourself..."></textarea>
+                                <div class="about-btn-row">
+                                    <button class="btn-about-cancel" onclick="cancelEditAbout()">Cancel</button>
+                                    <button class="btn-about-save" onclick="saveAbout()">Save Bio</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Overall Attendance & Red Flag Notice Card -->
+                    <div class="portal-card overall-metric-card" id="overallCard">
+                        <div class="overall-gauge-header">
+                            <span class="gauge-caption">Overall Attendance</span>
+                            <div class="standing-pill good" id="overallStandingPill">
+                                <i class="small-control-icon" data-lucide="check-circle"></i> In Good Standing
+                            </div>
+                        </div>
+
+                        <div class="overall-big-percentage-row">
+                            <div class="big-percent-number good" id="overallPercentageText">--%</div>
+                            <div class="attendance-ratio-tag" id="overallRatioText">-- / -- sessions</div>
+                        </div>
+
+                        <!-- Red Flag Alert Callout (Shows if overall < 75%) -->
+                        <div class="red-flag-callout-box" id="overallRedFlagBox" hidden>
+                            <div class="red-flag-icon-wrap">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"></path>
+                                    <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></line>
+                                </svg>
+                            </div>
+                            <div class="red-flag-text-content">
+                                <strong>Attendance Shortage Alert</strong>
+                                <p id="overallRedFlagDesc">Your overall attendance is below the 75% requirement.</p>
+                            </div>
+                        </div>
+
+                        <!-- Metric Counters Row -->
+                        <div class="metrics-trio-row">
+                            <div class="metric-trio-item">
+                                <span class="trio-val" id="metricTotalClasses">0</span>
+                                <span class="trio-lbl">Total Held</span>
+                            </div>
+                            <div class="metric-trio-divider"></div>
+                            <div class="metric-trio-item">
+                                <span class="trio-val" id="metricAttended">0</span>
+                                <span class="trio-lbl">Attended</span>
+                            </div>
+                            <div class="metric-trio-divider"></div>
+                            <div class="metric-trio-item">
+                                <span class="trio-val" id="metricMissed">0</span>
+                                <span class="trio-lbl">Missed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Recent Check-Ins Timeline -->
+                    <div class="portal-card recent-timeline-card">
+                        <div class="timeline-section-header">
+                            <h3 class="timeline-title section-title-with-icon"><i class="section-title-icon" data-lucide="clock"></i> Recent Verified Check-Ins</h3>
+                        </div>
+                        <div id="timelineFilterChips" class="timeline-filter-bar" hidden></div>
+                        <div id="timelineContainer" class="timeline-stack">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Real-Time Leaderboard & Courses Breakdown -->
+                <div class="dash-col-right">
+                    <!-- 3. Real-Time Leaderboard Card (Qualifying strictly > 75%) -->
+                    <div class="portal-card leaderboard-card" id="leaderboardCard">
+                        <div class="leaderboard-header-row">
+                            <div>
+                                <h3 class="leaderboard-title section-title-with-icon"><i class="section-title-icon" data-lucide="trophy"></i> Real-Time Leaderboard</h3>
+                                <p class="leaderboard-subtitle">Qualifying students with strictly &gt;75% attendance</p>
+                            </div>
+                            <span class="live-pulse-badge">Live</span>
+                        </div>
+
+                        <div id="leaderboardList" class="leaderboard-roster-list">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- 4. Course Breakdown & Subject Red Flags -->
+                    <div class="portal-card subjects-breakdown-card">
+                        <div class="subjects-header-row">
+                            <h3 class="subjects-title section-title-with-icon"><i class="section-title-icon" data-lucide="book-open"></i> Course Attendance Breakdown</h3>
+                            <span class="subjects-sub">75% Target</span>
+                        </div>
+
+                        <div id="subjectsListContainer" class="subjects-list-stack">
+                            <!-- Dynamically populated with subject progress bars and red flags -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Trust Badges Footer -->
+        <footer class="footer-badges-cluster">
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span>Encrypted Academic Records</span>
+            </div>
+            <span>•</span>
+            <div class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M22 4L12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span>Live Supabase Cloud Sync</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/scripts/student/profile.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+
+
+
+</body></html>

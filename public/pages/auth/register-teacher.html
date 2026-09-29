@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Teacher Registration · Attendance</title>
+    <link rel="stylesheet" href="/styles/shared/main.css">
+    <link rel="stylesheet" href="/styles/auth/auth.css">
+</head>
+<body class="auth-page">
+    <div class="ambient-glow top"></div>
+    <div class="ambient-glow bottom"></div>
+
+    <div class="center auth-container" style="max-width: 420px;">
+        <div class="card auth-card">
+            <h1>Teacher Registration</h1>
+            <p class="auth-subtitle">Create your teacher account to manage student attendance.</p>
+            
+            <div class="auth-form active">
+                <label>Full Name</label>
+                <input id="regTeacherName" type="text" placeholder="Jane Smith" class="form-control">
+                
+                <label>Username</label>
+                <input id="regTeacherUser" type="text" placeholder="prof_smith" class="form-control">
+                
+                <label>Password</label>
+                <div class="password-wrap">
+                    <input id="regTeacherPass" type="password" placeholder="••••••••" class="form-control">
+                    <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePassword('regTeacherPass', this)">
+                        <svg class="eye-open" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <svg class="eye-slashed" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><path d="M3 3l18 18"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                
+                <button onclick="registerTeacher()" id="btnRegTeacher" class="btn btn-primary btn-block mt-24">Register Teacher</button>
+            </div>
+            
+            <p id="regMsg" class="auth-msg"></p>
+            
+            <div class="auth-footer">
+                Already have an account? <a href="/login?role=teacher">Sign in</a>
+            </div>
+        </div>
+    </div>
+    <script src="/scripts/auth/register.js"></script>
+</body>
+</html>

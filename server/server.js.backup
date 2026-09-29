@@ -6,6 +6,7 @@ const nodeCrypto = require('crypto');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { createClient } = require('@supabase/supabase-js');
 
 // Load .env variables if available (for local development)
 try {
@@ -35,17 +36,24 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
     max: 10,                    // max connections in pool
     idleTimeoutMillis: 30_000,  // close idle connections after 30s
-    connectionTimeoutMillis: 5_000  // fail fast if pool is exhausted (5s)
+    connectionTimeoutMillis: 30_000  // fail fast if pool is exhausted (30s to allow Supabase to wake up)
 });
+
+const supabaseUrl = process.env.SUPABASE_URL || 'https://hddezwltrmtxizbxuvvf.supabase.co'; // Inferring URL from SUPABASE_DB_URL
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+let supabase = null;
+if (supabaseAnonKey) {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+}
 
 // --- Static file cache ---
 // Pre-load all HTML pages into memory at startup so disk I/O is paid once,
 // not on every incoming request.
-const STATIC_FILES = ['student.html', 'admin.html', 'superadmin.html', 'profile.html'];
+const STATIC_FILES = ['pages/student/dashboard.html', 'pages/teacher/dashboard.html', 'pages/attendance-admin/dashboard.html', 'pages/student/profile.html'];
 const staticCache = new Map();
 for (const file of STATIC_FILES) {
     try {
-        staticCache.set(file, fs.readFileSync(path.join(__dirname, 'public', file)));
+        staticCache.set(file, fs.readFileSync(path.join(__dirname, '../public', file)));
     } catch (_) {
         console.warn(`[static] Could not pre-load ${file}`);
     }
@@ -91,6 +99,9 @@ async function initDb() {
             );
             ALTER TABLE students ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
             ALTER TABLE students ADD COLUMN IF NOT EXISTS about TEXT DEFAULT '';
+            ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
+            ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
+            ALTER TABLE superadmins ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
 
             CREATE TABLE IF NOT EXISTS sessions (
                 id SERIAL PRIMARY KEY,
@@ -151,12 +162,13 @@ async function initDb() {
         if (adminCheck.rows.length === 0) {
             const initialUser = process.env.SUPERADMIN_USER || 'admin';
             const initialPass = process.env.SUPERADMIN_PASS || 'admin123';
+            const initialEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
             const hashedPass = await bcrypt.hash(initialPass, BCRYPT_ROUNDS);
             await pool.query(
-                'INSERT INTO superadmins (id, username, password) VALUES ($1, $2, $3)',
-                ['admin-1', initialUser, hashedPass]
+                'INSERT INTO superadmins (id, username, password, email) VALUES ($1, $2, $3, $4)',
+                ['admin-1', initialUser, hashedPass, initialEmail]
             );
-            console.log(`Initial superadmin account initialized (${initialUser}) with hashed password.`);
+            console.log(`Initial superadmin account initialized (${initialUser}) with hashed password and email (${initialEmail}).`);
         }
 
         // --- One-time migration: hash any existing plain-text passwords ---
@@ -331,19 +343,19 @@ function sortStudentsByEnrollment(students) {
 // --- Validation helpers ---
 const NAME_REGEX = /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/;
 const ENROLLMENT_REGEX = /^ADTU\/\d+\/\d{4}-\d{2,4}\/[A-Z0-9]+\/\d+$/;
-const SECTION_REGEX = /^[A-Z0-9]{1,6}$/;
+const SECTION_REGEX = /^[A-Z0-9-]+$/i;
 
 function validateStudentFields(name, enrollment, section) {
     const n = (name || '').trim();
     const e = (enrollment || '').trim().toUpperCase();
-    const s = (section || '').trim().toUpperCase();
+    const s = (section || '').trim();
     if (!n) return { error: 'Name is required' };
     if (n.length > 100) return { error: 'Name must not exceed 100 characters' };
     if (!NAME_REGEX.test(n)) return { error: 'Name must contain letters and spaces only' };
     if (!e) return { error: 'Enrollment ID is required' };
     if (!ENROLLMENT_REGEX.test(e)) return { error: 'Invalid enrollment ID format. Expected format: ADTU/1/2023-26/BCAO/012' };
-    if (s && !SECTION_REGEX.test(s)) return { error: 'Section must be alphanumeric (e.g. A, B, S-1)' };
-    return { name: n, enrollment: e, section: s || '' };
+    if (s && !SECTION_REGEX.test(s)) return { error: 'Section can contain letters, numbers, and hyphens only (e.g. A, B, Sec-1)' };
+    return { name: n, enrollment: e, section: s ? s.toUpperCase() : '' };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -360,8 +372,20 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, headers);
             const content = (process.env.NODE_ENV === 'production' && staticCache.has(file))
                 ? staticCache.get(file)
-                : fs.readFileSync(path.join(__dirname, 'public', file));
+                : fs.readFileSync(path.join(__dirname, '../public', file));
             return res.end(content);
+        }
+
+        // --- static CSS files ---
+        if (req.method === 'GET' && pathname.startsWith('/styles/') && pathname.endsWith('.css')) {
+            try {
+                const cssPath = path.join(__dirname, '../public', pathname);
+                const content = fs.readFileSync(cssPath);
+                res.writeHead(200, { 'Content-Type': 'text/css', 'Cache-Control': 'no-cache, must-revalidate' });
+                return res.end(content);
+            } catch (err) {
+                // Ignore missing file, fallback to 404 below
+            }
         }
 
         // --- student registration ---
@@ -709,6 +733,219 @@ const server = http.createServer(async (req, res) => {
                     avatar: row.avatar,
                     about: row.about
                 }
+            });
+        }
+
+        // --- frontend config ---
+        if (req.method === 'GET' && pathname === '/api/config') {
+            return send(res, 200, {
+                url: process.env.SUPABASE_URL || 'https://hddezwltrmtxizbxuvvf.supabase.co',
+                anonKey: process.env.SUPABASE_ANON_KEY || 'dummy-key-to-prevent-crash-until-configured'
+            });
+        }
+
+        // --- supabase auth exchange ---
+        if (req.method === 'POST' && pathname === '/api/auth/supabase-login') {
+            const { access_token } = await readBody(req);
+            if (!access_token || !supabase) return send(res, 400, { error: 'Missing token or Supabase not configured' });
+            
+            // Verify token with Supabase
+            const { data: { user }, error } = await supabase.auth.getUser(access_token);
+            if (error || !user || !user.email) {
+                return send(res, 401, { error: 'Invalid Supabase token' });
+            }
+
+            const email = user.email;
+            
+            // 1. Check Superadmin
+            const saCheck = await pool.query('SELECT id, username FROM superadmins WHERE email = $1', [email]);
+            if (saCheck.rows.length) {
+                const admin = saCheck.rows[0];
+                const token = signToken({ role: 'admin', adminId: admin.id, username: admin.username });
+                return send(res, 200, { ok: true, role: 'admin', token, username: admin.username });
+            }
+
+            // 2. Check Teacher
+            const tCheck = await pool.query('SELECT id, name FROM teachers WHERE email = $1', [email]);
+            if (tCheck.rows.length) {
+                const teacher = tCheck.rows[0];
+                const token = signToken({ role: 'teacher', teacherId: teacher.id, teacherName: teacher.name });
+                return send(res, 200, { ok: true, role: 'teacher', teacherId: teacher.id, teacherName: teacher.name, token });
+            }
+
+            // 3. Check Student
+            const stCheck = await pool.query('SELECT enrollment, name FROM students WHERE email = $1', [email]);
+            if (stCheck.rows.length) {
+                const student = stCheck.rows[0];
+                const token = signToken({ role: 'student', enrollment: student.enrollment });
+                return send(res, 200, { ok: true, role: 'student', enrollment: student.enrollment, token });
+            }
+
+            // 4. Not found in any role -> send a special status to allow linking enrollment if they are a student
+            return send(res, 200, { ok: true, role: 'unlinked_student', email });
+        }
+
+        // --- student enrollment linking ---
+        if (req.method === 'POST' && pathname === '/api/student/link') {
+            const { access_token, enrollment } = await readBody(req);
+            if (!access_token || !enrollment || !supabase) return send(res, 400, { error: 'Missing required fields' });
+            
+            const { data: { user }, error } = await supabase.auth.getUser(access_token);
+            if (error || !user || !user.email) return send(res, 401, { error: 'Invalid token' });
+
+            // Check if enrollment exists
+            const stCheck = await pool.query('SELECT enrollment FROM students WHERE enrollment = $1', [enrollment]);
+            if (!stCheck.rows.length) return send(res, 404, { error: 'Enrollment ID not found' });
+            
+            // Ensure not already linked
+            const existingLink = await pool.query('SELECT email FROM students WHERE enrollment = $1', [enrollment]);
+            if (existingLink.rows[0].email) return send(res, 400, { error: 'Enrollment ID already linked to an account' });
+
+            // Link
+            await pool.query('UPDATE students SET email = $1 WHERE enrollment = $2', [user.email, enrollment]);
+            const token = signToken({ role: 'student', enrollment });
+            return send(res, 200, { ok: true, role: 'student', enrollment, token });
+        }
+
+        // --- check email existence ---
+        if (req.method === 'GET' && pathname === '/api/student/check-email') {
+            const email = searchParams.get('email');
+            if (!email) return send(res, 400, { error: 'Email required' });
+            const stCheck = await pool.query('SELECT enrollment FROM students WHERE email = $1', [email]);
+            return send(res, 200, { registered: stCheck.rows.length > 0 });
+        }
+
+        // --- lookup email by enrollment ---
+        if (req.method === 'GET' && pathname === '/api/student/lookup-email') {
+            const enrollment = searchParams.get('enrollment');
+            if (!enrollment) return send(res, 400, { error: 'Enrollment required' });
+            const stCheck = await pool.query('SELECT email FROM students WHERE enrollment = $1', [enrollment.toUpperCase()]);
+            if (stCheck.rows.length === 0) return send(res, 404, { error: 'Student not found' });
+            return send(res, 200, { email: stCheck.rows[0].email });
+        }
+
+        // --- unified auth-and-mark for QR scanning ---
+        if (req.method === 'POST' && pathname === '/api/student/auth-and-mark') {
+            const { access_token, qr_token } = await readBody(req);
+            if (!access_token || !supabase) return send(res, 400, { error: 'Missing required fields' });
+            
+            const { data: { user }, error } = await supabase.auth.getUser(access_token);
+            if (error || !user || !user.email) return send(res, 401, { error: 'Invalid Supabase token' });
+
+            // Validate QR session if provided
+            let session = null;
+            let resolvedSection = '';
+            let resolvedSemester = '';
+            if (qr_token) {
+                const sessR = await pool.query('SELECT id, teacher_id, teacher_name, subject, subject_id, qr_token FROM sessions WHERE active = true AND qr_token = $1', [qr_token]);
+                if (!sessR.rows.length) return send(res, 401, { error: 'QR code is invalid or expired' });
+                session = sessR.rows[0];
+            }
+
+            // Check if student exists
+            const stCheck = await pool.query('SELECT enrollment, name, section FROM students WHERE email = $1', [user.email]);
+            if (!stCheck.rows.length) {
+                return send(res, 200, { ok: true, require_registration: true, email: user.email });
+            }
+
+            const student = stCheck.rows[0];
+
+            if (!session) {
+                return send(res, 200, { ok: true, profile: student });
+            }
+
+            // Resolve subject info
+            resolvedSection = student.section || '';
+            if (session.subject_id) {
+                const subjR = await pool.query('SELECT section, semester FROM subjects WHERE id = $1', [session.subject_id]);
+                if (subjR.rows.length) {
+                    if (!resolvedSection && subjR.rows[0].section) resolvedSection = subjR.rows[0].section;
+                    if (subjR.rows[0].semester) resolvedSemester = subjR.rows[0].semester;
+                }
+            }
+
+            // Check duplicate attendance
+            const existingAtt = await pool.query(
+                'SELECT id, time, section FROM attendance WHERE session_id = $1 AND enrollment = $2',
+                [session.id, student.enrollment]
+            );
+            
+            if (existingAtt.rows.length) {
+                const existing = existingAtt.rows[0];
+                return send(res, 200, {
+                    ok: true, already: true, subject: session.subject || 'Class Session',
+                    teacherName: session.teacher_name || 'Instructor',
+                    time: existing.time.toISOString(), section: existing.section || resolvedSection,
+                    semester: resolvedSemester
+                });
+            }
+
+            // Insert attendance
+            await pool.query(
+                'INSERT INTO attendance (session_id, enrollment, name, section) VALUES ($1, $2, $3, $4)',
+                [session.id, student.enrollment, student.name, resolvedSection]
+            );
+
+            return send(res, 200, {
+                ok: true, already: false, subject: session.subject || 'Class Session',
+                teacherName: session.teacher_name || 'Instructor',
+                time: new Date().toISOString(), section: resolvedSection, semester: resolvedSemester
+            });
+        }
+
+        // --- unified register-and-mark for QR scanning ---
+        if (req.method === 'POST' && pathname === '/api/student/register-and-mark') {
+            const { access_token, name, enrollment, qr_token } = await readBody(req);
+            if (!access_token || !name || !enrollment || !supabase) return send(res, 400, { error: 'Missing required fields' });
+            
+            const v = validateStudentFields(name, enrollment, '');
+            if (v.error) return send(res, 400, { error: v.error });
+            
+            const { data: { user }, error } = await supabase.auth.getUser(access_token);
+            if (error || !user || !user.email) return send(res, 401, { error: 'Invalid Supabase token' });
+
+            // Ensure enrollment not taken
+            const existing = await pool.query('SELECT enrollment FROM students WHERE enrollment = $1', [v.enrollment]);
+            if (existing.rows.length) return send(res, 409, { error: 'Student with this enrollment ID is already registered' });
+            
+            // Validate QR session if provided
+            let session = null;
+            let resolvedSection = '';
+            let resolvedSemester = '';
+            if (qr_token) {
+                const sessR = await pool.query('SELECT id, teacher_id, teacher_name, subject, subject_id, qr_token FROM sessions WHERE active = true AND qr_token = $1', [qr_token]);
+                if (!sessR.rows.length) return send(res, 401, { error: 'QR code is invalid or expired' });
+                session = sessR.rows[0];
+                
+                if (session.subject_id) {
+                    const subjR = await pool.query('SELECT section, semester FROM subjects WHERE id = $1', [session.subject_id]);
+                    if (subjR.rows.length) {
+                        if (subjR.rows[0].section) resolvedSection = subjR.rows[0].section;
+                        if (subjR.rows[0].semester) resolvedSemester = subjR.rows[0].semester;
+                    }
+                }
+            }
+
+            // Create student record
+            await pool.query(
+                'INSERT INTO students (enrollment, name, section, avatar, about, email) VALUES ($1, $2, $3, $4, $5, $6)',
+                [v.enrollment, v.name, resolvedSection, '', '', user.email]
+            );
+
+            if (!session) {
+                return send(res, 200, { ok: true, profile: { name: v.name, enrollment: v.enrollment } });
+            }
+
+            // Mark attendance
+            await pool.query(
+                'INSERT INTO attendance (session_id, enrollment, name, section) VALUES ($1, $2, $3, $4)',
+                [session.id, v.enrollment, v.name, resolvedSection]
+            );
+
+            return send(res, 200, {
+                ok: true, already: false, subject: session.subject || 'Class Session',
+                teacherName: session.teacher_name || 'Instructor',
+                time: new Date().toISOString(), section: resolvedSection, semester: resolvedSemester
             });
         }
 
@@ -1204,8 +1441,8 @@ const server = http.createServer(async (req, res) => {
         // --- super-admin auth & management ---
         if (req.method === 'POST' && pathname === '/api/admin/login') {
             const { username, password } = await readBody(req);
-            if (!username || !password) return send(res, 400, { error: 'Username and password required' });
-            const r = await pool.query('SELECT id, username, password FROM superadmins WHERE username = $1', [username]);
+            if (!username || !password) return send(res, 400, { error: 'Username or email and password required' });
+            const r = await pool.query('SELECT id, username, password FROM superadmins WHERE username = $1 OR email = $1', [username]);
             if (!r.rows.length) return send(res, 401, { error: 'Invalid credentials' });
             const admin = r.rows[0];
             const match = await bcrypt.compare(password, admin.password);
@@ -1222,17 +1459,22 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'POST' && pathname === '/api/admin/teachers') {
             if (!authenticateAdmin(req, res)) return;
-            const { name, username, password } = await readBody(req);
-            if (!name || !username || !password) return send(res, 400, { error: 'missing fields' });
+            const { name, username, email, password } = await readBody(req);
+            if (!name || !username || (!email && !password)) return send(res, 400, { error: 'missing fields (name, username, and email or password)' });
 
-            const check = await pool.query('SELECT 1 FROM teachers WHERE username = $1', [username]);
+            const check = await pool.query('SELECT 1 FROM teachers WHERE username = $1 OR (email = $2 AND email IS NOT NULL)', [username, email || null]);
             if (check.rows.length) {
-                return send(res, 409, { error: 'username taken' });
+                return send(res, 409, { error: 'username or email already taken' });
             }
 
             const id = nodeCrypto.randomUUID();
-            const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
-            await pool.query('INSERT INTO teachers (id, name, username, password) VALUES ($1, $2, $3, $4)', [id, name, username, hashedPassword]);
+            let hashedPassword = null;
+            if (password) {
+                hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+            } else {
+                hashedPassword = await bcrypt.hash(nodeCrypto.randomUUID(), BCRYPT_ROUNDS);
+            }
+            await pool.query('INSERT INTO teachers (id, name, username, password, email) VALUES ($1, $2, $3, $4, $5)', [id, name, username, hashedPassword, email || null]);
             return send(res, 200, { ok: true, id });
         }
 
@@ -1245,8 +1487,52 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'GET' && pathname === '/api/admin/students') {
             if (!authenticateAdmin(req, res)) return;
-            const r = await pool.query('SELECT enrollment, name, section FROM students ORDER BY name ASC');
+            const r = await pool.query('SELECT enrollment, name, section, email FROM students ORDER BY name ASC');
             return send(res, 200, r.rows);
+        }
+
+        if (req.method === 'POST' && pathname === '/api/admin/students/edit') {
+            if (!authenticateAdmin(req, res)) return;
+            const { oldEnrollment, name, enrollment, email } = await readBody(req);
+            if (!oldEnrollment) return send(res, 400, { error: 'Old Enrollment is required' });
+            
+            const normalizedOld = oldEnrollment.trim().toUpperCase();
+            const normalizedNew = (enrollment || '').trim().toUpperCase();
+            const normalizedEmail = (email || '').trim().toLowerCase() || null;
+            
+            if (!normalizedNew) return send(res, 400, { error: 'Enrollment is required' });
+            if (!name || !name.trim()) return send(res, 400, { error: 'Name is required' });
+
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                
+                await client.query(
+                    'UPDATE students SET name = $1, enrollment = $2, email = $3 WHERE enrollment = $4',
+                    [name.trim(), normalizedNew, normalizedEmail, normalizedOld]
+                );
+                
+                if (normalizedOld !== normalizedNew) {
+                    await client.query(
+                        'UPDATE attendance SET enrollment = $1, name = $2 WHERE enrollment = $3',
+                        [normalizedNew, name.trim(), normalizedOld]
+                    );
+                } else {
+                    await client.query(
+                        'UPDATE attendance SET name = $1 WHERE enrollment = $2',
+                        [name.trim(), normalizedOld]
+                    );
+                }
+                
+                await client.query('COMMIT');
+                return send(res, 200, { ok: true });
+            } catch (e) {
+                await client.query('ROLLBACK');
+                console.error(e);
+                return send(res, 409, { error: 'Failed to update student. Ensure enrollment and email are unique and not already taken.' });
+            } finally {
+                client.release();
+            }
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/students/delete') {
@@ -1254,6 +1540,17 @@ const server = http.createServer(async (req, res) => {
             const { enrollment } = await readBody(req);
             if (!enrollment) return send(res, 400, { error: 'Enrollment is required' });
             await pool.query('DELETE FROM students WHERE enrollment = $1', [enrollment.trim().toUpperCase()]);
+            return send(res, 200, { ok: true });
+        }
+
+        if (req.method === 'POST' && pathname === '/api/admin/students/reset-password') {
+            if (!authenticateAdmin(req, res)) return;
+            const { email } = await readBody(req);
+            if (!email) return send(res, 400, { error: 'Email is required' });
+            if (!supabase) return send(res, 500, { error: 'Supabase is not configured' });
+            
+            const { error } = await supabase.auth.resetPasswordForEmail(email);
+            if (error) return send(res, 400, { error: error.message });
             return send(res, 200, { ok: true });
         }
 

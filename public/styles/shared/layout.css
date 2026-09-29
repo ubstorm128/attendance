@@ -1,0 +1,101 @@
+/* Layouts & Grids */
+.global-navbar {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: var(--bg-card-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    position: sticky;
+    top: 20px;
+    margin: 20px auto;
+    max-width: 1200px;
+    width: calc(100% - 48px);
+    z-index: 100;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-subtle);
+}
+.global-navbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--ink);
+    flex: 1;
+}
+.global-navbar .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+.global-navbar .nav-link {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-2);
+    text-decoration: none;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+.global-navbar .nav-link:hover, .global-navbar .nav-link.active {
+    color: var(--primary);
+}
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+.app-container.narrow {
+    max-width: 800px;
+}
+.center-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    padding: 24px;
+}
+.ambient-glow {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.8;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Global Icon Alignment Fallback */
+svg.lucide {
+    vertical-align: middle;
+}
+.ambient-glow.top { width: 520px; height: 520px; background: #E0E7FF; top: -200px; left: 15%; }
+.ambient-glow.bottom { width: 460px; height: 460px; background: #E2E8F0; bottom: -150px; right: 5%; }
+@media (max-width: 768px) {
+    .app-container { padding: 16px; }
+    .global-navbar { 
+        padding: 12px 20px; 
+        flex-wrap: wrap; 
+        height: auto; 
+        gap: 12px; 
+        margin: 12px auto; 
+        width: calc(100% - 32px); 
+        border-radius: var(--radius-xl); 
+        top: 12px; 
+    }
+    .global-navbar .nav-links { 
+        display: flex; 
+        width: 100%; 
+        overflow-x: auto; 
+        padding-bottom: 4px; 
+        gap: 16px; 
+    }
+    .global-navbar .brand { margin-bottom: 4px; }
+    
+    /* Make side-by-side elements stack on mobile */
+    .flex-row { flex-direction: column !important; align-items: stretch !important; }
+}
