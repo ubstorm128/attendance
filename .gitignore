@@ -1,5 +1,6 @@
 node_modules/
+.env
+
 Teachers.txt
 database-migration-notes.md
-.env
-data.json
+data.json
