@@ -95,8 +95,11 @@ async function addTeacher() {
                 list.forEach(t => {
                     const div = document.createElement('div');
                     div.className = 'row';
-                    div.innerHTML = `<div><strong>${t.name}</strong><br><span class="handle">@${t.username}</span><br><span class="handle" style="font-size:0.8rem; color:var(--text-secondary)">${t.email || ''}</span></div>
-                    <div style="display:flex; gap:8px;">
+                    div.innerHTML = `<div style="min-width: 0; flex: 1; margin-right: 12px;">
+                        <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${t.name}</strong>
+                        <span class="handle" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">@${t.username}</span>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-shrink: 0;">
                         <button class="btn btn-secondary" title="Reset Password" onclick="resetTeacherPassword('${escapeHtml(t.email || '')}')" ${!t.email ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
                         <button class="btn btn-secondary" title="Edit" onclick="openEditTeacherModal('${t.id}', '${escapeHtml(t.name)}', '${escapeHtml(t.username)}', '${escapeHtml(t.email || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
                         <button class="btn btn-danger" title="Remove" onclick="removeTeacher('${t.id}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
@@ -252,8 +255,11 @@ async function addTeacher() {
                     const div = document.createElement('div');
                     div.className = 'row';
                     const sEmail = s.email || '';
-                    div.innerHTML = `<div><strong>${s.name}</strong><br><span class="handle">${s.enrollment}${s.section ? ' · Sec ' + s.section : ''}</span><br><span class="handle" style="font-size:0.8rem; color:var(--text-secondary)">${sEmail}</span></div>
-                    <div style="display:flex; gap:8px;">
+                    div.innerHTML = `<div style="min-width: 0; flex: 1; margin-right: 12px;">
+                        <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${s.name}</strong>
+                        <span class="handle" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">${s.enrollment}${s.section ? ' · Sec ' + s.section : ''}</span>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-shrink: 0;">
                         <button class="btn btn-secondary" title="Reset Password" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
                         <button class="btn btn-secondary" title="Edit" onclick="openEditStudentModal('${s.enrollment}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}')"><i data-lucide="edit" width="18" height="18"></i></button>
                         <button class="btn btn-danger" title="Remove" onclick="removeStudent('${s.enrollment}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
