@@ -160,7 +160,7 @@ function setupPasswordToggles() {
         function logout() {
             localStorage.removeItem('teacher_token');
             localStorage.removeItem('teacher_data');
-            window.location.href = '/login';
+            window.location.href = '/login?role=teacher';
         }
 
         function enterDash() {

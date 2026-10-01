@@ -69,11 +69,15 @@ async function initPortal() {
 
 
 function handleSignOut() {
-    if (confirm('Sign out of student portal?')) {
-        localStorage.removeItem('student_token');
-        localStorage.removeItem('student_data');
-        window.location.href = '/login';
+    if (!confirm('Sign out of student portal?')) return;
+
+    if (profileChip) {
+        profileChip.hidden = true;
     }
+
+    localStorage.removeItem('student_token');
+    localStorage.removeItem('student_data');
+    window.location.href = '/login';
 }
 
 if (switchProfileBtn) {
@@ -82,6 +86,8 @@ if (switchProfileBtn) {
 
 
         function renderProfileChip() {
+            if (!profileChip) return;
+            
             if (!profile) {
                 profileChip.hidden = true;
                 return;
@@ -90,11 +96,11 @@ if (switchProfileBtn) {
             const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
             
             if (profile.avatar) {
-                chipAvatar.innerHTML = `<img class="avatar-image" src="${escapeHtml(profile.avatar)}" alt="Avatar">`;
+                if (chipAvatar) chipAvatar.innerHTML = `<img class="avatar-image" src="${escapeHtml(profile.avatar)}" alt="Avatar">`;
             } else {
-                chipAvatar.textContent = initials.toUpperCase();
+                if (chipAvatar) chipAvatar.textContent = initials.toUpperCase();
             }
-            chipName.textContent = parts[0] || 'Student';
+            if (chipName) chipName.textContent = parts[0] || 'Student';
             profileChip.hidden = false;
         }
 
@@ -156,8 +162,10 @@ if (switchProfileBtn) {
             // About Me Bio
             if (p.about && p.about.trim()) {
                 aboutTextDisplay.textContent = p.about.trim();
+                aboutTextDisplay.classList.remove('empty');
             } else {
                 aboutTextDisplay.textContent = 'No bio added yet. Tap edit to write about yourself, academic interests, or notes.';
+                aboutTextDisplay.classList.add('empty');
             }
 
             // 2. Overall Attendance & Red Flag Notice
@@ -176,10 +184,20 @@ if (switchProfileBtn) {
                 overallStandingPill.innerHTML = '<i class="small-control-icon" data-lucide="alert-triangle"></i> Attendance Shortage (&lt; 75%)';
                 overallRedFlagBox.hidden = false;
                 
-                const recText = ov.classesToRecover > 0 
-                    ? `You must attend the next <strong>${ov.classesToRecover} consecutive lecture${ov.classesToRecover > 1 ? 's' : ''}</strong> without absence to recover your overall attendance above the mandatory 75% threshold.`
-                    : 'Your overall attendance is currently below the mandatory 75% university requirement.';
-                overallRedFlagDesc.innerHTML = `Your overall attendance is at <strong>${ov.percentage}%</strong>. ${recText}`;
+                const currentPctEl = document.getElementById('alertCurrentPct');
+                if (currentPctEl) currentPctEl.textContent = `${ov.percentage}%`;
+                
+                const consecEl = document.getElementById('alertConsecutive');
+                if (consecEl) {
+                    consecEl.textContent = ov.classesToRecover > 0 ? ov.classesToRecover : 'N/A';
+                }
+
+                const descEl = document.getElementById('overallRedFlagDesc');
+                if (descEl) {
+                    descEl.textContent = ov.classesToRecover > 0 
+                        ? 'Attend these classes without absence to reach 75%.'
+                        : 'Your overall attendance is below the 75% requirement.';
+                }
             } else {
                 overallPercentageText.classList.remove('bad');
                 overallPercentageText.classList.add('good');
@@ -480,6 +498,11 @@ if (switchProfileBtn) {
 
                 if (res.ok) {
                     aboutTextDisplay.textContent = text || 'No bio added yet. Tap edit to write about yourself, academic interests, or notes.';
+                    if (text) {
+                        aboutTextDisplay.classList.remove('empty');
+                    } else {
+                        aboutTextDisplay.classList.add('empty');
+                    }
                     cancelEditAbout();
                 } else {
                     alert('Failed to save bio. Please check your connection.');

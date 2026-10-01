@@ -730,13 +730,17 @@ let token = new URLSearchParams(location.search).get('token');
 
         // Ã¢-â‚¬Ã¢-â‚¬ Profile Switching Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬Ã¢-â‚¬
         function handleSwitchProfile() {
-            if (confirm('Switch student profile? You can enter a different Name and Enrollment ID.')) {
-                localStorage.removeItem('profile');
-                profile = null;
-                nameInput.value = '';
-                enrollmentInput.value = '';
-                initApp();
+            if (!confirm('Switch student profile? You can enter a different Name and Enrollment ID.')) return;
+
+            if (profileChip) {
+                profileChip.style.display = 'none';
             }
+
+            localStorage.removeItem('profile');
+            profile = null;
+            nameInput.value = '';
+            enrollmentInput.value = '';
+            initApp();
         }
 
         switchProfileBtn.addEventListener('click', handleSwitchProfile);

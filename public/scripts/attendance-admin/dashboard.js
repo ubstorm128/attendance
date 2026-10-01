@@ -86,31 +86,53 @@ async function addTeacher() {
             }
         }
 
+        window.allTeachers = [];
         async function loadTeachers() {
             try {
                 const r = await adminApiFetch('/api/admin/teachers');
-                const list = await r.json();
-                const el = document.getElementById('list');
-                el.innerHTML = list.length ? '' : '<p class="empty">No teachers in database.</p>';
-                list.forEach(t => {
-                    const div = document.createElement('div');
-                    div.className = 'row';
-                    div.innerHTML = `<div style="min-width: 0; flex: 1; margin-right: 12px;">
-                        <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${t.name}</strong>
-                        <span class="handle" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">@${t.username}</span>
-                    </div>
-                    <div style="display:flex; gap:8px; flex-shrink: 0;">
-                        <button class="btn btn-secondary" title="Reset Password" onclick="resetTeacherPassword('${escapeHtml(t.email || '')}')" ${!t.email ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
-                        <button class="btn btn-secondary" title="Edit" onclick="openEditTeacherModal('${t.id}', '${escapeHtml(t.name)}', '${escapeHtml(t.username)}', '${escapeHtml(t.email || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
-                        <button class="btn btn-danger" title="Remove" onclick="removeTeacher('${t.id}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
-                    </div>`;
-                    el.appendChild(div);
-                });
-                if (window.lucide) window.lucide.createIcons();
+                window.allTeachers = await r.json();
+                filterTeachers();
             } catch (e) {
                 console.error('Failed to load teachers:', e);
             }
         }
+
+        function filterTeachers() {
+            const q = (document.getElementById('teacherSearch').value || '').toLowerCase();
+            const list = window.allTeachers.filter(t => t.name.toLowerCase().includes(q) || t.username.toLowerCase().includes(q) || (t.email && t.email.toLowerCase().includes(q)));
+            renderTeachers(list);
+        }
+
+        function renderTeachers(list) {
+            const el = document.getElementById('list');
+            el.innerHTML = list.length ? '' : '<p class="empty">No teachers found.</p>';
+            list.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'row clickable';
+                div.onclick = (e) => {
+                    if (!e.target.closest('button')) {
+                        div.classList.toggle('show-actions');
+                    }
+                };
+                div.innerHTML = `<div style="min-width: 0; flex: 1; margin-right: 12px;">
+                    <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${t.name}</strong>
+                    <span class="handle" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">@${t.username}</span>
+                </div>
+                <div class="action-btns">
+                    <button class="btn btn-secondary" title="Reset Password" onclick="resetTeacherPassword('${escapeHtml(t.email || '')}')" ${!t.email ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
+                    <button class="btn btn-secondary" title="Edit" onclick="openEditTeacherModal('${t.id}', '${escapeHtml(t.name)}', '${escapeHtml(t.username)}', '${escapeHtml(t.email || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
+                    <button class="btn btn-danger" title="Remove" onclick="removeTeacher('${t.id}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
+                </div>`;
+                el.appendChild(div);
+            });
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function toggleAddTeacher() {
+            const b = document.getElementById('addTeacherBlock');
+            b.style.display = b.style.display === 'none' ? 'block' : 'none';
+        }
+
 
         async function removeTeacher(id) {
             if (!confirm(`Remove teacher?`)) return;
@@ -245,32 +267,54 @@ async function addTeacher() {
             }
         }
 
+        window.allStudents = [];
         async function loadStudents() {
             try {
                 const r = await adminApiFetch('/api/admin/students');
-                const list = await r.json();
-                const el = document.getElementById('studentList');
-                el.innerHTML = list.length ? '' : '<p class="empty">No registered students in database.</p>';
-                list.forEach(s => {
-                    const div = document.createElement('div');
-                    div.className = 'row';
-                    const sEmail = s.email || '';
-                    div.innerHTML = `<div style="min-width: 0; flex: 1; margin-right: 12px;">
-                        <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${s.name}</strong>
-                        <span class="handle" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">${s.enrollment}${s.section ? ' · Sec ' + s.section : ''}</span>
-                    </div>
-                    <div style="display:flex; gap:8px; flex-shrink: 0;">
-                        <button class="btn btn-secondary" title="Reset Password" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
-                        <button class="btn btn-secondary" title="Edit" onclick="openEditStudentModal('${s.enrollment}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}')"><i data-lucide="edit" width="18" height="18"></i></button>
-                        <button class="btn btn-danger" title="Remove" onclick="removeStudent('${s.enrollment}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
-                    </div>`;
-                    el.appendChild(div);
-                });
-                if (window.lucide) window.lucide.createIcons();
+                window.allStudents = await r.json();
+                filterStudents();
             } catch (e) {
                 console.error('Failed to load students:', e);
             }
         }
+
+        function filterStudents() {
+            const q = (document.getElementById('studentSearch').value || '').toLowerCase();
+            const list = window.allStudents.filter(s => s.name.toLowerCase().includes(q) || s.enrollment.toLowerCase().includes(q) || (s.email && s.email.toLowerCase().includes(q)));
+            renderStudents(list);
+        }
+
+        function renderStudents(list) {
+            const el = document.getElementById('studentList');
+            el.innerHTML = list.length ? '' : '<p class="empty">No students found.</p>';
+            list.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'row clickable';
+                div.onclick = (e) => {
+                    if (!e.target.closest('button')) {
+                        div.classList.toggle('show-actions');
+                    }
+                };
+                const sEmail = s.email || '';
+                div.innerHTML = `<div style="min-width: 0; flex: 1; margin-right: 12px;">
+                    <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${s.name}</strong>
+                    <span class="handle" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">${s.enrollment}${s.section ? ' · Sec ' + s.section : ''}</span>
+                </div>
+                <div class="action-btns">
+                    <button class="btn btn-secondary" title="Reset Password" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
+                    <button class="btn btn-secondary" title="Edit" onclick="openEditStudentModal('${s.enrollment}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}')"><i data-lucide="edit" width="18" height="18"></i></button>
+                    <button class="btn btn-danger" title="Remove" onclick="removeStudent('${s.enrollment}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
+                </div>`;
+                el.appendChild(div);
+            });
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function toggleAddStudent() {
+            const b = document.getElementById('addStudentBlock');
+            b.style.display = b.style.display === 'none' ? 'block' : 'none';
+        }
+
 
         function escapeHtml(str) {
             if (!str) return '';

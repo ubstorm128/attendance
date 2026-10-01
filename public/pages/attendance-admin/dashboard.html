@@ -37,14 +37,27 @@
 
             <!-- Teachers Panel -->
             <div class="card" id="panelTeachers">
-                <h2>Manage Teachers</h2>
-                <p class="sub">Add or remove instructor accounts stored in Supabase.</p>
+                <div class="list-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2 style="margin:0;">Manage Teachers</h2>
+                        <p class="sub" style="margin:4px 0 0;">Add or remove instructor accounts stored in Supabase.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="teacherSearch" placeholder="Search..." class="form-control" style="margin:0; height:36px; max-width: 180px;" oninput="filterTeachers()">
+                        <button class="btn btn-primary" onclick="toggleAddTeacher()" style="height:36px; white-space:nowrap;">+ Add Teacher</button>
+                    </div>
+                </div>
 
-                <label for="name">Full name</label><input id="name" placeholder="Dr. John Smith" class="form-control">
-                <label for="username">Username</label><input id="username" placeholder="john_smith" class="form-control">
-                <label for="email">Email (Optional)</label><input id="email" type="email" placeholder="john@university.edu" class="form-control">
-                <label for="password">Password</label><input id="password" type="password" placeholder="••••••••" class="form-control">
-                <button class="btn btn-primary add-btn" onclick="addTeacher()">Add Teacher</button>
+                <div id="addTeacherBlock" style="display: none; background: var(--bg-input); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                    <label for="name">Full name</label><input id="name" placeholder="Dr. John Smith" class="form-control">
+                    <label for="username">Username</label><input id="username" placeholder="john_smith" class="form-control">
+                    <label for="email">Email (Optional)</label><input id="email" type="email" placeholder="john@university.edu" class="form-control">
+                    <label for="password">Password</label><input id="password" type="password" placeholder="••••••••" class="form-control">
+                    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
+                        <button class="btn btn-secondary" onclick="toggleAddTeacher()" style="background:var(--bg-0); border:none;">Cancel</button>
+                        <button class="btn btn-primary add-btn" style="margin:0;" onclick="addTeacher()">Save Teacher</button>
+                    </div>
+                </div>
 
                 <div class="list-heading">Teachers in Database</div>
                 <div id="list"></div>
@@ -52,15 +65,28 @@
 
             <!-- Students Panel -->
             <div class="card is-hidden" id="panelStudents">
-                <h2>Registered Students</h2>
-                <p class="sub">Students registered in Supabase database.</p>
+                <div class="list-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2 style="margin:0;">Registered Students</h2>
+                        <p class="sub" style="margin:4px 0 0;">Students registered in Supabase database.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="studentSearch" placeholder="Search..." class="form-control" style="margin:0; height:36px; max-width: 180px;" oninput="filterStudents()">
+                        <button class="btn btn-primary" onclick="toggleAddStudent()" style="height:36px; white-space:nowrap;">+ Add Student</button>
+                    </div>
+                </div>
 
-                <label for="studentName">Full name</label><input id="studentName" placeholder="Student Name" class="form-control">
-                <label for="studentEnrollment">Enrollment ID</label><input id="studentEnrollment" placeholder="ADTU/1/2023-26/BCAO/012" class="form-control">
-                <label for="studentSection">Section</label><input id="studentSection" placeholder="A" class="form-control">
-                <label for="studentEmail">Email</label><input id="studentEmail" type="email" placeholder="student@university.edu" class="form-control">
-                <label for="studentPassword">Password</label><input id="studentPassword" type="password" placeholder="••••••••" class="form-control">
-                <button class="btn btn-primary add-btn" onclick="addStudent()">Add Student</button>
+                <div id="addStudentBlock" style="display: none; background: var(--bg-input); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                    <label for="studentName">Full name</label><input id="studentName" placeholder="Student Name" class="form-control">
+                    <label for="studentEnrollment">Enrollment ID</label><input id="studentEnrollment" placeholder="ADTU/1/2023-26/BCAO/012" class="form-control">
+                    <label for="studentSection">Section</label><input id="studentSection" placeholder="A" class="form-control">
+                    <label for="studentEmail">Email</label><input id="studentEmail" type="email" placeholder="student@university.edu" class="form-control">
+                    <label for="studentPassword">Password</label><input id="studentPassword" type="password" placeholder="••••••••" class="form-control">
+                    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
+                        <button class="btn btn-secondary" onclick="toggleAddStudent()" style="background:var(--bg-0); border:none;">Cancel</button>
+                        <button class="btn btn-primary add-btn" style="margin:0;" onclick="addStudent()">Save Student</button>
+                    </div>
+                </div>
 
                 <div class="list-heading">Students in Database</div>
                 <div id="studentList"></div>
