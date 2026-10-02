@@ -128,3 +128,4 @@
 .modal-actions .btn-primary:hover {
     background: #0666d6;
 }
+@media (max-width: 600px) { .add-subject-grid, .edit-subject-grid { grid-template-columns: 1fr; } .add-subject-field:first-child, .edit-subject-field:first-child { grid-column: span 1; } }

@@ -1,4 +1,18 @@
-function setupPasswordToggles() {
+        function toggleMobileMenu() {
+            const navRight = document.getElementById('navRight');
+            const hamburger = document.getElementById('hamburgerIcon');
+            const close = document.getElementById('closeMenuIcon');
+            
+            if (navRight) {
+                const isActive = navRight.classList.toggle('active');
+                if (hamburger && close) {
+                    hamburger.style.display = isActive ? 'none' : 'block';
+                    close.style.display = isActive ? 'block' : 'none';
+                }
+            }
+        }
+
+        function setupPasswordToggles() {
             const toggles = document.querySelectorAll('[data-password-toggle]');
             toggles.forEach((toggle) => {
                 toggle.addEventListener('click', () => {
@@ -289,7 +303,7 @@ function setupPasswordToggles() {
                             <svg class="subject-card-action-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
                             View Attendance
                         </button>
-                        <button class="btn ${s.isActive ? 'primary' : 'secondary'} subject-card-action" onclick="selectSubjectById('${esc(s.id)}')">
+                        <button class="btn ${s.isActive ? 'btn-primary' : 'btn-dark'} subject-card-action" onclick="selectSubjectById('${esc(s.id)}')">
                             ${s.isActive ? 'Resume Session' : 'Launch Session'}
                         </button>
                     </div>
@@ -490,37 +504,52 @@ function setupPasswordToggles() {
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
             overlay.innerHTML = `
                 <div class="modal-dialog modal-dialog-scroll add-subject-dialog">
-                    <h2>Add Course Subject</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h2>Add Course Subject</h2>
+                        <button type="button" onclick="closeModal()" style="background: none; border: none; cursor: pointer; color: #64748b; padding: 4px; display: flex;" aria-label="Close">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
                     <p class="sub">Add a subject to your teaching catalog across your departments.</p>
                     <div class="add-subject-grid">
-                        <div class="add-subject-field">
-                            <label for="newSubjName">Course / Subject Name</label>
-                            <input id="newSubjName" class="form-control" placeholder="e.g. Data Structures & Algorithms">
+                        <div class="add-subject-field modern-input-group" style="margin-bottom: 0;">
+                            <div class="modern-input-body">
+                                <label for="newSubjName">Course / Subject Name</label>
+                                <input id="newSubjName" placeholder="e.g. Data Structures & Algorithms">
+                            </div>
                         </div>
-                        <div class="add-subject-field">
-                            <label for="newSubjCode">Course Code</label>
-                            <input id="newSubjCode" class="form-control" placeholder="e.g. CS-204">
+                        <div class="add-subject-field modern-input-group" style="margin-bottom: 0;">
+                            <div class="modern-input-body">
+                                <label for="newSubjCode">Course Code</label>
+                                <input id="newSubjCode" placeholder="e.g. CS-204">
+                            </div>
                         </div>
-                        <div class="add-subject-field">
-                            <label for="newSubjDept">Department / Stream</label>
-                            <input id="newSubjDept" class="form-control" placeholder="e.g. CSE, IT, BCA">
+                        <div class="add-subject-field modern-input-group" style="margin-bottom: 0;">
+                            <div class="modern-input-body">
+                                <label for="newSubjDept">Department / Stream</label>
+                                <input id="newSubjDept" placeholder="e.g. CSE, IT, BCA">
+                            </div>
                         </div>
-                        <div class="add-subject-field">
-                            <label for="newSubjSemester">Semester</label>
-                            <select id="newSubjSemester" class="form-control" onchange="toggleCustomSemester('newSubjSemester', 'newSubjSemesterCustom')">
-                                ${semesterChoices.options}
-                            </select>
-                            <input id="newSubjSemesterCustom" class="form-control semester-custom-input" placeholder="Enter a custom semester" hidden>
+                        <div class="add-subject-field modern-input-group" style="margin-bottom: 0; flex-direction: column; align-items: stretch;">
+                            <div class="modern-input-body">
+                                <label for="newSubjSemester">Semester</label>
+                                <select id="newSubjSemester" style="border: none; outline: none; background: transparent; font-size: 16px; color: #10264B; font-weight: 500; width: 100%;" onchange="toggleCustomSemester('newSubjSemester', 'newSubjSemesterCustom')">
+                                    ${semesterChoices.options}
+                                </select>
+                                <input id="newSubjSemesterCustom" class="semester-custom-input" style="margin-top: 8px; border-top: 1px dashed #E2E8F0; padding-top: 8px;" placeholder="Enter a custom semester" hidden>
+                            </div>
                         </div>
-                        <div class="add-subject-field">
-                            <label for="newSubjSection">Section / Batch</label>
-                            <input id="newSubjSection" class="form-control" placeholder="e.g. A, B, Sec-1" oninput="this.value = this.value.toUpperCase()">
+                        <div class="add-subject-field modern-input-group" style="margin-bottom: 0;">
+                            <div class="modern-input-body">
+                                <label for="newSubjSection">Section / Batch</label>
+                                <input id="newSubjSection" placeholder="e.g. A, B, Sec-1" oninput="this.value = this.value.toUpperCase()">
+                            </div>
                         </div>
                     </div>
                     <p class="modal-error" id="newSubjError"></p>
-                    <div class="modal-actions">
-                        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                        <button class="btn btn-primary" id="addSubjectBtn" onclick="submitAddSubject()">Save Subject</button>
+                    <div class="modal-actions" style="margin-top: 24px; align-items: center;">
+                        <button class="modern-btn-secondary" style="width: auto; padding: 0 24px; height: 44px; margin-top: 0;" onclick="closeModal()">Cancel</button>
+                        <button class="modern-btn-primary" id="addSubjectBtn" style="width: auto; padding: 0 24px; height: 44px;" onclick="submitAddSubject()">Save Subject</button>
                     </div>
                 </div>
             `;
@@ -582,31 +611,46 @@ function setupPasswordToggles() {
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
             overlay.innerHTML = `
                 <div class="modal-dialog modal-dialog-scroll edit-subject-dialog">
-                    <h2>Edit Course Subject</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h2>Edit Course Subject</h2>
+                        <button type="button" onclick="closeModal()" style="background: none; border: none; cursor: pointer; color: #64748b; padding: 4px; display: flex;" aria-label="Close">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
                     <p class="sub">Update subject details and department information.</p>
                     <div class="edit-subject-grid">
-                        <div class="edit-subject-field">
-                            <label for="editSubjName">Course / Subject Name</label>
-                            <input id="editSubjName" class="form-control" value="${esc(subj.name)}">
+                        <div class="edit-subject-field modern-input-group" style="margin-bottom: 0;">
+                            <div class="modern-input-body">
+                                <label for="editSubjName">Course / Subject Name</label>
+                                <input id="editSubjName" value="${esc(subj.name)}">
+                            </div>
                         </div>
-                        <div class="edit-subject-field">
-                            <label for="editSubjCode">Course Code</label>
-                            <input id="editSubjCode" class="form-control" value="${esc(subj.code || '')}">
+                        <div class="edit-subject-field modern-input-group" style="margin-bottom: 0;">
+                            <div class="modern-input-body">
+                                <label for="editSubjCode">Course Code</label>
+                                <input id="editSubjCode" value="${esc(subj.code || '')}">
+                            </div>
                         </div>
-                        <div class="edit-subject-field">
-                            <label for="editSubjDept">Department / Stream</label>
-                            <input id="editSubjDept" class="form-control" value="${esc(subj.department || '')}">
+                        <div class="edit-subject-field modern-input-group" style="margin-bottom: 0;">
+                            <div class="modern-input-body">
+                                <label for="editSubjDept">Department / Stream</label>
+                                <input id="editSubjDept" value="${esc(subj.department || '')}">
+                            </div>
                         </div>
-                        <div class="edit-subject-field">
-                            <label for="editSubjSemester">Semester</label>
-                            <select id="editSubjSemester" class="form-control" onchange="toggleCustomSemester('editSubjSemester', 'editSubjSemesterCustom')">
-                                ${semesterChoices.options}
-                            </select>
-                            <input id="editSubjSemesterCustom" class="form-control semester-custom-input" value="${semesterChoices.hasCustomSemester ? esc(currentSemester) : ''}" placeholder="Enter a custom semester" ${semesterChoices.hasCustomSemester ? '' : 'hidden'}>
+                        <div class="edit-subject-field modern-input-group" style="margin-bottom: 0; flex-direction: column; align-items: stretch;">
+                            <div class="modern-input-body">
+                                <label for="editSubjSemester">Semester</label>
+                                <select id="editSubjSemester" style="border: none; outline: none; background: transparent; font-size: 16px; color: #10264B; font-weight: 500; width: 100%;" onchange="toggleCustomSemester('editSubjSemester', 'editSubjSemesterCustom')">
+                                    ${semesterChoices.options}
+                                </select>
+                                <input id="editSubjSemesterCustom" class="semester-custom-input" style="margin-top: 8px; border-top: 1px dashed #E2E8F0; padding-top: 8px;" value="${semesterChoices.hasCustomSemester ? esc(currentSemester) : ''}" placeholder="Enter a custom semester" ${semesterChoices.hasCustomSemester ? '' : 'hidden'}>
+                            </div>
                         </div>
-                        <div class="edit-subject-field">
-                            <label for="editSubjSection">Section / Batch</label>
-                            <input id="editSubjSection" class="form-control" value="${esc(subj.section || '')}" placeholder="e.g. A, B, Sec-1" oninput="this.value = this.value.toUpperCase()">
+                        <div class="edit-subject-field modern-input-group" style="margin-bottom: 0;">
+                            <div class="modern-input-body">
+                                <label for="editSubjSection">Section / Batch</label>
+                                <input id="editSubjSection" value="${esc(subj.section || '')}" placeholder="e.g. A, B, Sec-1" oninput="this.value = this.value.toUpperCase()">
+                            </div>
                         </div>
                     </div>
                     <datalist id="semesterList">
@@ -620,9 +664,9 @@ function setupPasswordToggles() {
                         <option value="8th Sem">
                     </datalist>
                     <p class="modal-error" id="editSubjError"></p>
-                    <div class="modal-actions">
-                        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                        <button class="btn btn-primary" id="saveEditSubjectBtn" onclick="submitEditSubject('${esc(subj.id)}')">Save Changes</button>
+                    <div class="modal-actions" style="margin-top: 24px; align-items: center;">
+                        <button class="modern-btn-secondary" style="width: auto; padding: 0 24px; height: 44px; margin-top: 0;" onclick="closeModal()">Cancel</button>
+                        <button class="modern-btn-primary" id="saveEditSubjectBtn" style="width: auto; padding: 0 24px; height: 44px;" onclick="submitEditSubject('${esc(subj.id)}')">Save Changes</button>
                     </div>
                 </div>
             `;

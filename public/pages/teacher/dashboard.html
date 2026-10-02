@@ -1,10 +1,13 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Teacher Register</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+
 
     <link rel="stylesheet" href="/styles/shared/main.css">
 </head>
@@ -20,54 +23,68 @@
         <header class="global-navbar">
             <div class="brand">
                 <div class="mark">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" width="22" height="22">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"
+                        width="22" height="22">
                         <path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"></path>
                         <path d="M8 9h6M8 13h8" stroke-linecap="round"></path>
                     </svg>
                 </div>
-                Teacher Admin View
+                Teacher Admin
             </div>
-
-            <!-- 3-Segment Cupertino Pill Control -->
-            <nav class="tabs" id="tabs" aria-label="Navigation">
-                <div class="tab-pill" id="tabPill"></div>
-                <div class="active nav-link" id="tabSubj" data-tab="subjects" onclick="showTab('subjects')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                    </svg>
-                    <span class="hide-on-mobile">My Subjects</span>
-                </div>
-                <div class="nav-link" id="tabLive" data-tab="live" onclick="showTab('live')">
-                    <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
-                        <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                    </svg>
-                    <span class="hide-on-mobile">Live Session</span>
-                </div>
-                <div class="nav-link" id="tabHist" data-tab="history" onclick="showTab('history')">
-                    <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-                        <path d="M3 8h18M3 12h18M3 16h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                    </svg>
-                    <span class="hide-on-mobile">History</span>
-                </div>
-            </nav>
-
-            <div class="nav-right">
-                <div class="teacher-chip">
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                <svg id="hamburgerIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+                <svg id="closeMenuIcon" style="display: none;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12"></path>
+                </svg>
+            </button>
+            <div class="nav-right" id="navRight">
+                <div class="teacher-profile-chip">
                     <div class="teacher-avatar" id="teacherAvatar">WN</div>
-                    <span class="teacher-name-badge" id="teacherBadgeName">Teacher</span>
+                    <div class="teacher-info">
+                        <span class="teacher-name-badge" id="teacherBadgeName">Teacher</span>
+                        <span class="teacher-role">Administrator</span>
+                    </div>
                 </div>
-                <button class="logout" onclick="logout()" title="Sign Out" aria-label="Sign out">
-                    <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                <button class="logout-icon-btn" onclick="logout()" title="Sign Out" aria-label="Sign out">
+                    <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                     </svg>
-                    <span class="logout-label">Sign out</span>
                 </button>
             </div>
         </header>
 
         <main>
+            <!-- 3-Segment Cupertino Pill Control -->
+            <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+                <nav class="tabs" id="tabs" aria-label="Navigation">
+                    <div class="tab-pill" id="tabPill"></div>
+                    <div class="active nav-link" id="tabSubj" data-tab="subjects" onclick="showTab('subjects')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span class="hide-on-mobile">My Subjects</span>
+                    </div>
+                    <div class="nav-link" id="tabLive" data-tab="live" onclick="showTab('live')">
+                        <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
+                            <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                        </svg>
+                        <span class="hide-on-mobile">Live Session</span>
+                    </div>
+                    <div class="nav-link" id="tabHist" data-tab="history" onclick="showTab('history')">
+                        <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                            <path d="M3 8h18M3 12h18M3 16h12" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            </path>
+                        </svg>
+                        <span class="hide-on-mobile">History</span>
+                    </div>
+                </nav>
+            </div>
             <div class="page-header">
                 <div class="page-title-group">
                     <h1 id="hello">Welcome back</h1>
@@ -84,7 +101,8 @@
                             courses across departments.</p>
                     </div>
                     <button onclick="openAddSubjectModal()" class="btn btn-primary">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
@@ -100,7 +118,8 @@
                 <div class="subject-banner" id="subjectBanner" hidden>
                     <div class="subject-banner-left">
                         <button class="back-btn" onclick="showTab('subjects')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <path d="M19 12H5M12 19l-7-7 7-7"></path>
                             </svg>
                             All Subjects
@@ -109,7 +128,8 @@
                         <span class="subject-crumb-title" id="crumbSubjectName">General Session</span>
                         <span class="dept-pill" id="crumbSubjectDept">CSE</span>
                     </div>
-                    <button class="secondary btn btn-primary compact-button" onclick="showTab('subjects')">Switch Subject</button>
+                    <button class="secondary btn btn-primary compact-button" onclick="showTab('subjects')">Switch
+                        Subject</button>
                 </div>
 
                 <!-- Three Metric Summary Cards -->
@@ -125,7 +145,8 @@
                     <div class="stat">
                         <div class="stat-top">
                             <div class="label">Current Subject</div>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)"
+                                stroke-width="2">
                                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                             </svg>
@@ -151,7 +172,8 @@
                     <div class="card qr-card">
                         <div class="card-header">
                             <h2 class="card-title">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
                                     <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
                                     <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
@@ -165,24 +187,31 @@
                         <div class="field-row">
                             <div class="field live-subject-field">
                                 <label for="liveSubjectSelect">Select Course Subject</label>
-                                <select id="liveSubjectSelect" class="live-subject-select" onchange="onLiveSubjectSelectChange()">
+                                <select id="liveSubjectSelect" class="live-subject-select"
+                                    onchange="onLiveSubjectSelectChange()">
                                     <option value="">-- Choose Subject to Launch Register --</option>
                                 </select>
                                 <input id="subject" type="hidden">
                             </div>
                             <div class="session-actions session-actions-spaced">
-                                <button onclick="generateSession()" id="startBtn" class="btn btn-primary">Start Session</button>
-                                <button class="danger btn btn-danger" id="closeBtn" onclick="closeSession()" hidden>Close Session</button>
+                                <button onclick="generateSession()" id="startBtn" class="btn btn-primary">Start
+                                    Session</button>
+                                <button class="danger btn btn-danger" id="closeBtn" onclick="closeSession()"
+                                    hidden>Close Session</button>
                             </div>
                         </div>
 
                         <div class="qr-shell" id="qrShell">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <svg viewBox="0 0 24 24" fill="none" width="48" height="48">
-                                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"></rect>
-                                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"></rect>
-                                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"></rect>
-                                    <path d="M14 14h3v3M20 17v4M17 20h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor"
+                                        stroke-width="1.6"></rect>
+                                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor"
+                                        stroke-width="1.6"></rect>
+                                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor"
+                                        stroke-width="1.6"></rect>
+                                    <path d="M14 14h3v3M20 17v4M17 20h4" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round"></path>
                                 </svg>
                                 Choose a course subject from the dropdown and click Start Session to project the QR code
                                 for students.
@@ -198,8 +227,10 @@
                                     </p>
                                 </div>
                                 <div class="qr-controls-row">
-                                    <button class="secondary btn btn-primary" id="expandQrBtn" onclick="openProjectorModal()">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <button class="secondary btn btn-primary" id="expandQrBtn"
+                                        onclick="openProjectorModal()">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
                                             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
                                         </svg>
                                         Projector Mode
@@ -213,7 +244,8 @@
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="9" cy="7" r="4"></circle>
                                     <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -225,19 +257,21 @@
                         </div>
 
                         <div class="table-wrap">
-                            <div class="table-container"><table>
-                                <thead>
-                                    <tr>
-                                        <th>Student</th>
-                                        <th class="hide-on-mobile">Enrollment ID</th>
-                                        <th class="hide-on-mobile">Section</th>
-                                        <th>Arrival</th>
-                                        <th class="hide-on-mobile">Status</th>
-                                        <th class="text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="rows"></tbody>
-                            </table></div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th class="hide-on-mobile">Enrollment ID</th>
+                                            <th class="hide-on-mobile">Section</th>
+                                            <th>Arrival</th>
+                                            <th class="hide-on-mobile">Status</th>
+                                            <th class="text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rows"></tbody>
+                                </table>
+                            </div>
                             <div id="emptyRosterMsg" class="empty-roster" hidden>
                                 No check-ins recorded yet. As students scan the QR code, their check-ins will stream in
                                 here live.
@@ -251,7 +285,8 @@
             <div id="historyTab" class="card" hidden>
                 <div class="card-header">
                     <h2 class="card-title">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
@@ -267,7 +302,8 @@
 
     <!-- Fullscreen Projector Modal (Lecture Hall View) -->
     <div id="projectorModal" class="projector-modal" hidden>
-        <button class="projector-close btn btn-primary" onclick="closeProjectorModal()" aria-label="Exit Projector Mode">
+        <button class="projector-close btn btn-primary" onclick="closeProjectorModal()"
+            aria-label="Exit Projector Mode">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -290,4 +326,6 @@
     </script>
 
 
-</body></html>
+</body>
+
+</html>

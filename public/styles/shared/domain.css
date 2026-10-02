@@ -418,8 +418,8 @@
             border-radius: var(--radius-pill);
             font-size: 11px;
             font-weight: 600;
-            background: rgba(0, 85, 179, 0.10);
-            color: #004D99;
+            background: rgba(118, 118, 128, 0.12);
+            color: var(--ink-2);
             letter-spacing: 0.02em;
         }
 
@@ -451,8 +451,8 @@
             border-radius: var(--radius-pill);
             font-size: 11px;
             font-weight: 600;
-            background: rgba(142, 68, 173, 0.12);
-            color: #8E44AD;
+            background: rgba(118, 118, 128, 0.12);
+            color: var(--ink-2);
             letter-spacing: 0.02em;
             margin-left: 6px;
         }
@@ -1370,15 +1370,15 @@
 
             .stats {
                 display: flex;
-                overflow-x: auto;
-                scroll-snap-type: x mandatory;
-                padding-bottom: 8px;
+                flex-direction: column;
+
+
                 gap: 12px;
             }
 
             .stat {
-                min-width: 85%;
-                scroll-snap-align: center;
+                width: 100%;
+
             }
 
             .session-actions {
@@ -3943,3 +3943,43 @@
 .alert-metric-value { font-size: 32px; font-weight: 800; line-height: 1; color: #d11a43; }
 .alert-metric-divider { width: 1px; height: 40px; background-color: #ffb6c1; }
 .alert-footer { display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #900b2a; background-color: rgba(255, 182, 193, 0.3); padding: 10px 14px; border-radius: 10px; text-align: center; }
+
+        .teacher-profile-chip { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .teacher-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #0878F9, #3B82F6); color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .teacher-info { display: flex; flex-direction: column; justify-content: center; }
+        .teacher-name-badge { font-size: 13px; font-weight: 600; color: #1E293B; line-height: 1.2; }
+        .teacher-role { font-size: 11px; font-weight: 500; color: #64748B; line-height: 1.2; }
+        .logout-icon-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E2E8F0; color: #64748B; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .logout-icon-btn:hover { background: #FEF2F2; color: #EF4444; border-color: #FECACA; }
+        .logout-icon-btn svg { flex: none; }
+
+        .mobile-menu-btn { display: none; background: none; border: none; color: #1E293B; cursor: pointer; padding: 8px; }
+        @media (max-width: 640px) {
+            .mobile-menu-btn { display: block; margin-left: auto; }
+            .nav-right {
+                position: static;
+                width: 100%;
+                flex-basis: 100%;
+                background: transparent;
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+                border: none;
+                box-shadow: none;
+                max-height: 0;
+                overflow: hidden;
+                padding-top: 0;
+                padding-bottom: 0;
+                opacity: 0;
+                transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
+            }
+            .nav-right.active {
+                max-height: 200px;
+                opacity: 1;
+                padding-top: 8px;
+                padding-bottom: 4px;
+            }
+            .teacher-profile-chip { width: 100%; justify-content: center; }
+            .logout-icon-btn { width: 100%; border-radius: 12px; padding: 10px; height: auto; justify-content: center; }
+            .logout-icon-btn::after { content: 'Sign Out'; margin-left: 8px; font-weight: 500; }
+        }
