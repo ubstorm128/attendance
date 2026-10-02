@@ -75,7 +75,7 @@ document.querySelector('[role="tablist"]').addEventListener('keydown', (event) =
 function logout() { 
     localStorage.removeItem('admin_token'); 
     localStorage.removeItem('admin_data');
-    window.location.href = '/login';
+    window.location.href = '/main';
 }
 
 // Initial load
