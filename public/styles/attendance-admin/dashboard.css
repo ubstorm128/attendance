@@ -1,0 +1,498 @@
+.admin-dashboard {
+    min-height: 100vh;
+    background-color: var(--bg-0);
+    background-image:
+        linear-gradient(rgba(29, 29, 31, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(29, 29, 31, 0.018) 1px, transparent 1px);
+    background-size: 48px 48px;
+}
+
+.admin-dashboard #dash {
+    min-height: 100vh;
+}
+
+.admin-dashboard .global-navbar {
+    position: sticky;
+    top: 12px;
+    width: calc(100% - 48px);
+    max-width: 1280px;
+    height: 64px;
+    margin: 12px auto 0;
+    padding: 0 20px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(29, 29, 31, 0.08);
+    box-shadow: 0 2px 8px rgba(29, 29, 31, 0.04), 0 12px 30px -20px rgba(29, 29, 31, 0.2);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
+}
+
+.admin-dashboard .brand {
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.admin-dashboard .brand .mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--primary);
+    box-shadow: none;
+}
+
+.admin-dashboard .logout {
+    appearance: none;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--danger);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+}
+
+.admin-dashboard .logout svg {
+    width: 16px;
+    height: 16px;
+}
+
+.admin-dashboard main {
+    position: relative;
+    z-index: 1;
+    width: calc(100% - 64px);
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 34px 0 64px;
+}
+
+.admin-dashboard .segmented-control {
+    max-width: 520px;
+    margin: 0 auto 24px;
+    padding: 4px;
+    gap: 4px;
+    border-radius: 14px;
+    background: rgba(118, 118, 128, 0.12);
+}
+
+.admin-dashboard .seg-btn {
+    min-height: 44px;
+    border-radius: 10px;
+    color: var(--ink-2);
+    font-size: 14px;
+}
+
+.admin-dashboard .seg-btn:focus-visible,
+.admin-dashboard .logout:focus-visible,
+.admin-dashboard .btn:focus-visible,
+.admin-dashboard .record-summary:focus-visible,
+.admin-dashboard .action-btns button:focus-visible {
+    outline: 3px solid rgba(0, 102, 204, 0.35);
+    outline-offset: 2px;
+}
+
+.admin-dashboard .admin-panel.card {
+    padding: 28px;
+    border: 1px solid rgba(29, 29, 31, 0.08);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), 0 20px 40px -24px rgba(0, 0, 0, 0.18);
+    animation: none;
+}
+
+.admin-dashboard .list-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.admin-dashboard .panel-heading h2,
+.admin-dashboard .security-panel h2 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.admin-dashboard .panel-heading .sub,
+.admin-dashboard .security-panel > .sub {
+    margin: 6px 0 0;
+    color: var(--ink-2);
+    font-size: 13px;
+}
+
+.admin-dashboard .list-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.admin-dashboard .list-tools .form-control {
+    width: min(260px, 28vw);
+    height: 44px;
+    margin: 0;
+}
+
+.admin-dashboard .list-tools .btn {
+    min-height: 44px;
+}
+
+.admin-dashboard .list-tools .btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+.admin-dashboard .list-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 28px 0 12px;
+    color: var(--ink-2);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}
+
+.admin-dashboard .record-count {
+    min-width: 26px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--bg-input);
+    color: var(--ink-2);
+    font-size: 12px;
+    letter-spacing: 0;
+    text-align: center;
+}
+
+.admin-dashboard .row.admin-record-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 16px;
+    min-height: 72px;
+    margin: 0 0 8px;
+    padding: 12px 14px;
+    border: 1px solid rgba(29, 29, 31, 0.08);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: none;
+    animation: none;
+}
+
+.admin-dashboard .record-identity {
+    min-width: 0;
+    flex: 1;
+}
+
+.admin-dashboard .record-summary {
+    display: none;
+}
+
+.admin-dashboard .record-identity strong {
+    display: block;
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-dashboard .record-identity .handle {
+    display: block;
+    overflow: hidden;
+    margin-top: 4px;
+    color: var(--ink-2);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-wrap: anywhere;
+}
+
+.admin-dashboard .action-btns {
+    display: flex;
+    flex: none;
+    justify-content: flex-end !important;
+    gap: 8px;
+    width: auto;
+    max-height: none;
+    margin: 0;
+    overflow: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.admin-dashboard .action-btns .btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+    border-radius: 10px;
+}
+
+.admin-dashboard .action-btns .btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.admin-dashboard .add-record-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+    margin: 0 0 22px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-canvas);
+}
+
+.admin-dashboard .add-record-form[hidden] {
+    display: none;
+}
+
+.admin-dashboard .add-record-form .form-field {
+    min-width: 0;
+}
+
+.admin-dashboard .add-record-form .form-field:first-child label {
+    margin-top: 0;
+}
+
+.admin-dashboard .form-actions {
+    display: flex;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.admin-dashboard .form-actions .btn {
+    min-height: 44px;
+}
+
+.admin-dashboard .security-form {
+    max-width: 520px;
+}
+
+.admin-dashboard .security-form .btn {
+    min-height: 44px;
+    margin-top: 22px;
+}
+
+.admin-dashboard .status-message {
+    color: var(--ink-2);
+}
+
+.admin-dashboard .status-message.is-error {
+    color: var(--danger);
+}
+
+.admin-dashboard .status-message.is-success {
+    color: var(--success-text);
+}
+
+@media (max-width: 720px) {
+    .admin-dashboard .global-navbar {
+        top: 8px;
+        width: calc(100% - 24px);
+        height: 58px;
+        margin-top: 8px;
+        padding: 0 12px;
+    }
+
+    .admin-dashboard .brand {
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    .admin-dashboard .brand .mark {
+        width: 32px;
+        height: 32px;
+    }
+
+    .admin-dashboard .logout {
+        gap: 6px;
+        padding: 8px;
+    }
+
+    .admin-dashboard main {
+        width: calc(100% - 28px);
+        padding: 22px 0 40px;
+    }
+
+    .admin-dashboard .segmented-control {
+        max-width: none;
+        margin-bottom: 16px;
+    }
+
+    .admin-dashboard .seg-btn {
+        min-width: 0;
+        padding: 8px 6px;
+    }
+
+    .admin-dashboard .admin-panel.card {
+        padding: 20px 16px;
+    }
+
+    .admin-dashboard .list-header-row {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .admin-dashboard .list-tools {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        width: 100%;
+    }
+
+    .admin-dashboard .list-tools .form-control {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .admin-dashboard .list-tools .btn {
+        padding: 10px 12px;
+    }
+
+    .admin-dashboard .row.admin-record-row {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0;
+        padding: 10px;
+    }
+
+    .admin-dashboard .record-identity {
+        display: none;
+    }
+
+    .admin-dashboard .record-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        min-height: 44px;
+        padding: 2px 4px;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .admin-dashboard .record-summary-text {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .admin-dashboard .record-summary-text strong {
+        overflow: hidden;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .admin-dashboard .record-summary-text span {
+        overflow: hidden;
+        color: var(--ink-2);
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .admin-dashboard .record-summary svg {
+        width: 18px;
+        height: 18px;
+        flex: none;
+        color: var(--ink-2);
+        transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .admin-dashboard .row.show-actions .record-summary svg {
+        transform: rotate(180deg);
+    }
+
+    .admin-dashboard .action-btns {
+        justify-content: center !important;
+        width: 100%;
+        max-height: 0;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+        gap: 4px;
+        transition: max-height 260ms cubic-bezier(.22, 1, .36, 1), margin 260ms cubic-bezier(.22, 1, .36, 1), opacity 180ms ease;
+    }
+
+    .admin-dashboard .row.show-actions .action-btns {
+        max-height: 60px;
+        margin-top: 8px;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .admin-dashboard .action-btns .btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+    }
+}
+
+@media (max-width: 460px) {
+    .admin-dashboard .brand {
+        font-size: 13px;
+    }
+
+    .admin-dashboard .logout .logout-text {
+        display: none;
+    }
+
+    .admin-dashboard .list-tools {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-dashboard .list-tools .btn {
+        width: 100%;
+    }
+
+    .admin-dashboard .row.admin-record-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-dashboard .action-btns {
+        justify-content: center !important;
+    }
+
+    .admin-dashboard .add-record-form {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 16px;
+    }
+
+    .admin-dashboard .form-actions {
+        grid-column: auto;
+    }
+
+    .admin-dashboard .form-actions .btn {
+        flex: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-dashboard *,
+    .admin-dashboard *::before,
+    .admin-dashboard *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

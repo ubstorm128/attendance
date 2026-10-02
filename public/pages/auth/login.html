@@ -19,45 +19,53 @@
             <h1 id="loginHeading">Student Login</h1>
             <p class="auth-subtitle" id="loginSubtitle">Sign in to access your student dashboard.</p>
             
-            <div id="studentForm" class="auth-form hidden">
-                <label for="studentIdentifier">Email or Enrollment ID</label>
-                <input id="studentIdentifier" type="text" placeholder="e.g. ADTU/1/... or email" class="form-control">
+            <div id="studentForm" class="auth-form">
+                <input id="studentIdentifier" type="text" placeholder="Email or Enrollment ID" class="form-control">
                 
-                <label for="studentPass">Password</label>
-                <div class="password-wrap">
-                    <input id="studentPass" type="password" placeholder="••••••••" class="form-control" onkeydown="if(event.key==='Enter') loginStudent()">
+                <div class="password-wrap" style="margin-top: 16px;">
+                    <input id="studentPass" type="password" placeholder="Password" class="form-control" onkeydown="if(event.key==='Enter') loginStudent()">
                     <button type="button" class="password-toggle" style="display: flex; align-items: center; justify-content: center;" aria-label="Show password" onclick="togglePassword('studentPass', this)">
                         <svg class="eye-open" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         <svg class="eye-slashed" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><path d="M3 3l18 18"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     </button>
                 </div>
                 
-                <button onclick="loginStudent()" id="btnStudent" class="btn btn-primary btn-block mt-24">Login</button>
+                <button onclick="loginStudent()" id="btnStudent" class="btn btn-primary btn-block" style="margin-top: 16px;">Login</button>
             </div>
 
             <div id="staffForm" class="auth-form hidden">
-                <label for="staffUser">Email or Username</label>
-                <input id="staffUser" autocomplete="username" type="text" placeholder="Enter email or username" class="form-control">
+                <input id="staffUser" autocomplete="username" type="text" placeholder="Email or Username" class="form-control">
                 
-                <label for="staffPass">Password</label>
-                <div class="password-wrap">
-                    <input id="staffPass" type="password" autocomplete="current-password" placeholder="••••••••" class="form-control" onkeydown="if(event.key==='Enter') loginStaff()">
+                <div class="password-wrap" style="margin-top: 16px;">
+                    <input id="staffPass" type="password" autocomplete="current-password" placeholder="Password" class="form-control" onkeydown="if(event.key==='Enter') loginStaff()">
                     <button type="button" class="password-toggle" style="display: flex; align-items: center; justify-content: center;" aria-label="Show password" onclick="togglePassword('staffPass', this)">
                         <svg class="eye-open" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         <svg class="eye-slashed" viewBox="0 0 24 24"><path d="M2.5 12S5.5 5 12 5s9.5 7 9.5 7-3 7-9.5 7S2.5 12 2.5 12Z"></path><path d="M3 3l18 18"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     </button>
                 </div>
                 
-                <button onclick="loginStaff()" id="btnStaff" class="btn btn-primary btn-block mt-24">Login</button>
+                <button onclick="loginStaff()" id="btnStaff" class="btn btn-primary btn-block" style="margin-top: 16px;">Login</button>
             </div>
+            
+            <div class="auth-footer" id="loginFooter" style="border-top: none; padding-top: 0; margin-top: 16px; margin-bottom: 8px; font-size: 13px; display: flex; flex-wrap: wrap; justify-content: center; column-gap: 4px;">
+                <span>Don't have an account?</span> <a href="/register">Register here</a>
+            </div>
+            
+            <div class="auth-divider" style="display: flex; align-items: center; text-align: center; margin: 12px 0; color: var(--text-muted); font-size: 0.875rem;">
+                <div style="flex: 1; border-bottom: 1px solid var(--border);"></div>
+                <span style="padding: 0 10px;">or</span>
+                <div style="flex: 1; border-bottom: 1px solid var(--border);"></div>
+            </div>
+
+            <button onclick="loginWithGoogle()" id="btnGoogle" class="btn btn-outline btn-block" style="margin-bottom: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; min-height: 38px;">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon" style="width: 18px; height: 18px;">
+                Continue with Google
+            </button>
             
             <p id="loginMsg" class="auth-msg"></p>
             
-            <div class="auth-footer" id="loginFooter">
-                Don't have an account? <a href="/register">Register here</a>
-            </div>
         </div>
     </div>
-    <script src="/scripts/auth/login.js"></script>
+    <script src="/scripts/auth/login.js?v=11"></script>
 </body>
 </html>

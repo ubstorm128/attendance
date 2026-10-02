@@ -49,7 +49,7 @@ if (supabaseAnonKey) {
 // --- Static file cache ---
 // Pre-load all HTML pages into memory at startup so disk I/O is paid once,
 // not on every incoming request.
-const STATIC_FILES = ['pages/student/dashboard.html', 'pages/teacher/dashboard.html', 'pages/attendance-admin/dashboard.html', 'pages/student/profile.html', 'pages/auth/login.html', 'pages/auth/main.html', 'pages/auth/register-student.html', 'pages/auth/register-teacher.html', 'pages/auth/reset-password.html'];
+const STATIC_FILES = ['pages/student/dashboard.html', 'pages/teacher/dashboard.html', 'pages/attendance-admin/dashboard.html', 'pages/student/profile.html', 'pages/auth/login.html', 'pages/auth/main.html', 'pages/auth/register-student.html', 'pages/auth/register-teacher.html', 'pages/auth/reset-password.html', 'pages/auth/callback.html'];
 const staticCache = new Map();
 for (const file of STATIC_FILES) {
     try {
@@ -387,7 +387,8 @@ const server = http.createServer(async (req, res) => {
             '/attendance_admin.html': 'pages/attendance-admin/dashboard.html',
             '/student/profile': 'pages/student/profile.html',
             '/profile.html': 'pages/student/profile.html',
-            '/profile': 'pages/student/profile.html'
+            '/profile': 'pages/student/profile.html',
+            '/auth/callback': 'pages/auth/callback.html'
         };
         
         if (req.method === 'GET' && pageRoutes[pathname]) {

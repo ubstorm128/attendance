@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Authenticating... · Attendance</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="/styles/shared/main.css">
+    <link rel="stylesheet" href="/styles/auth/auth.css">
+</head>
+<body class="auth-page">
+    <div class="ambient-glow top"></div>
+    <div class="ambient-glow bottom"></div>
+
+    <div class="center auth-container">
+        <div class="card auth-card text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px;">
+            <h2 id="callbackStatus" style="margin-bottom: 16px;">Verifying your account...</h2>
+            <p id="callbackMsg" class="auth-msg"></p>
+            <button id="btnBack" class="btn btn-outline btn-block mt-24 hidden" onclick="window.location.href='/main'">← Back to role selection</button>
+        </div>
+    </div>
+    
+    <script src="/scripts/auth/callback.js"></script>
+</body>
+</html>

@@ -5,15 +5,16 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
 
-    <link rel="stylesheet" href="/styles/shared/main.css">
+    <link rel="stylesheet" href="/styles/shared/main.css?v=2">
+    <link rel="stylesheet" href="/styles/attendance-admin/dashboard.css">
+    <style>
+        @media (max-width: 768px) {
+            .logout-text { display: none !important; }
+        }
+    </style>
 </head>
 
-<body>
-
-    <div class="blob a"></div>
-    <div class="blob b"></div>
-    <div class="blob c"></div>
-
+<body class="admin-dashboard">
     <div id="dash">
         <div class="global-navbar">
             <div class="brand">
@@ -21,86 +22,88 @@
                 Attendance Admin Dashboard
             </div>
             <div class="ribbon-spacer"></div>
-            <div class="logout" onclick="logout()">
+            <button type="button" class="logout" onclick="logout()" aria-label="Log out">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                Logout
-            </div>
+                <span class="logout-text">Logout</span>
+            </button>
         </div>
 
         <main>
             <!-- Navigation Segments -->
-            <div class="segmented-control">
-                <button class="seg-btn active" id="tabTeachers" onclick="showTab('teachers')">Teachers</button>
-                <button class="seg-btn" id="tabStudents" onclick="showTab('students')">Students</button>
-                <button class="seg-btn" id="tabSecurity" onclick="showTab('security')">Security</button>
+            <div class="segmented-control" role="tablist" aria-label="Admin sections">
+                <button type="button" class="seg-btn active" id="tabTeachers" role="tab" aria-selected="true" aria-controls="panelTeachers" onclick="showTab('teachers')">Teachers</button>
+                <button type="button" class="seg-btn" id="tabStudents" role="tab" aria-selected="false" aria-controls="panelStudents" onclick="showTab('students')">Students</button>
+                <button type="button" class="seg-btn" id="tabSecurity" role="tab" aria-selected="false" aria-controls="panelSecurity" onclick="showTab('security')">Security</button>
             </div>
 
             <!-- Teachers Panel -->
-            <div class="card" id="panelTeachers">
-                <div class="list-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-                    <div>
-                        <h2 style="margin:0;">Manage Teachers</h2>
-                        <p class="sub" style="margin:4px 0 0;">Add or remove instructor accounts stored in Supabase.</p>
+            <div class="card admin-panel" id="panelTeachers" role="tabpanel" aria-labelledby="tabTeachers">
+                <div class="list-header-row">
+                    <div class="panel-heading">
+                        <h2>Manage Teachers</h2>
+                        <p class="sub">Create and manage instructor accounts.</p>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="teacherSearch" placeholder="Search..." class="form-control" style="margin:0; height:36px; max-width: 180px;" oninput="filterTeachers()">
-                        <button class="btn btn-primary" onclick="toggleAddTeacher()" style="height:36px; white-space:nowrap;">+ Add Teacher</button>
-                    </div>
-                </div>
-
-                <div id="addTeacherBlock" style="display: none; background: var(--bg-input); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-                    <label for="name">Full name</label><input id="name" placeholder="Dr. John Smith" class="form-control">
-                    <label for="username">Username</label><input id="username" placeholder="john_smith" class="form-control">
-                    <label for="email">Email (Optional)</label><input id="email" type="email" placeholder="john@university.edu" class="form-control">
-                    <label for="password">Password</label><input id="password" type="password" placeholder="••••••••" class="form-control">
-                    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
-                        <button class="btn btn-secondary" onclick="toggleAddTeacher()" style="background:var(--bg-0); border:none;">Cancel</button>
-                        <button class="btn btn-primary add-btn" style="margin:0;" onclick="addTeacher()">Save Teacher</button>
+                    <div class="list-tools">
+                        <input type="search" id="teacherSearch" placeholder="Search teachers" aria-label="Search teachers" class="form-control" oninput="filterTeachers()">
+                        <button type="button" class="btn btn-primary" onclick="toggleAddTeacher()"><i data-lucide="plus" aria-hidden="true"></i> Add Teacher</button>
                     </div>
                 </div>
 
-                <div class="list-heading">Teachers in Database</div>
+                <div id="addTeacherBlock" class="add-record-form" hidden>
+                    <div class="form-field"><label for="name">Full name</label><input id="name" placeholder="Dr. John Smith" class="form-control"></div>
+                    <div class="form-field"><label for="username">Username</label><input id="username" placeholder="john_smith" class="form-control"></div>
+                    <div class="form-field"><label for="email">Email (Optional)</label><input id="email" type="email" placeholder="john@university.edu" class="form-control"></div>
+                    <div class="form-field"><label for="password">Password</label><input id="password" type="password" placeholder="••••••••" class="form-control"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="toggleAddTeacher()">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="addTeacher()">Save Teacher</button>
+                    </div>
+                </div>
+
+                <div class="list-heading"><span>Teacher accounts</span><span id="teacherCount" class="record-count">0</span></div>
                 <div id="list"></div>
             </div>
 
             <!-- Students Panel -->
-            <div class="card is-hidden" id="panelStudents">
-                <div class="list-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-                    <div>
-                        <h2 style="margin:0;">Registered Students</h2>
-                        <p class="sub" style="margin:4px 0 0;">Students registered in Supabase database.</p>
+            <div class="card admin-panel is-hidden" id="panelStudents" role="tabpanel" aria-labelledby="tabStudents" hidden>
+                <div class="list-header-row">
+                    <div class="panel-heading">
+                        <h2>Registered Students</h2>
+                        <p class="sub">Review student profiles and enrollment details.</p>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="studentSearch" placeholder="Search..." class="form-control" style="margin:0; height:36px; max-width: 180px;" oninput="filterStudents()">
-                        <button class="btn btn-primary" onclick="toggleAddStudent()" style="height:36px; white-space:nowrap;">+ Add Student</button>
-                    </div>
-                </div>
-
-                <div id="addStudentBlock" style="display: none; background: var(--bg-input); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-                    <label for="studentName">Full name</label><input id="studentName" placeholder="Student Name" class="form-control">
-                    <label for="studentEnrollment">Enrollment ID</label><input id="studentEnrollment" placeholder="ADTU/1/2023-26/BCAO/012" class="form-control">
-                    <label for="studentSection">Section</label><input id="studentSection" placeholder="A" class="form-control">
-                    <label for="studentEmail">Email</label><input id="studentEmail" type="email" placeholder="student@university.edu" class="form-control">
-                    <label for="studentPassword">Password</label><input id="studentPassword" type="password" placeholder="••••••••" class="form-control">
-                    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
-                        <button class="btn btn-secondary" onclick="toggleAddStudent()" style="background:var(--bg-0); border:none;">Cancel</button>
-                        <button class="btn btn-primary add-btn" style="margin:0;" onclick="addStudent()">Save Student</button>
+                    <div class="list-tools">
+                        <input type="search" id="studentSearch" placeholder="Search students" aria-label="Search students" class="form-control" oninput="filterStudents()">
+                        <button type="button" class="btn btn-primary" onclick="toggleAddStudent()"><i data-lucide="plus" aria-hidden="true"></i> Add Student</button>
                     </div>
                 </div>
 
-                <div class="list-heading">Students in Database</div>
+                <div id="addStudentBlock" class="add-record-form" hidden>
+                    <div class="form-field"><label for="studentName">Full name</label><input id="studentName" placeholder="Student Name" class="form-control"></div>
+                    <div class="form-field"><label for="studentEnrollment">Enrollment ID</label><input id="studentEnrollment" placeholder="ADTU/1/2023-26/BCAO/012" class="form-control"></div>
+                    <div class="form-field"><label for="studentSection">Section</label><input id="studentSection" placeholder="A" class="form-control"></div>
+                    <div class="form-field"><label for="studentEmail">Email</label><input id="studentEmail" type="email" placeholder="student@university.edu" class="form-control"></div>
+                    <div class="form-field"><label for="studentPassword">Password</label><input id="studentPassword" type="password" placeholder="••••••••" class="form-control"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="toggleAddStudent()">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="addStudent()">Save Student</button>
+                    </div>
+                </div>
+
+                <div class="list-heading"><span>Student accounts</span><span id="studentCount" class="record-count">0</span></div>
                 <div id="studentList"></div>
             </div>
 
             <!-- Security Panel -->
-            <div class="card is-hidden" id="panelSecurity">
+            <div class="card admin-panel security-panel is-hidden" id="panelSecurity" role="tabpanel" aria-labelledby="tabSecurity" hidden>
                 <h2>Admin Security</h2>
-                <p class="sub">Update attendance admin password stored in Supabase.</p>
+                <p class="sub">Update the password for this administrator account.</p>
 
-                <label for="currPass">Current Password</label><input id="currPass" type="password" class="form-control">
-                <label for="newPass">New Password</label><input id="newPass" type="password" class="form-control">
-                <label for="confPass">Confirm New Password</label><input id="confPass" type="password" class="form-control">
-                <button class="btn btn-primary add-btn" onclick="changeAdminPassword()">Update Password</button>
+                <div class="security-form">
+                    <label for="currPass">Current Password</label><input id="currPass" type="password" autocomplete="current-password" class="form-control">
+                    <label for="newPass">New Password</label><input id="newPass" type="password" autocomplete="new-password" class="form-control">
+                    <label for="confPass">Confirm New Password</label><input id="confPass" type="password" autocomplete="new-password" class="form-control">
+                    <button type="button" class="btn btn-primary" onclick="changeAdminPassword()">Update Password</button>
+                </div>
                 <p id="secMsg" class="status-message"></p>
             </div>
         </main>

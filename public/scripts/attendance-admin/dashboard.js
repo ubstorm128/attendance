@@ -34,17 +34,43 @@ function setupPasswordToggles() {
 setupPasswordToggles();
 
 function showTab(tab) {
-    document.getElementById('tabTeachers').classList.toggle('active', tab === 'teachers');
-    document.getElementById('tabStudents').classList.toggle('active', tab === 'students');
-    document.getElementById('tabSecurity').classList.toggle('active', tab === 'security');
+    const tabs = {
+        teachers: ['tabTeachers', 'panelTeachers'],
+        students: ['tabStudents', 'panelStudents'],
+        security: ['tabSecurity', 'panelSecurity']
+    };
 
-    document.getElementById('panelTeachers').classList.toggle('is-hidden', tab !== 'teachers');
-    document.getElementById('panelStudents').classList.toggle('is-hidden', tab !== 'students');
-    document.getElementById('panelSecurity').classList.toggle('is-hidden', tab !== 'security');
+    Object.entries(tabs).forEach(([name, [tabId, panelId]]) => {
+        const isActive = name === tab;
+        const tabButton = document.getElementById(tabId);
+        const panel = document.getElementById(panelId);
+        tabButton.classList.toggle('active', isActive);
+        tabButton.setAttribute('aria-selected', String(isActive));
+        tabButton.tabIndex = isActive ? 0 : -1;
+        panel.classList.toggle('is-hidden', !isActive);
+        panel.hidden = !isActive;
+    });
 
     if (tab === 'teachers') loadTeachers();
     if (tab === 'students') loadStudents();
 }
+
+document.querySelector('[role="tablist"]').addEventListener('keydown', (event) => {
+    const tabButtons = Array.from(document.querySelectorAll('[role="tab"]'));
+    const currentIndex = tabButtons.indexOf(document.activeElement);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabButtons.length;
+    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = tabButtons.length - 1;
+    if (nextIndex === currentIndex) return;
+
+    event.preventDefault();
+    tabButtons[nextIndex].focus();
+    tabButtons[nextIndex].click();
+});
 
 function logout() { 
     localStorage.removeItem('admin_token'); 
@@ -100,29 +126,57 @@ async function addTeacher() {
         function filterTeachers() {
             const q = (document.getElementById('teacherSearch').value || '').toLowerCase();
             const list = window.allTeachers.filter(t => t.name.toLowerCase().includes(q) || t.username.toLowerCase().includes(q) || (t.email && t.email.toLowerCase().includes(q)));
+                    document.getElementById('teacherCount').textContent = list.length;
             renderTeachers(list);
+        }
+
+        function syncRecordActionDisclosure(row, isMobile = window.matchMedia('(max-width: 720px)').matches) {
+            const summary = row.querySelector('.record-summary');
+            const actions = row.querySelector('.action-btns');
+            if (!isMobile) row.classList.remove('show-actions');
+            const isExpanded = isMobile && row.classList.contains('show-actions');
+            summary.setAttribute('aria-expanded', String(isExpanded));
+            actions.inert = isMobile && !isExpanded;
+            actions.setAttribute('aria-hidden', String(isMobile && !isExpanded));
+        }
+
+        window.matchMedia('(max-width: 720px)').addEventListener('change', (event) => {
+            document.querySelectorAll('.admin-record-row').forEach(row => {
+                syncRecordActionDisclosure(row, event.matches);
+            });
+        });
+
+        function setupRecordActionDisclosure(row) {
+            const summary = row.querySelector('.record-summary');
+            summary.addEventListener('click', () => {
+                if (!window.matchMedia('(max-width: 720px)').matches) return;
+                row.classList.toggle('show-actions');
+                syncRecordActionDisclosure(row);
+            });
+            syncRecordActionDisclosure(row);
         }
 
         function renderTeachers(list) {
             const el = document.getElementById('list');
             el.innerHTML = list.length ? '' : '<p class="empty">No teachers found.</p>';
-            list.forEach(t => {
+                    list.forEach((t, index) => {
                 const div = document.createElement('div');
-                div.className = 'row clickable';
-                div.onclick = (e) => {
-                    if (!e.target.closest('button')) {
-                        div.classList.toggle('show-actions');
-                    }
-                };
-                div.innerHTML = `<div style="min-width: 0; flex: 1; margin-right: 12px;">
-                    <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${t.name}</strong>
-                    <span class="handle" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">@${t.username}</span>
+                div.className = 'row admin-record-row';
+                        const actionId = `teacher-actions-${index}`;
+                        div.innerHTML = `<div class="record-identity">
+                    <strong>${escapeHtml(t.name)}</strong>
+                    <span class="handle">@${escapeHtml(t.username)}</span>
                 </div>
-                <div class="action-btns">
-                    <button class="btn btn-secondary" title="Reset Password" onclick="resetTeacherPassword('${escapeHtml(t.email || '')}')" ${!t.email ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
-                    <button class="btn btn-secondary" title="Edit" onclick="openEditTeacherModal('${t.id}', '${escapeHtml(t.name)}', '${escapeHtml(t.username)}', '${escapeHtml(t.email || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
-                    <button class="btn btn-danger" title="Remove" onclick="removeTeacher('${t.id}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
+                        <button class="record-summary" type="button" aria-expanded="false" aria-controls="${actionId}">
+                            <span class="record-summary-text"><strong>${escapeHtml(t.name)}</strong><span>${escapeHtml(t.username)}</span></span>
+                            <i data-lucide="chevron-down" aria-hidden="true"></i>
+                        </button>
+                        <div class="action-btns" id="${actionId}">
+                    <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(t.name)}" onclick="resetTeacherPassword('${escapeHtml(t.email || '')}')" ${!t.email ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
+                    <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(t.name)}" onclick="openEditTeacherModal('${t.id}', '${escapeHtml(t.name)}', '${escapeHtml(t.username)}', '${escapeHtml(t.email || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
+                    <button class="btn btn-danger" type="button" title="Remove" aria-label="Remove ${escapeHtml(t.name)}" onclick="removeTeacher('${t.id}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
                 </div>`;
+                        setupRecordActionDisclosure(div);
                 el.appendChild(div);
             });
             if (window.lucide) window.lucide.createIcons();
@@ -130,7 +184,8 @@ async function addTeacher() {
 
         function toggleAddTeacher() {
             const b = document.getElementById('addTeacherBlock');
-            b.style.display = b.style.display === 'none' ? 'block' : 'none';
+            b.hidden = !b.hidden;
+            if (!b.hidden) b.querySelector('input')?.focus();
         }
 
 
@@ -281,30 +336,32 @@ async function addTeacher() {
         function filterStudents() {
             const q = (document.getElementById('studentSearch').value || '').toLowerCase();
             const list = window.allStudents.filter(s => s.name.toLowerCase().includes(q) || s.enrollment.toLowerCase().includes(q) || (s.email && s.email.toLowerCase().includes(q)));
+            document.getElementById('studentCount').textContent = list.length;
             renderStudents(list);
         }
 
         function renderStudents(list) {
             const el = document.getElementById('studentList');
             el.innerHTML = list.length ? '' : '<p class="empty">No students found.</p>';
-            list.forEach(s => {
+            list.forEach((s, index) => {
                 const div = document.createElement('div');
-                div.className = 'row clickable';
-                div.onclick = (e) => {
-                    if (!e.target.closest('button')) {
-                        div.classList.toggle('show-actions');
-                    }
-                };
+                div.className = 'row admin-record-row';
                 const sEmail = s.email || '';
-                div.innerHTML = `<div style="min-width: 0; flex: 1; margin-right: 12px;">
-                    <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${s.name}</strong>
-                    <span class="handle" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">${s.enrollment}${s.section ? ' · Sec ' + s.section : ''}</span>
+                const actionId = `student-actions-${index}`;
+                div.innerHTML = `<div class="record-identity">
+                    <strong>${escapeHtml(s.name)}</strong>
+                    <span class="handle">${escapeHtml(s.enrollment)}${s.section ? ' · Sec ' + escapeHtml(s.section) : ''}</span>
                 </div>
-                <div class="action-btns">
-                    <button class="btn btn-secondary" title="Reset Password" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
-                    <button class="btn btn-secondary" title="Edit" onclick="openEditStudentModal('${s.enrollment}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}')"><i data-lucide="edit" width="18" height="18"></i></button>
-                    <button class="btn btn-danger" title="Remove" onclick="removeStudent('${s.enrollment}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
+                <button class="record-summary" type="button" aria-expanded="false" aria-controls="${actionId}">
+                    <span class="record-summary-text"><strong>${escapeHtml(s.name)}</strong><span>${escapeHtml(s.enrollment)}${s.section ? ' · Sec ' + escapeHtml(s.section) : ''}</span></span>
+                    <i data-lucide="chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="action-btns" id="${actionId}">
+                    <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(s.name)}" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
+                    <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(s.name)}" onclick="openEditStudentModal('${escapeHtml(s.enrollment)}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}')"><i data-lucide="edit" width="18" height="18"></i></button>
+                    <button class="btn btn-danger" type="button" title="Remove" aria-label="Remove ${escapeHtml(s.name)}" onclick="removeStudent('${escapeHtml(s.enrollment)}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
                 </div>`;
+                setupRecordActionDisclosure(div);
                 el.appendChild(div);
             });
             if (window.lucide) window.lucide.createIcons();
@@ -312,7 +369,8 @@ async function addTeacher() {
 
         function toggleAddStudent() {
             const b = document.getElementById('addStudentBlock');
-            b.style.display = b.style.display === 'none' ? 'block' : 'none';
+            b.hidden = !b.hidden;
+            if (!b.hidden) b.querySelector('input')?.focus();
         }
 
 

@@ -1,9 +1,12 @@
 .auth-page {
     display: flex;
     justify-content: center;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
     padding: 20px;
     background: var(--bg-0);
+    overflow: hidden;
 }
 
 .auth-container {
@@ -12,10 +15,15 @@
     position: relative;
     z-index: 10;
     margin: auto;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
 }
 
 .auth-card {
     padding: 40px 30px;
+    max-height: 100%;
+    overflow-y: auto;
 }
 
 .auth-card h1 {
@@ -160,5 +168,49 @@
 @media (max-width: 768px) {
     .role-cards {
         flex-direction: column;
+    }
+}
+
+@media (max-height: 700px) {
+    .auth-card {
+        padding: 24px 22px;
+    }
+
+    .auth-subtitle {
+        margin-bottom: 16px;
+    }
+
+    .auth-footer {
+        margin-top: 20px;
+        padding-top: 16px;
+    }
+
+    .role-cards {
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .role-card {
+        padding: 12px;
+    }
+
+    .role-icon {
+        margin-bottom: 8px;
+    }
+
+    label {
+        margin-top: 10px;
+    }
+
+    .form-control {
+        padding: 10px 12px;
+    }
+
+    .auth-divider {
+        margin: 16px 0 !important;
+    }
+
+    #btnGoogle {
+        margin-bottom: 16px !important;
     }
 }

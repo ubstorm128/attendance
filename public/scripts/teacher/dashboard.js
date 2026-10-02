@@ -504,12 +504,7 @@
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
             overlay.innerHTML = `
                 <div class="modal-dialog modal-dialog-scroll add-subject-dialog">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <h2>Add Course Subject</h2>
-                        <button type="button" onclick="closeModal()" style="background: none; border: none; cursor: pointer; color: #64748b; padding: 4px; display: flex;" aria-label="Close">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
+                    <h2>Add Course Subject</h2>
                     <p class="sub">Add a subject to your teaching catalog across your departments.</p>
                     <div class="add-subject-grid">
                         <div class="add-subject-field modern-input-group" style="margin-bottom: 0;">
@@ -611,12 +606,7 @@
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
             overlay.innerHTML = `
                 <div class="modal-dialog modal-dialog-scroll edit-subject-dialog">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <h2>Edit Course Subject</h2>
-                        <button type="button" onclick="closeModal()" style="background: none; border: none; cursor: pointer; color: #64748b; padding: 4px; display: flex;" aria-label="Close">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
+                    <h2>Edit Course Subject</h2>
                     <p class="sub">Update subject details and department information.</p>
                     <div class="edit-subject-grid">
                         <div class="edit-subject-field modern-input-group" style="margin-bottom: 0;">

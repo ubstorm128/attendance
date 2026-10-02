@@ -3,53 +3,60 @@ if (window.location.hash && window.location.hash.includes('type=recovery')) {
 }
 
 const urlParams = new URLSearchParams(window.location.search);
-let currentRole = urlParams.get('role') || 'student';
+let currentRole = urlParams.get('role');
+if (!currentRole) {
+    try { currentRole = sessionStorage.getItem('selectedRole'); } catch(e) {}
+}
+if (!currentRole) currentRole = 'student';
+currentRole = currentRole.toLowerCase().trim();
 
-document.addEventListener('DOMContentLoaded', () => {
+function initLoginUI() {
     // Setup titles
     const heading = document.getElementById('loginHeading');
     const subtitle = document.getElementById('loginSubtitle');
+    const sForm = document.getElementById('studentForm');
+    const stForm = document.getElementById('staffForm');
+    const footer = document.getElementById('loginFooter');
     
     if (currentRole === 'student') {
         if (heading) heading.textContent = 'Student Login';
         if (subtitle) subtitle.textContent = 'Sign in to access your student dashboard.';
-        const sForm = document.getElementById('studentForm');
         if (sForm) sForm.classList.remove('hidden');
-        const stForm = document.getElementById('staffForm');
+        if (sForm) sForm.style.display = 'block';
         if (stForm) stForm.classList.add('hidden');
-    } else if (currentRole === 'teacher') {
-        if (heading) heading.textContent = 'Teacher Login';
-        if (subtitle) subtitle.textContent = 'Sign in to access your teacher dashboard.';
-        const sForm = document.getElementById('studentForm');
-        if (sForm) sForm.classList.add('hidden');
-        const stForm = document.getElementById('staffForm');
-        if (stForm) stForm.classList.remove('hidden');
-    } else if (currentRole === 'admin') {
-        if (heading) heading.textContent = 'Admin Login';
-        if (subtitle) subtitle.textContent = 'Sign in to access the attendance administration dashboard.';
-        const sForm = document.getElementById('studentForm');
-        if (sForm) sForm.classList.add('hidden');
-        const stForm = document.getElementById('staffForm');
-        if (stForm) stForm.classList.remove('hidden');
-    }
-    
-    // Dynamic Footer
-    const footer = document.getElementById('loginFooter');
-    if (footer) {
-        if (currentRole === 'student') {
-            footer.innerHTML = `Don't have a student account? <a href="/register/student">Register here</a>`;
+        if (stForm) stForm.style.display = 'none';
+        
+        if (footer) {
+            footer.innerHTML = `<span>No student account?</span> <a href="/register/student">Register here</a>`;
             footer.classList.remove('hidden');
-        } else if (currentRole === 'teacher') {
-            footer.innerHTML = `Don't have a teacher account? <a href="/register/teacher">Register here</a>`;
-            footer.classList.remove('hidden');
-        } else {
-            footer.classList.add('hidden');
+        }
+    } else if (currentRole === 'teacher' || currentRole === 'admin') {
+        if (heading) heading.textContent = currentRole === 'teacher' ? 'Teacher Login' : 'Admin Login';
+        if (subtitle) subtitle.textContent = currentRole === 'teacher' ? 'Sign in to access your teacher dashboard.' : 'Sign in to access the attendance administration dashboard.';
+        if (sForm) sForm.classList.add('hidden');
+        if (sForm) sForm.style.display = 'none';
+        if (stForm) stForm.classList.remove('hidden');
+        if (stForm) stForm.style.display = 'block';
+        
+        if (footer) {
+            if (currentRole === 'teacher') {
+                footer.innerHTML = `<span>No teacher account?</span> <a href="/register/teacher">Register here</a>`;
+                footer.classList.remove('hidden');
+            } else {
+                footer.classList.add('hidden');
+            }
         }
     }
     
     const loginMsg = document.getElementById('loginMsg');
     if (loginMsg) loginMsg.style.display = 'none';
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLoginUI);
+} else {
+    initLoginUI();
+}
 
 function backToRoles() {
     window.location.href = '/main';
@@ -147,4 +154,16 @@ async function loginStaff() {
         document.getElementById('btnStaff').textContent = 'Sign In';
         showMsg('Network error. Please try again.');
     }
+}
+
+// --- Supabase Google OAuth ---
+const supabaseUrl = 'https://hddezwltrmtxizbxuvvf.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkZGV6d2x0cm10eGl6Ynh1dnZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxOTc0MjQsImV4cCI6MjEwNDc3MzQyNH0.AmTVu6EKNkjkZ8KM_di7ev3jgDlOMHvwHYEvC6tRu7c';
+let supabaseClient = null;
+if (window.supabase) {
+    supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+}
+
+async function loginWithGoogle() {
+    showMsg('Google Authentication is coming soon!');
 }
