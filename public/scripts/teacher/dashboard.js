@@ -355,7 +355,7 @@
                             <select id="modalSubjectSwitcher" class="subject-switcher" onchange="openSubjectAttendanceModal(this.value)">
                                 ${teacherSubjects.map(s => `<option value="${esc(s.id)}" ${s.id === subjectId ? 'selected' : ''}>${esc(s.code ? s.code + ' ' : '')}${esc(s.name)}${s.section ? ' (Sec ' + esc(s.section) + ')' : ''}</option>`).join('')}
                             </select>
-                            <button class="projector-close subject-report-close" onclick="closeModal()"><i class="subject-report-close-icon" data-lucide="x"></i></button>
+
                         </div>
                     </div>
 
@@ -411,7 +411,7 @@
                     <!-- Search filter bar -->
                     <div class="subject-report-toolbar">
                         <div class="subject-report-heading-text">Student Attendance Records for this Subject</div>
-                        <input id="rosterSearchInput" class="subject-report-search" oninput="filterRosterTable()" placeholder="Search student name or enrollment…">
+                        <input type="search" id="rosterSearchInput" class="form-control subject-report-search" oninput="filterRosterTable()" placeholder="Search student name or enrollment…">
                     </div>
 
                     <!-- Roster Table -->
