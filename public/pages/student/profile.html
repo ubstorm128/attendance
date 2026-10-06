@@ -36,7 +36,8 @@
                     <span class="brand-sub">Academic Attendance &amp; Analytics</span>
                 </div>
             </div>
-            <button class="chip-switch-btn" onclick="handleSignOut()" title="Sign Out" aria-label="Sign Out" style="background: transparent; border: none; cursor: pointer; color: var(--ink-2); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; transition: background 0.2s ease;">
+            <button class="chip-switch-btn" onclick="handleSignOut()" title="Sign Out" aria-label="Sign Out"
+                style="background: transparent; border: none; cursor: pointer; color: var(--ink-2); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; transition: background 0.2s ease;">
                 <i data-lucide="log-out" width="20" height="20"></i>
             </button>
         </header>
@@ -82,8 +83,8 @@
                             <div class="about-header-row">
                                 <span class="about-title-tag">About Me</span>
                                 <button class="about-edit-btn about-edit-action" id="editAboutBtn"
-                                    onclick="toggleEditAbout()"><i class="small-control-icon" data-lucide="pencil"></i>
-                                    Edit Bio</button>
+                                    onclick="toggleEditAbout()"><i class="small-control-icon"
+                                        data-lucide="pencil"></i></button>
                             </div>
                             <p class="about-text-content" id="aboutTextDisplay">No bio added yet. Tap edit to write
                                 about yourself, academic interests, or notes.</p>
@@ -99,53 +100,100 @@
                     </div>
 
                     <!-- 2. Overall Attendance & Red Flag Notice Card -->
-                    <div class="portal-card overall-metric-card" id="overallCard">
-                        <div class="overall-gauge-header">
-                            <span class="gauge-caption">Overall</span>
-                            <div class="standing-pill good" id="overallStandingPill">
-                                <i class="small-control-icon" data-lucide="check-circle"></i> In Good Standing
-                            </div>
-                        </div>
-
-                        <div class="overall-big-percentage-row">
-                            <div class="big-percent-number good" id="overallPercentageText">--%</div>
-                            <div class="attendance-ratio-tag" id="overallRatioText">-- / -- sessions</div>
-                        </div>
-
-                        <!-- Red Flag Alert Callout (Shows if overall < 75%) -->
-                        <div class="modern-alert-card" id="overallRedFlagBox" hidden>
-                            <div class="alert-content-row">
-                                <div class="alert-metric-col">
-                                    <span class="alert-metric-label">Current</span>
-                                    <div class="alert-metric-value" id="alertCurrentPct">--%</div>
+                    <div class="portal-card overall-metric-card flip-card-container" id="overallCard">
+                        <div class="flip-card-inner">
+                            <div class="flip-card-front">
+                                <div class="overall-gauge-header">
+                                    <span class="gauge-caption" id="overallGaugeCaption">Overall</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button class="icon-btn"
+                                            onclick="document.getElementById('overallCard').classList.toggle('flipped')"
+                                            title="Filter by Month"
+                                            style="background:transparent; border:none; cursor:pointer; color: var(--ink-3);">
+                                            <i class="small-control-icon" data-lucide="filter"></i>
+                                        </button>
+                                        <div class="standing-pill good" id="overallStandingPill">
+                                            <i class="small-control-icon" data-lucide="check-circle"></i> In Good
+                                            Standing
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="alert-metric-divider"></div>
-                                <div class="alert-metric-col">
-                                    <span class="alert-metric-label">Required Lectures</span>
-                                    <div class="alert-metric-value" id="alertConsecutive">--</div>
+
+                                <div class="overall-big-percentage-row">
+                                    <div class="big-percent-number good" id="overallPercentageText">--%</div>
+                                    <div class="attendance-ratio-tag" id="overallRatioText">-- / -- sessions</div>
+                                </div>
+
+                                <!-- Red Flag Alert Callout (Shows if overall < 75%) -->
+                                <div class="modern-alert-card" id="overallRedFlagBox" hidden>
+                                    <div class="alert-content-row">
+                                        <div class="alert-metric-col">
+                                            <span class="alert-metric-label">Current</span>
+                                            <div class="alert-metric-value" id="alertCurrentPct">--%</div>
+                                        </div>
+                                        <div class="alert-metric-divider"></div>
+                                        <div class="alert-metric-col">
+                                            <span class="alert-metric-label">Required Lectures</span>
+                                            <div class="alert-metric-value" id="alertConsecutive">--</div>
+                                        </div>
+                                    </div>
+                                    <div class="alert-footer">
+                                        <svg viewBox="0 0 24 24" fill="none" width="18" height="18"
+                                            style="margin-right:6px;">
+                                            <path
+                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round" />
+                                        </svg>
+                                        <span id="overallRedFlagDesc">Attendance below 75% threshold.</span>
+                                    </div>
+                                </div>
+
+                                <!-- Metric Counters Row -->
+                                <div class="metrics-trio-row">
+                                    <div class="metric-trio-item">
+                                        <span class="trio-val" id="metricTotalClasses">0</span>
+                                        <span class="trio-lbl">Total Held</span>
+                                    </div>
+                                    <div class="metric-trio-divider"></div>
+                                    <div class="metric-trio-item">
+                                        <span class="trio-val" id="metricAttended">0</span>
+                                        <span class="trio-lbl">Attended</span>
+                                    </div>
+                                    <div class="metric-trio-divider"></div>
+                                    <div class="metric-trio-item">
+                                        <span class="trio-val" id="metricMissed">0</span>
+                                        <span class="trio-lbl">Missed</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="alert-footer">
-                                <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="margin-right:6px;"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span id="overallRedFlagDesc">Attendance below 75% threshold.</span>
-                            </div>
-                        </div>
 
-                        <!-- Metric Counters Row -->
-                        <div class="metrics-trio-row">
-                            <div class="metric-trio-item">
-                                <span class="trio-val" id="metricTotalClasses">0</span>
-                                <span class="trio-lbl">Total Held</span>
-                            </div>
-                            <div class="metric-trio-divider"></div>
-                            <div class="metric-trio-item">
-                                <span class="trio-val" id="metricAttended">0</span>
-                                <span class="trio-lbl">Attended</span>
-                            </div>
-                            <div class="metric-trio-divider"></div>
-                            <div class="metric-trio-item">
-                                <span class="trio-val" id="metricMissed">0</span>
-                                <span class="trio-lbl">Missed</span>
+                            <div class="flip-card-back">
+                                <div class="overall-gauge-header">
+                                    <span class="gauge-caption">Filter Attendance</span>
+                                    <button class="icon-btn"
+                                        onclick="document.getElementById('overallCard').classList.remove('flipped')"
+                                        title="Close Filter"
+                                        style="background:transparent; border:none; cursor:pointer; color: var(--ink-3);">
+                                        <i class="small-control-icon" data-lucide="x"></i>
+                                    </button>
+                                </div>
+                                <div class="month-filter-grid">
+                                    <button class="month-btn active"
+                                        onclick="applyMonthFilter('all', this)">All</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(1, this)">Jan</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(2, this)">Feb</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(3, this)">Mar</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(4, this)">Apr</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(5, this)">May</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(6, this)">Jun</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(7, this)">Jul</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(8, this)">Aug</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(9, this)">Sep</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(10, this)">Oct</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(11, this)">Nov</button>
+                                    <button class="month-btn" onclick="applyMonthFilter(12, this)">Dec</button>
+                                </div>
                             </div>
                         </div>
                     </div>

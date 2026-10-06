@@ -5,8 +5,10 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
-    background: var(--bg-card-elevated);
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-top: 1px solid rgba(255, 255, 255, 0.8);
+    border-left: 1px solid rgba(255, 255, 255, 0.8);
     border-radius: var(--radius-pill);
     position: sticky;
     top: 20px;
@@ -14,9 +16,9 @@
     max-width: 1200px;
     width: calc(100% - 48px);
     z-index: 100;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: var(--shadow-subtle);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 .global-navbar .brand {
     display: flex;

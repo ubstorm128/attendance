@@ -109,11 +109,15 @@ if (switchProfileBtn) {
         
 
         // ── Fetch Attendance & Profile Data ────────────────────────────────
-        async function loadStudentAttendanceAndProfile() {
+        async function loadStudentAttendanceAndProfile(month = 'all') {
             if (!profile || !profile.enrollment) return;
 
             try {
-                const res = await fetch(`/api/my-attendance?enrollment=${encodeURIComponent(profile.enrollment)}`, { headers: { 'Authorization': `Bearer ${studentToken}` } });
+                let url = `/api/my-attendance?enrollment=${encodeURIComponent(profile.enrollment)}`;
+                if (month !== 'all') {
+                    url += `&month=${month}`;
+                }
+                const res = await fetch(url, { headers: { 'Authorization': `Bearer ${studentToken}` } });
                 if (!res.ok) {
                     console.error('Failed to fetch attendance data');
                     return;
@@ -515,3 +519,33 @@ if (switchProfileBtn) {
 
         // Run
         initPortal();
+
+        // Month Filter Logic
+        function applyMonthFilter(month, btnEl) {
+            // Update active state on buttons
+            if (btnEl) {
+                const buttons = document.querySelectorAll('.month-btn');
+                buttons.forEach(b => b.classList.remove('active'));
+                btnEl.classList.add('active');
+            }
+            
+            // Un-flip the card
+            const overallCard = document.getElementById('overallCard');
+            if (overallCard) {
+                overallCard.classList.remove('flipped');
+            }
+
+            // Update caption
+            const captionEl = document.getElementById('overallGaugeCaption');
+            if (captionEl) {
+                if (month === 'all') {
+                    captionEl.textContent = 'Overall (All Months)';
+                } else {
+                    const monthNames = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    captionEl.textContent = `Overall (${monthNames[month]})`;
+                }
+            }
+
+            // Fetch new data
+            loadStudentAttendanceAndProfile(month);
+        }

@@ -648,6 +648,13 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'GET' && pathname === '/api/my-attendance') {
             const enrollment = (searchParams.get('enrollment') || '').trim().toUpperCase();
             if (!enrollment) return send(res, 400, { error: 'enrollment is required' });
+            
+            const monthStr = searchParams.get('month') || 'all';
+            let filterMonth = -1;
+            if (monthStr !== 'all') {
+                filterMonth = parseInt(monthStr, 10);
+                if (isNaN(filterMonth) || filterMonth < 1 || filterMonth > 12) filterMonth = -1;
+            }
 
             // 1. Verify student exists
             const stCheck = await pool.query(
@@ -672,7 +679,7 @@ const server = http.createServer(async (req, res) => {
                     MIN(sess.teacher_name)                                                 AS "teacherName"
                 FROM subjects subj
                 LEFT JOIN sessions sess
-                    ON sess.subject_id = subj.id
+                    ON sess.subject_id = subj.id AND ($3 = -1 OR EXTRACT(MONTH FROM sess.created_at) = $3)
                 LEFT JOIN attendance a
                     ON a.session_id = sess.id
                 WHERE (
@@ -687,7 +694,7 @@ const server = http.createServer(async (req, res) => {
                 )
                 GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section, subj.semester
                 ORDER BY subj.name ASC
-            `, [enrollment, studentSection]);
+            `, [enrollment, studentSection, filterMonth]);
 
             let totalHeldOverall = 0;
             let totalAttendedOverall = 0;

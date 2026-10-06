@@ -430,3 +430,80 @@
     background: white !important;
     border-radius: 16px !important;
 }
+
+/* Flip Card CSS */
+.flip-card-container {
+    perspective: 1000px;
+    position: relative;
+}
+
+.flip-card-inner {
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    position: relative;
+    width: 100%;
+    display: grid;
+}
+
+.flip-card-container.flipped .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back {
+    backface-visibility: hidden;
+    width: 100%;
+    grid-area: 1 / 1;
+}
+
+.flip-card-front {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.flip-card-back {
+    /* position absolute removed */
+    /* top removed */
+    /* left removed */
+    /* height removed */
+    transform: rotateY(180deg);
+    /* background: white; */
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    /* padding: 24px; */
+    box-sizing: border-box;
+    /* ensure it stays on top when flipped */
+    z-index: 10;
+    /* overflow-y removed */
+}
+
+.month-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 8px;
+    margin-top: 16px;
+    flex-grow: 1;
+}
+
+.month-btn {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 500;
+    color: #64748B;
+    transition: all 0.2s;
+}
+
+.month-btn:hover {
+    background: #F8FAFC;
+    color: #0878F9;
+    border-color: #0878F9;
+}
+.month-btn.active {
+    background: #0878F9;
+    color: white;
+    border-color: #0878F9;
+}
