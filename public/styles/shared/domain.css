@@ -1991,8 +1991,8 @@
         }
 
         /* About Me Block */
-        .profile-about-box { background: #ffffff; border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); margin-bottom: 24px; transition: box-shadow 0.3s ease; }
-.profile-about-box:hover { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05); }
+        .profile-about-box { background: transparent; padding: 20px 0 0 0; margin-top: 4px; border: none; border-top: 1px solid var(--border); box-shadow: none; margin-bottom: 8px; }
+.profile-about-box:hover { box-shadow: none; }
 .about-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .about-title-tag { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
 .about-edit-btn { background: transparent; border: 1px solid var(--hair); color: var(--ink-2); font-size: 12px; font-weight: 600; border-radius: 20px; cursor: pointer; padding: 6px 12px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease; }
@@ -3921,8 +3921,8 @@
 
 .action-btns { justify-content: center !important; }
 
-.profile-about-box { background: #ffffff; border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); margin-bottom: 24px; transition: box-shadow 0.3s ease; }
-.profile-about-box:hover { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05); }
+.profile-about-box { background: transparent; padding: 20px 0 0 0; margin-top: 4px; border: none; border-top: 1px solid var(--border); box-shadow: none; margin-bottom: 8px; }
+.profile-about-box:hover { box-shadow: none; }
 .about-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .about-title-tag { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
 .about-edit-btn { background: transparent; border: 1px solid var(--hair); color: var(--ink-2); font-size: 12px; font-weight: 600; border-radius: 20px; cursor: pointer; padding: 6px 12px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease; }
