@@ -370,9 +370,9 @@ async function addTeacher() {
                     <i data-lucide="chevron-down" aria-hidden="true"></i>
                 </button>
                 <div class="action-btns" id="${actionId}">
-                    <button class="btn ${isCoord ? 'btn-primary' : 'btn-secondary'}" type="button" title="${isCoord ? 'Revoke Coordinator Role' : 'Grant Coordinator Role'}" aria-label="${isCoord ? 'Revoke Coordinator' : 'Grant Coordinator'}" onclick="toggleCoordinatorRole('${escapeHtml(s.enrollment)}', ${!isCoord})">
+                    <button class="btn ${isCoord ? 'btn-primary' : 'btn-secondary'} btn-coordinator-toggle" type="button" title="${isCoord ? 'Revoke Coordinator Role' : 'Grant Coordinator Role'}" aria-label="${isCoord ? 'Revoke Coordinator' : 'Grant Coordinator'}" onclick="toggleCoordinatorRole('${escapeHtml(s.enrollment)}', ${!isCoord})">
                         <i data-lucide="${isCoord ? 'shield-check' : 'shield'}" width="16" height="16"></i>
-                        <span style="font-size:12px; margin-left:4px;">${isCoord ? 'Coordinator' : 'Make Coord'}</span>
+                        <span>${isCoord ? 'Coordinator' : 'Make Coordinator'}</span>
                     </button>
                     <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(s.name)}" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
                     <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(s.name)}" onclick="openEditStudentModal('${escapeHtml(s.enrollment)}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}', '${escapeHtml(s.section || '')}', '${escapeHtml(s.semester || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>

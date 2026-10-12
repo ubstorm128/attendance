@@ -61,14 +61,25 @@ const switchProfileBtn = document.getElementById('switchProfileBtn');
         }
 
         
+function updateCoordinatorButtons(isCoord) {
+    const dashCoordBtn = document.getElementById('dashCoordinatorBtn');
+    if (dashCoordBtn) dashCoordBtn.style.display = isCoord ? 'inline-flex' : 'none';
+
+    const navCoordBtn = document.getElementById('navCoordinatorBtn');
+    if (navCoordBtn) navCoordBtn.style.display = isCoord ? 'inline-flex' : 'none';
+
+    const coordinatorNavGroup = document.getElementById('coordinatorNavGroup');
+    if (coordinatorNavGroup) coordinatorNavGroup.style.display = isCoord ? 'inline-flex' : 'none';
+
+    if (isCoord && window.lucide) {
+        window.lucide.createIcons();
+    }
+}
+
 async function initPortal() {
     renderProfileChip();
-    if (profile && profile.is_coordinator) {
-        const coordinatorNavGroup = document.getElementById('coordinatorNavGroup');
-        if (coordinatorNavGroup) coordinatorNavGroup.style.display = 'inline-flex';
-        const dashCoordinatorPill = document.getElementById('dashCoordinatorPill');
-        if (dashCoordinatorPill) dashCoordinatorPill.style.display = 'inline-flex';
-    }
+    const isCoord = Boolean(profile && profile.is_coordinator);
+    updateCoordinatorButtons(isCoord);
     await loadStudentAttendanceAndProfile();
 }
 
@@ -161,14 +172,7 @@ if (switchProfileBtn) {
             // Sync updated profile to localStorage
             const isCoord = Boolean(p.is_coordinator);
             profile.is_coordinator = isCoord;
-            const dashCoordinatorPill = document.getElementById('dashCoordinatorPill');
-            if (dashCoordinatorPill) {
-                dashCoordinatorPill.style.display = isCoord ? 'inline-flex' : 'none';
-            }
-            const coordinatorNavGroup = document.getElementById('coordinatorNavGroup');
-            if (coordinatorNavGroup) {
-                coordinatorNavGroup.style.display = isCoord ? 'inline-flex' : 'none';
-            }
+            updateCoordinatorButtons(isCoord);
 
             if (p.name && profile) {
                 profile.name = p.name;
@@ -814,7 +818,10 @@ if (switchProfileBtn) {
             document.getElementById('coordSubjectError').style.display = 'none';
 
             const overlay = document.getElementById('coordSubjectModal');
-            if (overlay) overlay.classList.add('active');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                requestAnimationFrame(() => overlay.classList.add('active'));
+            }
             if (window.lucide) window.lucide.createIcons();
         }
 
@@ -832,13 +839,19 @@ if (switchProfileBtn) {
             document.getElementById('coordSubjectError').style.display = 'none';
 
             const overlay = document.getElementById('coordSubjectModal');
-            if (overlay) overlay.classList.add('active');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                requestAnimationFrame(() => overlay.classList.add('active'));
+            }
             if (window.lucide) window.lucide.createIcons();
         }
 
         function closeCoordSubjectModal() {
             const overlay = document.getElementById('coordSubjectModal');
-            if (overlay) overlay.classList.remove('active');
+            if (overlay) {
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }
         }
 
         async function saveCoordSubject() {
@@ -929,7 +942,10 @@ if (switchProfileBtn) {
             renderRosterList(enrolledSet);
 
             const overlay = document.getElementById('coordRosterModal');
-            if (overlay) overlay.classList.add('active');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                requestAnimationFrame(() => overlay.classList.add('active'));
+            }
             if (window.lucide) window.lucide.createIcons();
         }
 
@@ -992,7 +1008,10 @@ if (switchProfileBtn) {
 
         function closeCoordRosterModal() {
             const overlay = document.getElementById('coordRosterModal');
-            if (overlay) overlay.classList.remove('active');
+            if (overlay) {
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }
         }
 
         async function saveCoordRoster() {
@@ -1055,13 +1074,19 @@ if (switchProfileBtn) {
             }
 
             const overlay = document.getElementById('coordUploadModal');
-            if (overlay) overlay.classList.add('active');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                requestAnimationFrame(() => overlay.classList.add('active'));
+            }
             if (window.lucide) window.lucide.createIcons();
         }
 
         function closeCoordUploadModal() {
             const overlay = document.getElementById('coordUploadModal');
-            if (overlay) overlay.classList.remove('active');
+            if (overlay) {
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }
         }
 
         async function handleCoordFileSelect(event) {
@@ -1210,6 +1235,36 @@ if (switchProfileBtn) {
                 const el = document.getElementById(id);
                 if (el && e.target === el) {
                     el.classList.remove('active');
+                    el.style.display = 'none';
                 }
             });
-        });
+        });
+
+        // Expose global coordinator handlers for HTML onclick attributes
+        window.switchPortalTab = switchPortalTab;
+        window.loadCoordinatorData = loadCoordinatorData;
+        window.openAddSubjectModal = openAddSubjectModal;
+        window.openEditSubjectModal = openEditSubjectModal;
+        window.closeCoordSubjectModal = closeCoordSubjectModal;
+        window.saveCoordSubject = saveCoordSubject;
+        window.deleteSubject = deleteSubject;
+        window.openElectiveRosterModal = openElectiveRosterModal;
+        window.closeCoordRosterModal = closeCoordRosterModal;
+        window.saveCoordRoster = saveCoordRoster;
+        window.filterRosterChecklist = filterRosterChecklist;
+        window.selectAllRoster = selectAllRoster;
+        window.updateRosterCount = updateRosterCount;
+        window.openBulkUploadModal = openBulkUploadModal;
+        window.closeCoordUploadModal = closeCoordUploadModal;
+        window.handleCoordFileSelect = handleCoordFileSelect;
+        window.submitCoordBulkUpload = submitCoordBulkUpload;
+        window.toggleEditSemester = toggleEditSemester;
+        window.saveSemester = saveSemester;
+        window.handleSignOut = handleSignOut;
+        window.triggerAvatarUpload = triggerAvatarUpload;
+        window.handleAvatarFileSelected = handleAvatarFileSelected;
+        window.removeAvatarPhoto = removeAvatarPhoto;
+        window.toggleEditAbout = toggleEditAbout;
+        window.cancelEditAbout = cancelEditAbout;
+        window.saveAbout = saveAbout;
+        window.applyMonthFilter = applyMonthFilter;

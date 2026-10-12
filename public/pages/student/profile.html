@@ -47,10 +47,18 @@
                 </button>
             </div>
 
-            <button class="chip-switch-btn" onclick="handleSignOut()" title="Sign Out" aria-label="Sign Out"
-                style="background: transparent; border: none; cursor: pointer; color: var(--ink-2); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; transition: background 0.2s ease;">
-                <i data-lucide="log-out" width="20" height="20"></i>
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <!-- Coordinator Action Button in Navbar (Visible only if is_coordinator) -->
+                <button type="button" class="btn-coordinator-action" id="navCoordinatorBtn" onclick="switchPortalTab('manage')" style="display: none;" title="Manage Class Subjects & Attendance">
+                    <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                    <span>Coordinator</span>
+                </button>
+
+                <button class="chip-switch-btn" onclick="handleSignOut()" title="Sign Out" aria-label="Sign Out"
+                    style="background: transparent; border: none; cursor: pointer; color: var(--ink-2); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; transition: background 0.2s ease;">
+                    <i data-lucide="log-out" width="20" height="20"></i>
+                </button>
+            </div>
         </header>
 
         <!-- STATE 2: Student Profile & Attendance Dashboard (Module Two) -->
@@ -79,14 +87,20 @@
                                     onchange="handleAvatarFileSelected(event)" class="form-control">
                             </div>
                             <div class="profile-meta-text">
-                                <h2 class="profile-student-name" id="dashStudentName">Student Name</h2>
-                                <div class="profile-enrollment-badge" id="dashEnrollment">ADTU/...</div>
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                                    <div>
+                                        <h2 class="profile-student-name" id="dashStudentName">Student Name</h2>
+                                        <div class="profile-enrollment-badge" id="dashEnrollment">ADTU/...</div>
+                                    </div>
+                                    <!-- Coordinator Button with profile/shield icon -->
+                                    <button type="button" class="btn-coordinator-action" id="dashCoordinatorBtn" onclick="switchPortalTab('manage')" style="display: none;" title="Open Coordinator Workspace">
+                                        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                                        <span>Coordinator</span>
+                                    </button>
+                                </div>
                                 <div class="profile-pills-row" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px;">
                                     <div class="profile-section-pill" id="dashSemesterPill" style="display: none;"></div>
                                     <div class="profile-section-pill" id="dashSectionPill">Standard</div>
-                                    <div class="profile-section-pill" id="dashCoordinatorPill" style="display: none; background: rgba(0, 113, 227, 0.12); color: #0071e3; border: 1px solid rgba(0, 113, 227, 0.25); font-weight: 600;">
-                                        <i data-lucide="shield-check" style="width: 12px; height: 12px; margin-right: 3px; display: inline-block; vertical-align: middle;"></i> Coordinator
-                                    </div>
                                     <button type="button" class="about-edit-btn" id="editSemesterBtn" onclick="toggleEditSemester()" title="Update Semester" style="padding: 2px 7px; font-size: 11px; margin: 0; height: 22px; line-height: 1;">
                                         <i class="small-control-icon" data-lucide="pencil" style="width: 11px; height: 11px;"></i> Sem
                                     </button>
@@ -300,6 +314,9 @@
                             <p style="color: var(--ink-2); font-size: 14px; margin: 0;">Manage subjects, configure elective student rosters, and bulk-upload attendance records.</p>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center;">
+                            <button type="button" class="btn btn-secondary compact-button" onclick="switchPortalTab('attendance')" title="Return to My Student Profile" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;">
+                                <i data-lucide="arrow-left" style="width: 15px; height: 15px;"></i> Back to Profile
+                            </button>
                             <button type="button" class="btn btn-secondary compact-button" onclick="loadCoordinatorData()" title="Refresh" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;">
                                 <i data-lucide="refresh-cw" style="width: 15px; height: 15px;"></i> Refresh
                             </button>
@@ -343,7 +360,7 @@
         </main>
 
         <!-- Add / Edit Subject Modal -->
-        <div class="modal-overlay" id="coordSubjectModal">
+        <div class="modal-overlay" id="coordSubjectModal" style="display: none;">
             <div class="modal-dialog" style="max-width: 480px;">
                 <h2 class="modal-title" id="coordSubjectModalTitle">Add Subject</h2>
                 <p class="modal-desc" id="coordSubjectModalDesc">Create a new subject for your class.</p>
@@ -392,7 +409,7 @@
         </div>
 
         <!-- Elective Roster Modal -->
-        <div class="modal-overlay" id="coordRosterModal">
+        <div class="modal-overlay" id="coordRosterModal" style="display: none;">
             <div class="modal-dialog" style="max-width: 540px; max-height: 85vh; display: flex; flex-direction: column;">
                 <div style="flex-shrink: 0;">
                     <h2 class="modal-title" id="coordRosterTitle">Elective Roster</h2>
@@ -424,7 +441,7 @@
         </div>
 
         <!-- Bulk Attendance Upload Modal -->
-        <div class="modal-overlay" id="coordUploadModal">
+        <div class="modal-overlay" id="coordUploadModal" style="display: none;">
             <div class="modal-dialog" style="max-width: 500px;">
                 <h2 class="modal-title">Upload Past Attendance</h2>
                 <p class="modal-desc" id="coordUploadSubtitle">Import attendance records via Excel (.xlsx, .xls).</p>
