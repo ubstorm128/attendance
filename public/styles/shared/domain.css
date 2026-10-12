@@ -763,6 +763,11 @@
             color: #004D99;
         }
 
+        .attendance-count-pill {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
         /* ── QR Stage (Left Column) ── */
         .qr-card {
             display: flex;
@@ -860,10 +865,7 @@
         }
 
         #qrBox canvas,
-        #projectorQrBox canvas {
-            display: none !important;
-        }
-
+        #projectorQrBox canvas,
         #qrBox img,
         #projectorQrBox img {
             display: block !important;
@@ -4064,5 +4066,4 @@
     gap: 6px !important;
     border-radius: 8px !important;
 }
-
 
