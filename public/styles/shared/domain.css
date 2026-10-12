@@ -872,10 +872,13 @@
         }
 
         #qrBox canvas,
-        #projectorQrBox canvas,
+        #projectorQrBox canvas {
+            display: none !important;
+        }
+
         #qrBox img,
         #projectorQrBox img {
-            display: block !important;
+            display: block;
             margin: 0 auto;
         }
 

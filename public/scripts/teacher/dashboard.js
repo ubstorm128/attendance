@@ -1292,6 +1292,8 @@
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.M
             });
+            const boxCanvas = box.querySelector('canvas');
+            if (boxCanvas) boxCanvas.remove();
 
             if (projBox) {
                 new QRCode(projBox, {
@@ -1302,6 +1304,8 @@
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.H
                 });
+                const projCanvas = projBox.querySelector('canvas');
+                if (projCanvas) projCanvas.remove();
             }
 
             const subjectVal = (customSubjectTitle || document.getElementById('subject').value || (currentSelectedSubject ? currentSelectedSubject.name : '') || 'Class Session').trim();
