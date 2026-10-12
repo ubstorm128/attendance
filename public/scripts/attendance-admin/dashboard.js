@@ -349,22 +349,31 @@ async function addTeacher() {
                 const div = document.createElement('div');
                 div.className = 'row admin-record-row';
                 const sEmail = s.email || '';
+                const isCoord = Boolean(s.is_coordinator);
                 const actionId = `student-actions-${index}`;
                 const metaParts = [
                     escapeHtml(s.enrollment),
-                    s.semester ? escapeHtml(s.semester) : '',
-                    s.section ? 'Sec ' + escapeHtml(s.section) : ''
+                    s.semester ? escapeHtml(s.semester) : '<span style="color:var(--ink-3)">No Sem</span>',
+                    s.section ? 'Sec ' + escapeHtml(s.section) : '<span style="color:var(--ink-3)">No Sec</span>'
                 ].filter(Boolean).join(' · ');
 
+                const coordBadge = isCoord
+                    ? `<span class="badge-coordinator" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#0071e3; background:rgba(0,113,227,0.12); border:1px solid rgba(0,113,227,0.25); border-radius:999px; padding:2px 8px; margin-left:6px; vertical-align:middle;"><i data-lucide="shield-check" style="width:12px; height:12px;"></i> Coordinator</span>`
+                    : '';
+
                 div.innerHTML = `<div class="record-identity">
-                    <strong>${escapeHtml(s.name)}</strong>
+                    <strong>${escapeHtml(s.name)}${coordBadge}</strong>
                     <span class="handle">${metaParts}</span>
                 </div>
                 <button class="record-summary" type="button" aria-expanded="false" aria-controls="${actionId}">
-                    <span class="record-summary-text"><strong>${escapeHtml(s.name)}</strong><span>${metaParts}</span></span>
+                    <span class="record-summary-text"><strong>${escapeHtml(s.name)}${coordBadge}</strong><span>${metaParts}</span></span>
                     <i data-lucide="chevron-down" aria-hidden="true"></i>
                 </button>
                 <div class="action-btns" id="${actionId}">
+                    <button class="btn ${isCoord ? 'btn-primary' : 'btn-secondary'}" type="button" title="${isCoord ? 'Revoke Coordinator Role' : 'Grant Coordinator Role'}" aria-label="${isCoord ? 'Revoke Coordinator' : 'Grant Coordinator'}" onclick="toggleCoordinatorRole('${escapeHtml(s.enrollment)}', ${!isCoord})">
+                        <i data-lucide="${isCoord ? 'shield-check' : 'shield'}" width="16" height="16"></i>
+                        <span style="font-size:12px; margin-left:4px;">${isCoord ? 'Coordinator' : 'Make Coord'}</span>
+                    </button>
                     <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(s.name)}" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
                     <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(s.name)}" onclick="openEditStudentModal('${escapeHtml(s.enrollment)}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}', '${escapeHtml(s.section || '')}', '${escapeHtml(s.semester || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
                     <button class="btn btn-danger" type="button" title="Remove" aria-label="Remove ${escapeHtml(s.name)}" onclick="removeStudent('${escapeHtml(s.enrollment)}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
@@ -373,6 +382,26 @@ async function addTeacher() {
                 el.appendChild(div);
             });
             if (window.lucide) window.lucide.createIcons();
+        }
+
+        async function toggleCoordinatorRole(enrollment, grant) {
+            const actionText = grant ? 'grant Coordinator privileges to' : 'revoke Coordinator privileges from';
+            if (!confirm(`Are you sure you want to ${actionText} ${enrollment}?`)) return;
+
+            try {
+                const r = await adminApiFetch('/api/admin/students/coordinator', {
+                    method: 'POST',
+                    body: JSON.stringify({ enrollment, value: grant })
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    alert(data.error || 'Failed to update coordinator status.');
+                    return;
+                }
+                loadStudents();
+            } catch (e) {
+                alert('Network error while updating coordinator status.');
+            }
         }
 
         function toggleAddStudent() {

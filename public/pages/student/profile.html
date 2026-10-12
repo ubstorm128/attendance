@@ -13,7 +13,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <link rel="stylesheet" href="/styles/shared/main.css">
 </head>
@@ -36,6 +36,17 @@
                     <span class="brand-sub">Academic Attendance &amp; Analytics</span>
                 </div>
             </div>
+
+            <!-- Coordinator Segmented Switcher (Visible only if is_coordinator) -->
+            <div class="coord-nav-switcher" id="coordinatorNavGroup" style="display: none;">
+                <button type="button" class="coord-nav-btn active" id="btnTabAttendance" onclick="switchPortalTab('attendance')">
+                    <i data-lucide="line-chart" style="width: 14px; height: 14px;"></i> My Attendance
+                </button>
+                <button type="button" class="coord-nav-btn" id="btnTabManage" onclick="switchPortalTab('manage')">
+                    <i data-lucide="shield" style="width: 14px; height: 14px;"></i> Manage Class
+                </button>
+            </div>
+
             <button class="chip-switch-btn" onclick="handleSignOut()" title="Sign Out" aria-label="Sign Out"
                 style="background: transparent; border: none; cursor: pointer; color: var(--ink-2); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; transition: background 0.2s ease;">
                 <i data-lucide="log-out" width="20" height="20"></i>
@@ -59,8 +70,8 @@
                                 <div class="avatar-camera-badge" title="Upload Photo">
                                     <svg viewBox="0 0 24 24" fill="none">
                                         <path
-                                            d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-                                            stroke="currentColor" stroke-width="2"></path>
+                                             d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                                             stroke="currentColor" stroke-width="2"></path>
                                         <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"></circle>
                                     </svg>
                                 </div>
@@ -73,6 +84,9 @@
                                 <div class="profile-pills-row" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px;">
                                     <div class="profile-section-pill" id="dashSemesterPill" style="display: none;"></div>
                                     <div class="profile-section-pill" id="dashSectionPill">Standard</div>
+                                    <div class="profile-section-pill" id="dashCoordinatorPill" style="display: none; background: rgba(0, 113, 227, 0.12); color: #0071e3; border: 1px solid rgba(0, 113, 227, 0.25); font-weight: 600;">
+                                        <i data-lucide="shield-check" style="width: 12px; height: 12px; margin-right: 3px; display: inline-block; vertical-align: middle;"></i> Coordinator
+                                    </div>
                                     <button type="button" class="about-edit-btn" id="editSemesterBtn" onclick="toggleEditSemester()" title="Update Semester" style="padding: 2px 7px; font-size: 11px; margin: 0; height: 22px; line-height: 1;">
                                         <i class="small-control-icon" data-lucide="pencil" style="width: 11px; height: 11px;"></i> Sem
                                     </button>
@@ -266,6 +280,194 @@
                 </div>
             </div>
         </main>
+
+        <!-- STATE 3: Coordinator Class Management (Visible only if is_coordinator) -->
+        <main id="coordinatorManageView" style="display: none; width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 16px;">
+            <div class="coord-view-container">
+                <!-- Hero Header Banner -->
+                <div class="portal-card coord-hero-banner" style="margin-bottom: 24px; padding: 28px; background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(240,246,255,0.85)); border: 1px solid rgba(0, 113, 227, 0.2); box-shadow: 0 8px 32px rgba(0, 113, 227, 0.06); border-radius: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span class="coord-badge-tag" style="background: rgba(0, 113, 227, 0.12); color: #0071e3; font-weight: 700; font-size: 11px; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(0, 113, 227, 0.25); display: inline-flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i> Class Coordinator
+                                </span>
+                                <span id="coordClassScopePill" style="background: rgba(0,0,0,0.06); color: var(--ink-2); font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;">
+                                    Scope: Loading...
+                                </span>
+                            </div>
+                            <h2 style="font-size: 24px; font-weight: 700; color: var(--ink); margin: 0 0 6px 0; letter-spacing: -0.5px;">Class Subjects &amp; Attendance</h2>
+                            <p style="color: var(--ink-2); font-size: 14px; margin: 0;">Manage subjects, configure elective student rosters, and bulk-upload attendance records.</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button type="button" class="btn btn-secondary compact-button" onclick="loadCoordinatorData()" title="Refresh" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;">
+                                <i data-lucide="refresh-cw" style="width: 15px; height: 15px;"></i> Refresh
+                            </button>
+                            <button type="button" class="btn btn-primary compact-button" onclick="openAddSubjectModal()" style="height: 38px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.25);">
+                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Subject
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Coordinator Metrics Strip -->
+                    <div class="coord-metrics-strip" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(0, 0, 0, 0.06);">
+                        <div class="coord-metric-item" style="padding: 12px 16px; background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(0, 0, 0, 0.05); border-radius: 12px;">
+                            <div style="font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--ink-3); letter-spacing: 0.5px;">Total Subjects</div>
+                            <div id="coordMetricTotalSubjects" style="font-size: 22px; font-weight: 700; color: var(--ink); margin-top: 4px;">0</div>
+                        </div>
+                        <div class="coord-metric-item" style="padding: 12px 16px; background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(0, 0, 0, 0.05); border-radius: 12px;">
+                            <div style="font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--ink-3); letter-spacing: 0.5px;">Elective Subjects</div>
+                            <div id="coordMetricElectives" style="font-size: 22px; font-weight: 700; color: #7c3aed; margin-top: 4px;">0</div>
+                        </div>
+                        <div class="coord-metric-item" style="padding: 12px 16px; background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(0, 0, 0, 0.05); border-radius: 12px;">
+                            <div style="font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--ink-3); letter-spacing: 0.5px;">Class Students</div>
+                            <div id="coordMetricClassStudents" style="font-size: 22px; font-weight: 700; color: #0071e3; margin-top: 4px;">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subjects Cards Stack -->
+                <div class="portal-card" style="padding: 24px; border-radius: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="font-size: 17px; font-weight: 600; margin: 0; color: var(--ink);">Class Subjects</h3>
+                            <p style="font-size: 13px; color: var(--ink-2); margin: 2px 0 0 0;">Subjects configured for your semester &amp; section</p>
+                        </div>
+                    </div>
+
+                    <div id="coordSubjectsContainer" class="coord-subjects-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Add / Edit Subject Modal -->
+        <div class="modal-overlay" id="coordSubjectModal">
+            <div class="modal-dialog" style="max-width: 480px;">
+                <h2 class="modal-title" id="coordSubjectModalTitle">Add Subject</h2>
+                <p class="modal-desc" id="coordSubjectModalDesc">Create a new subject for your class.</p>
+                
+                <div style="margin-bottom: 14px; padding: 10px 14px; background: rgba(0, 113, 227, 0.07); border-radius: 10px; font-size: 12px; color: #0071e3; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="info" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
+                    <span id="coordSubjectScopeInfo">Class Scope: Locked to your Semester &amp; Section</span>
+                </div>
+
+                <input type="hidden" id="coordSubjectEditId">
+                
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px;">Subject Name *</label>
+                    <input type="text" id="coordSubjName" class="form-control" placeholder="e.g. Distributed Operating Systems" style="width: 100%;">
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px;">Subject Code</label>
+                    <input type="text" id="coordSubjCode" class="form-control" placeholder="e.g. BCA-602" style="width: 100%;">
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px;">Assigned Teacher *</label>
+                    <select id="coordSubjTeacher" class="form-control" style="width: 100%;">
+                        <option value="">Select a teacher...</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 18px; padding: 12px; background: rgba(0,0,0,0.03); border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--ink); margin: 0;">
+                        <input type="checkbox" id="coordSubjIsElective" style="width: 16px; height: 16px; accent-color: #7c3aed;">
+                        <span>This is an Elective Subject</span>
+                    </label>
+                    <p style="font-size: 11px; color: var(--ink-3); margin: 4px 0 0 24px; line-height: 1.4;">
+                        Electives are only visible to assigned students. You can assign the student roster after creation.
+                    </p>
+                </div>
+
+                <p id="coordSubjectError" class="status-message is-error" style="display: none; margin-bottom: 14px; font-size: 12px; color: var(--bad);"></p>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCoordSubjectModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveCoordSubject" onclick="saveCoordSubject()">Save Subject</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Elective Roster Modal -->
+        <div class="modal-overlay" id="coordRosterModal">
+            <div class="modal-dialog" style="max-width: 540px; max-height: 85vh; display: flex; flex-direction: column;">
+                <div style="flex-shrink: 0;">
+                    <h2 class="modal-title" id="coordRosterTitle">Elective Roster</h2>
+                    <p class="modal-desc" id="coordRosterSubtitle" style="margin-bottom: 12px;">Select enrolled students in your class.</p>
+                    
+                    <input type="hidden" id="coordRosterSubjectId">
+                    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                        <input type="text" id="coordRosterSearch" class="form-control" placeholder="Search by name or enrollment..." style="flex: 1;" oninput="filterRosterChecklist()">
+                        <button type="button" class="btn btn-secondary compact-button" onclick="selectAllRoster(true)" style="font-size: 11px; padding: 6px 10px;">Select All</button>
+                        <button type="button" class="btn btn-secondary compact-button" onclick="selectAllRoster(false)" style="font-size: 11px; padding: 6px 10px;">Clear</button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); font-weight: 500; margin-bottom: 8px;">
+                        <span id="coordRosterCount">0 students selected</span>
+                    </div>
+                </div>
+
+                <!-- Scrollable Student Checklist -->
+                <div id="coordRosterList" style="flex: 1; overflow-y: auto; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 8px; max-height: 320px; background: rgba(0,0,0,0.02);">
+                    <!-- Checkboxes populated here -->
+                </div>
+
+                <p id="coordRosterError" class="status-message is-error" style="display: none; margin-top: 10px; font-size: 12px; color: var(--bad);"></p>
+
+                <div class="modal-actions" style="margin-top: 16px; flex-shrink: 0;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCoordRosterModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveCoordRoster" onclick="saveCoordRoster()">Save Roster</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Attendance Upload Modal -->
+        <div class="modal-overlay" id="coordUploadModal">
+            <div class="modal-dialog" style="max-width: 500px;">
+                <h2 class="modal-title">Upload Past Attendance</h2>
+                <p class="modal-desc" id="coordUploadSubtitle">Import attendance records via Excel (.xlsx, .xls).</p>
+                
+                <input type="hidden" id="coordUploadSubjectId">
+
+                <div id="coordUploadElectiveNotice" style="display: none; margin-bottom: 14px; padding: 10px 14px; background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 10px; font-size: 12px; color: #7c3aed; font-weight: 500;">
+                    <i data-lucide="alert-circle" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
+                    Elective Subject: Only students enrolled in this elective will be recorded. Others in the file will be safely skipped.
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px;">Session Date *</label>
+                    <input type="date" id="coordUploadDate" class="form-control" style="width: 100%;">
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px;">Session Title / Notes (Optional)</label>
+                    <input type="text" id="coordUploadTitle" class="form-control" placeholder="e.g. Lecture 12 - Regular Session" style="width: 100%;">
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px;">Excel Spreadsheet (.xlsx, .xls) *</label>
+                    <div class="file-drop-zone" onclick="document.getElementById('coordFileInput').click()" style="border: 2px dashed rgba(0, 113, 227, 0.3); border-radius: 12px; padding: 22px; text-align: center; cursor: pointer; background: rgba(0, 113, 227, 0.02); transition: all 0.2s ease;">
+                        <i data-lucide="file-spreadsheet" style="width: 32px; height: 32px; color: #0071e3; margin-bottom: 6px;"></i>
+                        <div id="coordFileLabel" style="font-size: 13px; font-weight: 500; color: var(--ink);">Click to browse Excel file</div>
+                        <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">Must contain Enrollment ID / Roll No column</div>
+                    </div>
+                    <input type="file" id="coordFileInput" accept=".xlsx, .xls" style="display: none;" onchange="handleCoordFileSelect(event)">
+                </div>
+
+                <div id="coordUploadPreview" style="display: none; margin-bottom: 14px; padding: 10px 14px; background: rgba(52, 199, 89, 0.1); border-radius: 10px; font-size: 12px; color: #2e7d32; font-weight: 600;">
+                    ✓ Parsed <span id="coordUploadCount">0</span> student records ready to upload.
+                </div>
+
+                <p id="coordUploadError" class="status-message is-error" style="display: none; margin-bottom: 14px; font-size: 12px; color: var(--bad);"></p>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCoordUploadModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btnSubmitCoordUpload" onclick="submitCoordBulkUpload()">Upload &amp; Record</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Trust Badges Footer -->
         <footer class="footer-badges-cluster">

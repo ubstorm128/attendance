@@ -94,6 +94,7 @@ async function initDb() {
                 created_at TIMESTAMPTZ NOT NULL DEFAULT now()
             );
             ALTER TABLE subjects ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT '';
+            ALTER TABLE subjects ADD COLUMN IF NOT EXISTS is_elective BOOLEAN DEFAULT false;
 
             CREATE TABLE IF NOT EXISTS students (
                 enrollment TEXT PRIMARY KEY,
@@ -107,8 +108,15 @@ async function initDb() {
             ALTER TABLE students ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT '';
             ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
             ALTER TABLE students ADD COLUMN IF NOT EXISTS password TEXT;
+            ALTER TABLE students ADD COLUMN IF NOT EXISTS is_coordinator BOOLEAN DEFAULT false;
             ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
             ALTER TABLE attendance_admins ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
+
+            CREATE TABLE IF NOT EXISTS student_subjects (
+                enrollment TEXT REFERENCES students(enrollment) ON DELETE CASCADE ON UPDATE CASCADE,
+                subject_id TEXT REFERENCES subjects(id) ON DELETE CASCADE,
+                PRIMARY KEY (enrollment, subject_id)
+            );
 
             CREATE TABLE IF NOT EXISTS sessions (
                 id SERIAL PRIMARY KEY,
@@ -143,6 +151,8 @@ async function initDb() {
             CREATE INDEX IF NOT EXISTS idx_attendance_session   ON attendance (session_id);
             CREATE INDEX IF NOT EXISTS idx_attendance_enrollment ON attendance (enrollment);
             CREATE INDEX IF NOT EXISTS idx_subjects_teacher     ON subjects (teacher_id);
+            CREATE INDEX IF NOT EXISTS idx_student_subjects_enrollment ON student_subjects (enrollment);
+            CREATE INDEX IF NOT EXISTS idx_student_subjects_subject_id ON student_subjects (subject_id);
         `);
         console.log('Database indexes ensured.');
 
@@ -256,6 +266,37 @@ function authenticateAdmin(req, res) {
     return payload;
 }
 
+/**
+ * Middleware-style helper: verifies the student JWT, then queries database
+ * directly to check coordinator status and class scope (never trust token claims).
+ * Returns the student row or sends 403 (or 401) and returns null.
+ * A coordinator with blank semester or section is rejected.
+ */
+async function authenticateCoordinator(req, res) {
+    const payload = verifyToken(req);
+    if (!payload || !payload.enrollment) {
+        send(res, 401, { error: 'Authentication required. Please log in as a student.' });
+        return null;
+    }
+    const { enrollment } = payload;
+    const r = await pool.query(
+        'SELECT enrollment, name, section, semester, is_coordinator FROM students WHERE enrollment = $1',
+        [enrollment]
+    );
+    if (!r.rows.length) {
+        send(res, 403, { error: 'Student record not found.' });
+        return null;
+    }
+    const student = r.rows[0];
+    const sem = (student.semester || '').trim();
+    const sec = (student.section || '').trim();
+    if (!student.is_coordinator || !sem || !sec) {
+        send(res, 403, { error: 'Forbidden: coordinator privileges required with valid semester and section assigned.' });
+        return null;
+    }
+    return student;
+}
+
 // --- SSE clients & replay buffer ---
 //
 // Each connected teacher gets their response object tracked.
@@ -363,6 +404,78 @@ function validateStudentFields(name, enrollment, section) {
     if (!ENROLLMENT_REGEX.test(e)) return { error: 'Invalid enrollment ID format. Expected format: ADTU/1/2023-26/BCAO/012' };
     if (s && !SECTION_REGEX.test(s)) return { error: 'Section can contain letters, numbers, and hyphens only (e.g. A, B, Sec-1)' };
     return { name: n, enrollment: e, section: s ? s.toUpperCase() : '' };
+}
+
+/**
+ * Shared helper for Excel bulk attendance upload.
+ * Used by both teachers and class coordinators.
+ */
+async function executeBulkUpload({ subj, teacherId, teacherName, body, filterElectiveRoster = false }) {
+    const { records, sessionDate, sessionTitle } = body;
+    if (!Array.isArray(records) || records.length === 0) {
+        return { status: 400, error: 'At least one student record is required' };
+    }
+
+    const defaultTitle = `${subj.code ? subj.code + ' ' : ''}${subj.name}${subj.section ? ' (Sec ' + subj.section + ')' : ''}`;
+    const title = (sessionTitle || '').trim() || defaultTitle;
+    const sessDate = sessionDate ? new Date(sessionDate) : new Date();
+
+    let allowedEnrollments = null;
+    if (filterElectiveRoster && subj.is_elective) {
+        const allowedRes = await pool.query(
+            'SELECT enrollment FROM student_subjects WHERE subject_id = $1',
+            [subj.id]
+        );
+        allowedEnrollments = new Set(allowedRes.rows.map(r => r.enrollment));
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Create a closed session for this uploaded date
+        const sessIns = await client.query(
+            'INSERT INTO sessions (teacher_id, teacher_name, subject, subject_id, active, created_at) VALUES ($1, $2, $3, $4, false, $5) RETURNING id',
+            [teacherId, teacherName || 'Instructor', title, subj.id, isNaN(sessDate.getTime()) ? new Date() : sessDate]
+        );
+        const sessionId = sessIns.rows[0].id;
+
+        let insertedCount = 0;
+        for (const row of records) {
+            const normEnrollment = (row.enrollment || row.id || row.roll || '').toString().trim().toUpperCase();
+            if (!normEnrollment) continue;
+
+            // If elective and filter is active, skip student if not enrolled in elective
+            if (allowedEnrollments && !allowedEnrollments.has(normEnrollment)) {
+                continue;
+            }
+
+            const studentName = (row.name || normEnrollment).toString().trim();
+            const studentSection = (row.section || subj.section || '').toString().trim().toUpperCase();
+
+            // Upsert student record
+            await client.query(
+                'INSERT INTO students (enrollment, name, section) VALUES ($1, $2, $3) ON CONFLICT (enrollment) DO UPDATE SET name = COALESCE(EXCLUDED.name, students.name), section = COALESCE(NULLIF(EXCLUDED.section, \'\'), students.section)',
+                [normEnrollment, studentName, studentSection]
+            );
+
+            // Insert attendance for this session
+            await client.query(
+                'INSERT INTO attendance (session_id, enrollment, name, section, time) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (session_id, enrollment) DO NOTHING',
+                [sessionId, normEnrollment, studentName, studentSection, sessDate]
+            );
+            insertedCount++;
+        }
+
+        await client.query('COMMIT');
+        return { status: 200, data: { ok: true, sessionId, count: insertedCount } };
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error during bulk attendance upload:', err);
+        return { status: 500, error: 'Failed to process bulk attendance upload' };
+    } finally {
+        client.release();
+    }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -502,7 +615,8 @@ const server = http.createServer(async (req, res) => {
                 enrollment: student.enrollment,
                 name: student.name,
                 section: student.section || '',
-                semester: student.semester || ''
+                semester: student.semester || '',
+                is_coordinator: Boolean(student.is_coordinator)
             });
         }
 
@@ -667,7 +781,7 @@ const server = http.createServer(async (req, res) => {
 
             // 1. Verify student exists
             const stCheck = await pool.query(
-                'SELECT enrollment, name, section, semester, avatar, about FROM students WHERE enrollment = $1',
+                'SELECT enrollment, name, section, semester, avatar, about, is_coordinator FROM students WHERE enrollment = $1',
                 [enrollment]
             );
             if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
@@ -675,7 +789,7 @@ const server = http.createServer(async (req, res) => {
             const studentSection = currentStudent.section || '';
             const studentSemester = (currentStudent.semester || '').trim();
 
-            // 2. Per-subject attendance breakdown — strictly filtered by subject_id
+            // 2. Per-subject attendance breakdown — core vs elective scoping
             const bySubjectRows = await pool.query(`
                 SELECT
                     subj.id,
@@ -684,6 +798,7 @@ const server = http.createServer(async (req, res) => {
                     subj.department,
                     subj.section,
                     subj.semester,
+                    COALESCE(subj.is_elective, false)                                     AS is_elective,
                     COUNT(DISTINCT sess.id)::int                                          AS "totalHeld",
                     COUNT(DISTINCT CASE WHEN a.enrollment = $1 THEN a.session_id END)::int AS "attended",
                     MIN(sess.teacher_name)                                                 AS "teacherName"
@@ -693,11 +808,24 @@ const server = http.createServer(async (req, res) => {
                 LEFT JOIN attendance a
                     ON a.session_id = sess.id
                 WHERE (
-                    ($2 != '' AND subj.section != '' AND subj.section = $2)
-                    OR subj.section = '' OR $2 = ''
+                    (
+                        COALESCE(subj.is_elective, false) = false
+                        AND (
+                            ($2 != '' AND subj.section != '' AND subj.section = $2)
+                            OR subj.section = '' OR $2 = ''
+                        )
+                        AND ($4::text = '' OR regexp_replace(subj.semester,'[^0-9]','','g') = regexp_replace($4::text,'[^0-9]','','g'))
+                    )
+                    OR (
+                        COALESCE(subj.is_elective, false) = true
+                        AND EXISTS (
+                            SELECT 1 FROM student_subjects ss
+                            WHERE ss.enrollment = $1 AND ss.subject_id = subj.id
+                        )
+                    )
                 )
-                AND ($4::text = '' OR regexp_replace(subj.semester,'[^0-9]','','g') = regexp_replace($4::text,'[^0-9]','','g'))
-                GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section, subj.semester
+                GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section, subj.semester, subj.is_elective
+                HAVING COUNT(DISTINCT sess.id) > 0
                 ORDER BY subj.name ASC
                 `, [enrollment, studentSection, filterMonth, studentSemester]);
 
@@ -724,6 +852,7 @@ const server = http.createServer(async (req, res) => {
                     department: row.department,
                     section: row.section,
                     semester: row.semester || '',
+                    isElective: Boolean(row.is_elective),
                     teacherName: row.teacherName || 'Instructor',
                     totalHeld,
                     attended,
@@ -770,53 +899,59 @@ const server = http.createServer(async (req, res) => {
                 time:        r.time.toISOString()
             }));
 
-            // 5. Leaderboard — students with >75% attendance, ranked by SQL
-            const leaderboardRows = await pool.query(`
-                SELECT
-                    st.enrollment,
-                    st.name,
-                    st.section,
-                    st.avatar,
-                    COUNT(a.session_id)::int AS attended,
-                    ${totalHeldOverall}      AS total
-                FROM students st
-                JOIN attendance a ON a.enrollment = st.enrollment
-                GROUP BY st.enrollment, st.name, st.section, st.avatar
-                HAVING ${totalHeldOverall} > 0
-                    AND ROUND(COUNT(a.session_id)::numeric / ${totalHeldOverall} * 100) > 75
-                ORDER BY attended DESC, st.name ASC
-            `);
+            // 5. Leaderboard — students with >75% attendance, strictly scoped to this subject set
+            const subjectIds = bySubjectRows.rows.map(r => r.id);
+            let leaderboard = [];
+            if (subjectIds.length > 0 && totalHeldOverall > 0) {
+                const leaderboardRows = await pool.query(`
+                    SELECT
+                        st.enrollment,
+                        st.name,
+                        st.section,
+                        st.avatar,
+                        COUNT(DISTINCT a.session_id)::int AS attended
+                    FROM students st
+                    JOIN attendance a ON a.enrollment = st.enrollment
+                    JOIN sessions sess ON sess.id = a.session_id AND sess.subject_id = ANY($1::text[])
+                    WHERE ($2 = -1 OR EXTRACT(MONTH FROM sess.created_at) = $2)
+                    GROUP BY st.enrollment, st.name, st.section, st.avatar
+                    HAVING ROUND(COUNT(DISTINCT a.session_id)::numeric / $3 * 100) > 75
+                    ORDER BY attended DESC, st.name ASC
+                `, [subjectIds, filterMonth, totalHeldOverall]);
 
-            const leaderboard = leaderboardRows.rows.map((s, idx) => ({
-                rank:             idx + 1,
-                name:             s.name,
-                section:          s.section,
-                avatar:           s.avatar || '',
-                percentage:       totalHeldOverall > 0 ? Math.round((s.attended / totalHeldOverall) * 100) : 100,
-                attended:         s.attended,
-                total:            s.total,
-                totalAttended:    s.attended,
-                totalHeld:        s.total,
-                isCurrentStudent: s.enrollment === enrollment
-            }));
+                leaderboard = leaderboardRows.rows.map((s, idx) => ({
+                    rank:             idx + 1,
+                    name:             s.name,
+                    section:          s.section,
+                    avatar:           s.avatar || '',
+                    percentage:       Math.round((s.attended / totalHeldOverall) * 100),
+                    attended:         s.attended,
+                    total:            totalHeldOverall,
+                    totalAttended:    s.attended,
+                    totalHeld:        totalHeldOverall,
+                    isCurrentStudent: s.enrollment === enrollment
+                }));
+            }
 
             return send(res, 200, {
                 ok: true,
                 profile: {
-                    name:       currentStudent.name,
-                    enrollment: currentStudent.enrollment,
-                    section:    currentStudent.section,
-                    semester:   currentStudent.semester || '',
-                    avatar:     currentStudent.avatar || '',
-                    about:      currentStudent.about  || ''
+                    name:           currentStudent.name,
+                    enrollment:     currentStudent.enrollment,
+                    section:        currentStudent.section,
+                    semester:       currentStudent.semester || '',
+                    avatar:         currentStudent.avatar || '',
+                    about:          currentStudent.about  || '',
+                    is_coordinator: Boolean(currentStudent.is_coordinator)
                 },
                 student: {
-                    name:       currentStudent.name,
-                    enrollment: currentStudent.enrollment,
-                    section:    currentStudent.section,
-                    semester:   currentStudent.semester || '',
-                    avatar:     currentStudent.avatar || '',
-                    about:      currentStudent.about  || ''
+                    name:           currentStudent.name,
+                    enrollment:     currentStudent.enrollment,
+                    section:        currentStudent.section,
+                    semester:       currentStudent.semester || '',
+                    avatar:         currentStudent.avatar || '',
+                    about:          currentStudent.about  || '',
+                    is_coordinator: Boolean(currentStudent.is_coordinator)
                 },
                 overall: {
                     totalHeld:        totalHeldOverall,
@@ -907,11 +1042,11 @@ const server = http.createServer(async (req, res) => {
             }
 
             // 3. Check Student
-            const stCheck = await pool.query('SELECT enrollment, name FROM students WHERE email = $1', [email]);
+            const stCheck = await pool.query('SELECT enrollment, name, is_coordinator FROM students WHERE email = $1', [email]);
             if (stCheck.rows.length) {
                 const student = stCheck.rows[0];
                 const token = signToken({ role: 'student', enrollment: student.enrollment });
-                return send(res, 200, { ok: true, role: 'student', enrollment: student.enrollment, token });
+                return send(res, 200, { ok: true, role: 'student', enrollment: student.enrollment, token, is_coordinator: Boolean(student.is_coordinator) });
             }
 
             // 4. Not found in any role -> send a special status to allow linking enrollment if they are a student
@@ -927,7 +1062,7 @@ const server = http.createServer(async (req, res) => {
             if (error || !user || !user.email) return send(res, 401, { error: 'Invalid token' });
 
             // Check if enrollment exists
-            const stCheck = await pool.query('SELECT enrollment FROM students WHERE enrollment = $1', [enrollment]);
+            const stCheck = await pool.query('SELECT enrollment, is_coordinator FROM students WHERE enrollment = $1', [enrollment]);
             if (!stCheck.rows.length) return send(res, 404, { error: 'Enrollment ID not found' });
             
             // Ensure not already linked
@@ -937,7 +1072,7 @@ const server = http.createServer(async (req, res) => {
             // Link
             await pool.query('UPDATE students SET email = $1 WHERE enrollment = $2', [user.email, enrollment]);
             const token = signToken({ role: 'student', enrollment });
-            return send(res, 200, { ok: true, role: 'student', enrollment, token });
+            return send(res, 200, { ok: true, role: 'student', enrollment, token, is_coordinator: Boolean(stCheck.rows[0].is_coordinator) });
         }
 
         // --- check email existence ---
@@ -1242,66 +1377,243 @@ const server = http.createServer(async (req, res) => {
             const auth = authenticate(req, res);
             if (!auth) return;
             const { teacherId } = auth;
-            const { subjectId, records, sessionDate, sessionTitle } = await readBody(req);
+            const body = await readBody(req);
+            const { subjectId } = body;
 
             if (!subjectId) return send(res, 400, { error: 'subjectId is required' });
-            if (!Array.isArray(records) || records.length === 0) {
-                return send(res, 400, { error: 'At least one student record is required' });
-            }
 
             const sCheck = await pool.query(
-                'SELECT id, name, code, section FROM subjects WHERE id = $1 AND teacher_id = $2',
+                'SELECT id, name, code, section, is_elective FROM subjects WHERE id = $1 AND teacher_id = $2',
                 [subjectId, teacherId]
             );
             if (!sCheck.rows.length) return send(res, 404, { error: 'Subject not found or not authorized' });
             const subj = sCheck.rows[0];
 
-            const defaultTitle = `${subj.code ? subj.code + ' ' : ''}${subj.name}${subj.section ? ' (Sec ' + subj.section + ')' : ''}`;
-            const title = (sessionTitle || '').trim() || defaultTitle;
-            const sessDate = sessionDate ? new Date(sessionDate) : new Date();
+            const result = await executeBulkUpload({
+                subj,
+                teacherId,
+                teacherName: auth.teacherName || 'Instructor',
+                body,
+                filterElectiveRoster: false
+            });
+            if (result.error) return send(res, result.status, { error: result.error });
+            return send(res, result.status, result.data);
+        }
+
+        // --- coordinator: get teachers list ---
+        if (req.method === 'GET' && pathname === '/api/coordinator/teachers') {
+            const co = await authenticateCoordinator(req, res);
+            if (!co) return;
+            const r = await pool.query('SELECT id, name FROM teachers ORDER BY name ASC');
+            return send(res, 200, r.rows);
+        }
+
+        // --- coordinator: get students in class (for elective roster picker) ---
+        if (req.method === 'GET' && pathname === '/api/coordinator/students') {
+            const co = await authenticateCoordinator(req, res);
+            if (!co) return;
+            const r = await pool.query(`
+                SELECT enrollment, name, section, semester
+                FROM students
+                WHERE section = $1
+                  AND regexp_replace(COALESCE(semester, ''), '[^0-9]', '', 'g') = regexp_replace($2, '[^0-9]', '', 'g')
+                ORDER BY enrollment ASC, name ASC
+            `, [co.section, co.semester]);
+            return send(res, 200, r.rows);
+        }
+
+        // --- coordinator: get subjects for class ---
+        if (req.method === 'GET' && pathname === '/api/coordinator/subjects') {
+            const co = await authenticateCoordinator(req, res);
+            if (!co) return;
+            const r = await pool.query(`
+                SELECT
+                    s.id,
+                    s.name,
+                    s.code,
+                    s.department,
+                    s.section,
+                    s.semester,
+                    s.teacher_id,
+                    t.name AS teacher_name,
+                    COALESCE(s.is_elective, false) AS is_elective,
+                    COALESCE(
+                        (SELECT json_agg(ss.enrollment ORDER BY ss.enrollment ASC)
+                         FROM student_subjects ss
+                         WHERE ss.subject_id = s.id),
+                        '[]'::json
+                    ) AS enrolled_enrollments
+                FROM subjects s
+                LEFT JOIN teachers t ON t.id = s.teacher_id
+                WHERE s.section = $1
+                  AND regexp_replace(COALESCE(s.semester, ''), '[^0-9]', '', 'g') = regexp_replace($2, '[^0-9]', '', 'g')
+                ORDER BY s.name ASC
+            `, [co.section, co.semester]);
+            return send(res, 200, r.rows);
+        }
+
+        // --- coordinator: create subject ---
+        if (req.method === 'POST' && pathname === '/api/coordinator/subjects') {
+            const co = await authenticateCoordinator(req, res);
+            if (!co) return;
+            const { name, code, teacherId, isElective } = await readBody(req);
+            const sName = (name || '').trim();
+            const sCode = (code || '').trim().toUpperCase();
+            const tId = (teacherId || '').trim();
+            if (!sName || !tId) {
+                return send(res, 400, { error: 'Subject name and teacher are required' });
+            }
+            const tCheck = await pool.query('SELECT id FROM teachers WHERE id = $1', [tId]);
+            if (!tCheck.rows.length) {
+                return send(res, 400, { error: 'Selected teacher does not exist' });
+            }
+
+            const id = 'subj-' + nodeCrypto.randomUUID().slice(0, 8);
+            const isElec = Boolean(isElective);
+            await pool.query(
+                'INSERT INTO subjects (id, teacher_id, name, code, department, section, semester, is_elective) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+                [id, tId, sName, sCode || 'GEN', 'GENERAL', co.section, co.semester, isElec]
+            );
+            return send(res, 201, { ok: true, id });
+        }
+
+        // --- coordinator: edit subject ---
+        if (req.method === 'POST' && pathname === '/api/coordinator/subjects/edit') {
+            const co = await authenticateCoordinator(req, res);
+            if (!co) return;
+            const { id, name, code, teacherId, isElective } = await readBody(req);
+            if (!id) return send(res, 400, { error: 'Subject ID is required' });
+
+            const checkS = await pool.query(`
+                SELECT id FROM subjects
+                WHERE id = $1
+                  AND section = $2
+                  AND regexp_replace(COALESCE(semester, ''), '[^0-9]', '', 'g') = regexp_replace($3, '[^0-9]', '', 'g')
+            `, [id, co.section, co.semester]);
+            if (!checkS.rows.length) {
+                return send(res, 404, { error: 'Subject not found in your class' });
+            }
+
+            const sName = (name || '').trim();
+            const sCode = (code || '').trim().toUpperCase();
+            const tId = (teacherId || '').trim();
+            if (!sName || !tId) return send(res, 400, { error: 'Name and teacher are required' });
+
+            const tCheck = await pool.query('SELECT id FROM teachers WHERE id = $1', [tId]);
+            if (!tCheck.rows.length) return send(res, 400, { error: 'Selected teacher does not exist' });
+
+            await pool.query(
+                'UPDATE subjects SET name = $1, code = $2, teacher_id = $3, is_elective = $4 WHERE id = $5',
+                [sName, sCode || 'GEN', tId, Boolean(isElective), id]
+            );
+            return send(res, 200, { ok: true });
+        }
+
+        // --- coordinator: delete subject ---
+        if (req.method === 'POST' && pathname === '/api/coordinator/subjects/delete') {
+            const co = await authenticateCoordinator(req, res);
+            if (!co) return;
+            const { id } = await readBody(req);
+            if (!id) return send(res, 400, { error: 'Subject ID is required' });
+
+            const checkS = await pool.query(`
+                SELECT id FROM subjects
+                WHERE id = $1
+                  AND section = $2
+                  AND regexp_replace(COALESCE(semester, ''), '[^0-9]', '', 'g') = regexp_replace($3, '[^0-9]', '', 'g')
+            `, [id, co.section, co.semester]);
+            if (!checkS.rows.length) {
+                return send(res, 404, { error: 'Subject not found in your class' });
+            }
+
+            await pool.query('DELETE FROM subjects WHERE id = $1', [id]);
+            return send(res, 200, { ok: true });
+        }
+
+        // --- coordinator: update elective roster ---
+        if (req.method === 'POST' && pathname === '/api/coordinator/electives') {
+            const co = await authenticateCoordinator(req, res);
+            if (!co) return;
+            const { subjectId, enrollments } = await readBody(req);
+            if (!subjectId) return send(res, 400, { error: 'subjectId is required' });
+            if (!Array.isArray(enrollments)) return send(res, 400, { error: 'enrollments must be an array' });
+
+            const sCheck = await pool.query(`
+                SELECT id, is_elective FROM subjects
+                WHERE id = $1
+                  AND section = $2
+                  AND regexp_replace(COALESCE(semester, ''), '[^0-9]', '', 'g') = regexp_replace($3, '[^0-9]', '', 'g')
+            `, [subjectId, co.section, co.semester]);
+            if (!sCheck.rows.length) return send(res, 404, { error: 'Subject not found in your class' });
+            if (!sCheck.rows[0].is_elective) return send(res, 400, { error: 'Subject is not marked as an elective' });
+
+            const normEnrollments = [...new Set(enrollments.map(e => String(e).trim().toUpperCase()).filter(Boolean))];
+            let validEnrollments = [];
+            if (normEnrollments.length > 0) {
+                const validR = await pool.query(`
+                    SELECT enrollment FROM students
+                    WHERE enrollment = ANY($1::text[])
+                      AND section = $2
+                      AND regexp_replace(COALESCE(semester, ''), '[^0-9]', '', 'g') = regexp_replace($3, '[^0-9]', '', 'g')
+                `, [normEnrollments, co.section, co.semester]);
+                validEnrollments = validR.rows.map(r => r.enrollment);
+            }
 
             const client = await pool.connect();
             try {
                 await client.query('BEGIN');
-
-                // Create a closed session for this uploaded date
-                const sessIns = await client.query(
-                    'INSERT INTO sessions (teacher_id, teacher_name, subject, subject_id, active, created_at) VALUES ($1, $2, $3, $4, false, $5) RETURNING id',
-                    [teacherId, auth.teacherName || 'Instructor', title, subjectId, isNaN(sessDate.getTime()) ? new Date() : sessDate]
-                );
-                const sessionId = sessIns.rows[0].id;
-
-                let insertedCount = 0;
-                for (const row of records) {
-                    const normEnrollment = (row.enrollment || row.id || row.roll || '').toString().trim().toUpperCase();
-                    if (!normEnrollment) continue;
-                    const studentName = (row.name || normEnrollment).toString().trim();
-                    const studentSection = (row.section || subj.section || '').toString().trim().toUpperCase();
-
-                    // Upsert student record
+                await client.query('DELETE FROM student_subjects WHERE subject_id = $1', [subjectId]);
+                for (const enr of validEnrollments) {
                     await client.query(
-                        'INSERT INTO students (enrollment, name, section) VALUES ($1, $2, $3) ON CONFLICT (enrollment) DO UPDATE SET name = COALESCE(EXCLUDED.name, students.name), section = COALESCE(NULLIF(EXCLUDED.section, \'\'), students.section)',
-                        [normEnrollment, studentName, studentSection]
+                        'INSERT INTO student_subjects (enrollment, subject_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                        [enr, subjectId]
                     );
-
-                    // Insert attendance for this session
-                    await client.query(
-                        'INSERT INTO attendance (session_id, enrollment, name, section, time) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (session_id, enrollment) DO NOTHING',
-                        [sessionId, normEnrollment, studentName, studentSection, sessDate]
-                    );
-                    insertedCount++;
                 }
-
                 await client.query('COMMIT');
-                return send(res, 200, { ok: true, sessionId, count: insertedCount });
+                return send(res, 200, { ok: true, count: validEnrollments.length });
             } catch (err) {
                 await client.query('ROLLBACK');
-                console.error('Error during bulk attendance upload:', err);
-                return send(res, 500, { error: 'Failed to process bulk attendance upload' });
+                console.error('Error updating elective roster:', err);
+                return send(res, 500, { error: 'Failed to update elective roster' });
             } finally {
                 client.release();
             }
         }
+
+        // --- coordinator: bulk attendance upload via excel ---
+        if (req.method === 'POST' && pathname === '/api/coordinator/attendance/bulk-upload') {
+            const co = await authenticateCoordinator(req, res);
+            if (!co) return;
+            const body = await readBody(req);
+            const { subjectId } = body;
+
+            if (!subjectId) return send(res, 400, { error: 'subjectId is required' });
+
+            // Subject must be in coordinator's class
+            const sCheck = await pool.query(`
+                SELECT s.id, s.name, s.code, s.section, s.teacher_id, s.is_elective, t.name AS teacher_name
+                FROM subjects s
+                LEFT JOIN teachers t ON t.id = s.teacher_id
+                WHERE s.id = $1
+                  AND s.section = $2
+                  AND regexp_replace(COALESCE(s.semester, ''), '[^0-9]', '', 'g') = regexp_replace($3, '[^0-9]', '', 'g')
+            `, [subjectId, co.section, co.semester]);
+            if (!sCheck.rows.length) {
+                return send(res, 404, { error: 'Subject not found in your class' });
+            }
+            const subj = sCheck.rows[0];
+
+            const result = await executeBulkUpload({
+                subj,
+                teacherId: subj.teacher_id,
+                teacherName: subj.teacher_name || 'Instructor',
+                body,
+                filterElectiveRoster: true
+            });
+            if (result.error) return send(res, result.status, { error: result.error });
+            return send(res, result.status, result.data);
+        }
+
 
         // --- teacher subjects: create ---
         if (req.method === 'POST' && pathname === '/api/teacher/subjects') {
@@ -1745,8 +2057,33 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'GET' && pathname === '/api/admin/students') {
             if (!authenticateAdmin(req, res)) return;
-            const r = await pool.query('SELECT enrollment, name, section, semester, email FROM students ORDER BY name ASC');
+            const r = await pool.query('SELECT enrollment, name, section, semester, email, is_coordinator FROM students ORDER BY name ASC');
             return send(res, 200, r.rows);
+        }
+
+        if (req.method === 'POST' && pathname === '/api/admin/students/coordinator') {
+            if (!authenticateAdmin(req, res)) return;
+            const { enrollment, value } = await readBody(req);
+            const normEnrollment = (enrollment || '').trim().toUpperCase();
+            if (!normEnrollment) return send(res, 400, { error: 'Enrollment is required' });
+
+            const isGrant = Boolean(value);
+            const checkR = await pool.query('SELECT enrollment, semester, section FROM students WHERE enrollment = $1', [normEnrollment]);
+            if (!checkR.rows.length) return send(res, 404, { error: 'Student not found' });
+
+            const student = checkR.rows[0];
+            if (isGrant) {
+                const sem = (student.semester || '').trim();
+                const sec = (student.section || '').trim();
+                if (!sem || !sec) {
+                    return send(res, 400, {
+                        error: 'Cannot grant coordinator: student must have a valid semester and section assigned first.'
+                    });
+                }
+            }
+
+            await pool.query('UPDATE students SET is_coordinator = $1 WHERE enrollment = $2', [isGrant, normEnrollment]);
+            return send(res, 200, { ok: true, is_coordinator: isGrant });
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/students/edit') {

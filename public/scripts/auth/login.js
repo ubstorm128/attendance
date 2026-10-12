@@ -108,7 +108,8 @@ async function loginStudent() {
             enrollment: data.enrollment,
             name: data.name,
             section: data.section || '',
-            semester: data.semester || ''
+            semester: data.semester || '',
+            is_coordinator: Boolean(data.is_coordinator)
         };
         localStorage.setItem('student_data', JSON.stringify(sData));
         localStorage.setItem('profile', JSON.stringify(sData));
