@@ -18,17 +18,17 @@
             
             <div class="auth-form active">
                 <label>Full Name</label>
-                <input id="regStudentName" type="text" placeholder="John Doe" class="form-control">
+                <input id="regStudentName" type="text" placeholder="Chandrachur Chouhan" class="form-control">
                 
                 <label>Enrollment ID</label>
-                <input id="regStudentId" type="text" placeholder="ADTU/1/2023-26/BCAO/012" class="form-control" oninput="this.value = this.value.toUpperCase()">
+                <input id="regStudentId" type="text" placeholder="ADTU/1/2024-27/BCAO/..." class="form-control" oninput="this.value = this.value.toUpperCase()">
                 
                 <label>Email</label>
                 <input id="regStudentEmail" type="email" placeholder="student@example.com" class="form-control">
                 
                 <label for="regStudentSemester">Semester</label>
                 <select id="regStudentSemester" class="form-control" onchange="handleSemesterChange(this)">
-                    <option value="">Select Semester (Optional)</option>
+                    <option value="">Select Semester</option>
                     <option value="1st Sem">1st Sem</option>
                     <option value="2nd Sem">2nd Sem</option>
                     <option value="3rd Sem">3rd Sem</option>
@@ -41,8 +41,8 @@
                 </select>
                 <input id="regStudentSemesterCustom" type="text" placeholder="Enter custom semester (e.g. 9th Sem)" class="form-control" style="display: none; margin-top: 8px;">
                 
-                <label>Section (Optional)</label>
-                <input id="regStudentSection" type="text" placeholder="A, B, Sec-1" class="form-control" oninput="this.value = this.value.toUpperCase()">
+                <label>Section</label>
+                <input id="regStudentSection" type="text" placeholder="A, B, C" class="form-control" oninput="this.value = this.value.toUpperCase()">
                 
                 <label>Password</label>
                 <div class="password-wrap">
