@@ -290,6 +290,7 @@ async function addTeacher() {
         async function addStudent() {
             const name = document.getElementById('studentName').value.trim();
             const enrollment = document.getElementById('studentEnrollment').value.trim();
+            const semester = (document.getElementById('studentSemester')?.value || '').trim();
             const section = document.getElementById('studentSection').value.trim();
             const email = document.getElementById('studentEmail').value.trim();
             const password = document.getElementById('studentPassword').value;
@@ -303,12 +304,13 @@ async function addTeacher() {
                 const r = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, enrollment, section, email, password })
+                    body: JSON.stringify({ name, enrollment, section, semester, email, password })
                 });
                 const data = await r.json();
                 if (r.ok) {
                     document.getElementById('studentName').value = '';
                     document.getElementById('studentEnrollment').value = '';
+                    if (document.getElementById('studentSemester')) document.getElementById('studentSemester').value = '';
                     document.getElementById('studentSection').value = '';
                     document.getElementById('studentEmail').value = '';
                     document.getElementById('studentPassword').value = '';
@@ -348,17 +350,23 @@ async function addTeacher() {
                 div.className = 'row admin-record-row';
                 const sEmail = s.email || '';
                 const actionId = `student-actions-${index}`;
+                const metaParts = [
+                    escapeHtml(s.enrollment),
+                    s.semester ? escapeHtml(s.semester) : '',
+                    s.section ? 'Sec ' + escapeHtml(s.section) : ''
+                ].filter(Boolean).join(' · ');
+
                 div.innerHTML = `<div class="record-identity">
                     <strong>${escapeHtml(s.name)}</strong>
-                    <span class="handle">${escapeHtml(s.enrollment)}${s.section ? ' · Sec ' + escapeHtml(s.section) : ''}</span>
+                    <span class="handle">${metaParts}</span>
                 </div>
                 <button class="record-summary" type="button" aria-expanded="false" aria-controls="${actionId}">
-                    <span class="record-summary-text"><strong>${escapeHtml(s.name)}</strong><span>${escapeHtml(s.enrollment)}${s.section ? ' · Sec ' + escapeHtml(s.section) : ''}</span></span>
+                    <span class="record-summary-text"><strong>${escapeHtml(s.name)}</strong><span>${metaParts}</span></span>
                     <i data-lucide="chevron-down" aria-hidden="true"></i>
                 </button>
                 <div class="action-btns" id="${actionId}">
                     <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(s.name)}" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
-                    <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(s.name)}" onclick="openEditStudentModal('${escapeHtml(s.enrollment)}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}')"><i data-lucide="edit" width="18" height="18"></i></button>
+                    <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(s.name)}" onclick="openEditStudentModal('${escapeHtml(s.enrollment)}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}', '${escapeHtml(s.section || '')}', '${escapeHtml(s.semester || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
                     <button class="btn btn-danger" type="button" title="Remove" aria-label="Remove ${escapeHtml(s.name)}" onclick="removeStudent('${escapeHtml(s.enrollment)}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
                 </div>`;
                 setupRecordActionDisclosure(div);
@@ -384,7 +392,7 @@ async function addTeacher() {
             });
         }
 
-        function openEditStudentModal(enrollment, name, email) {
+        function openEditStudentModal(enrollment, name, email, section = '', semester = '') {
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
             
@@ -403,6 +411,10 @@ async function addTeacher() {
                     <input type="text" id="editStudentName" class="form-control" value="${name}">
                     <label>Enrollment</label>
                     <input type="text" id="editStudentEnrollment" class="form-control" value="${enrollment}">
+                    <label>Semester</label>
+                    <input type="text" id="editStudentSemester" class="form-control" value="${semester}" placeholder="1st Sem">
+                    <label>Section</label>
+                    <input type="text" id="editStudentSection" class="form-control" value="${section}" placeholder="A">
                     <label>Email</label>
                     <input type="email" id="editStudentEmail" class="form-control" value="${email}">
                     <p id="editStudentError" class="status-message is-error" style="display:none;"></p>
@@ -426,12 +438,14 @@ async function addTeacher() {
 
                 const newName = document.getElementById('editStudentName').value;
                 const newEnroll = document.getElementById('editStudentEnrollment').value;
+                const newSem = document.getElementById('editStudentSemester').value;
+                const newSec = document.getElementById('editStudentSection').value;
                 const newEmail = document.getElementById('editStudentEmail').value;
 
                 try {
                     const r = await adminApiFetch('/api/admin/students/edit', {
                         method: 'POST',
-                        body: JSON.stringify({ oldEnrollment: enrollment, name: newName, enrollment: newEnroll, email: newEmail })
+                        body: JSON.stringify({ oldEnrollment: enrollment, name: newName, enrollment: newEnroll, email: newEmail, section: newSec, semester: newSem })
                     });
                     const data = await r.json();
                     if (r.ok) {

@@ -138,12 +138,28 @@ if (switchProfileBtn) {
             dashEnrollment.textContent = p.enrollment || profile.enrollment || '';
             dashSectionPill.textContent = p.section ? `Section ${p.section}` : 'General Cohort';
 
+            const dashSemesterPill = document.getElementById('dashSemesterPill');
+            if (dashSemesterPill) {
+                if (p.semester) {
+                    dashSemesterPill.textContent = p.semester;
+                    dashSemesterPill.style.display = 'inline-block';
+                } else {
+                    dashSemesterPill.style.display = 'none';
+                }
+            }
+            const editSemesterSelect = document.getElementById('editSemesterSelect');
+            if (editSemesterSelect && p.semester) {
+                editSemesterSelect.value = p.semester;
+            }
+
             // Sync updated profile to localStorage
             if (p.name && profile) {
                 profile.name = p.name;
                 if (p.avatar !== undefined) profile.avatar = p.avatar;
                 if (p.section !== undefined) profile.section = p.section;
+                if (p.semester !== undefined) profile.semester = p.semester;
                 localStorage.setItem('profile', JSON.stringify(profile));
+                localStorage.setItem('student_data', JSON.stringify(profile));
                 renderProfileChip();
             }
 
@@ -514,6 +530,54 @@ if (switchProfileBtn) {
             } catch (e) {
                 console.error('Error saving bio:', e);
                 alert('Network error while saving bio.');
+            }
+        }
+
+        // ── Semester Editing System ─────────────────────────────────────────
+        function toggleEditSemester(show) {
+            const row = document.getElementById('semesterEditRow');
+            if (!row) return;
+            const isVisible = show !== undefined ? show : row.style.display !== 'none';
+            row.style.display = isVisible ? 'none' : 'flex';
+            if (row.style.display === 'flex') {
+                const sel = document.getElementById('editSemesterSelect');
+                if (sel) {
+                    sel.value = profile?.semester || latestAttendanceData?.student?.semester || '';
+                    sel.focus();
+                }
+            }
+        }
+
+        async function saveSemester() {
+            if (!profile || !profile.enrollment) return;
+            const sel = document.getElementById('editSemesterSelect');
+            const newSem = sel ? sel.value.trim() : '';
+
+            try {
+                const res = await fetch('/api/student/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enrollment: profile.enrollment,
+                        semester: newSem
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.student) {
+                        profile.semester = data.student.semester || '';
+                        localStorage.setItem('profile', JSON.stringify(profile));
+                        localStorage.setItem('student_data', JSON.stringify(profile));
+                    }
+                    toggleEditSemester(false);
+                    loadStudentAttendanceAndProfile();
+                } else {
+                    alert('Failed to update semester.');
+                }
+            } catch (err) {
+                console.error('Error updating semester:', err);
+                alert('Network error while updating semester.');
             }
         }
 

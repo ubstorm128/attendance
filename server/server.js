@@ -453,6 +453,7 @@ const server = http.createServer(async (req, res) => {
             
             const email = (body.email || '').trim().toLowerCase();
             const password = body.password || '';
+            const semester = (body.semester || '').trim();
             
             if (!email || !password) {
                 return send(res, 400, { error: 'Email and password are required' });
@@ -469,8 +470,8 @@ const server = http.createServer(async (req, res) => {
             const hashed = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
             await pool.query(
-                'INSERT INTO students (enrollment, name, section, email, password) VALUES ($1, $2, $3, $4, $5)',
-                [v.enrollment, v.name, v.section || '', email, hashed]
+                'INSERT INTO students (enrollment, name, section, semester, email, password) VALUES ($1, $2, $3, $4, $5, $6)',
+                [v.enrollment, v.name, v.section || '', semester, email, hashed]
             );
 
             return send(res, 200, { ok: true, message: 'Student registered successfully' });
@@ -495,7 +496,14 @@ const server = http.createServer(async (req, res) => {
             if (!match) return send(res, 401, { error: 'Invalid password' });
 
             const token = jwt.sign({ type: 'student', enrollment: student.enrollment }, JWT_SECRET, { expiresIn: '7d' });
-            return send(res, 200, { ok: true, token, enrollment: student.enrollment, name: student.name });
+            return send(res, 200, {
+                ok: true,
+                token,
+                enrollment: student.enrollment,
+                name: student.name,
+                section: student.section || '',
+                semester: student.semester || ''
+            });
         }
 
 
@@ -659,7 +667,7 @@ const server = http.createServer(async (req, res) => {
 
             // 1. Verify student exists
             const stCheck = await pool.query(
-                'SELECT enrollment, name, section, avatar, about FROM students WHERE enrollment = $1',
+                'SELECT enrollment, name, section, semester, avatar, about FROM students WHERE enrollment = $1',
                 [enrollment]
             );
             if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
@@ -798,6 +806,7 @@ const server = http.createServer(async (req, res) => {
                     name:       currentStudent.name,
                     enrollment: currentStudent.enrollment,
                     section:    currentStudent.section,
+                    semester:   currentStudent.semester || '',
                     avatar:     currentStudent.avatar || '',
                     about:      currentStudent.about  || ''
                 },
@@ -805,6 +814,7 @@ const server = http.createServer(async (req, res) => {
                     name:       currentStudent.name,
                     enrollment: currentStudent.enrollment,
                     section:    currentStudent.section,
+                    semester:   currentStudent.semester || '',
                     avatar:     currentStudent.avatar || '',
                     about:      currentStudent.about  || ''
                 },
@@ -822,14 +832,14 @@ const server = http.createServer(async (req, res) => {
             });
         }
 
-        // --- student: update profile (avatar, about) ---
+        // --- student: update profile (avatar, about, semester) ---
         if (req.method === 'POST' && pathname === '/api/student/profile') {
-            const { enrollment, name, avatar, about } = await readBody(req);
+            const { enrollment, name, avatar, about, semester } = await readBody(req);
             const normEnrollment = (enrollment || '').trim().toUpperCase();
             if (!normEnrollment) return send(res, 400, { error: 'enrollment is required' });
 
             const stCheck = await pool.query(
-                'SELECT enrollment, name, section, avatar, about FROM students WHERE enrollment = $1',
+                'SELECT enrollment, name, section, semester, avatar, about FROM students WHERE enrollment = $1',
                 [normEnrollment]
             );
             if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
@@ -838,10 +848,11 @@ const server = http.createServer(async (req, res) => {
             const newName = name && name.trim() ? name.trim() : current.name;
             const newAvatar = avatar !== undefined ? avatar : (current.avatar || '');
             const newAbout = about !== undefined ? about : (current.about || '');
+            const newSemester = semester !== undefined ? (semester || '').trim() : (current.semester || '');
 
             const upd = await pool.query(
-                'UPDATE students SET name = $1, avatar = $2, about = $3 WHERE enrollment = $4 RETURNING *',
-                [newName, newAvatar, newAbout, normEnrollment]
+                'UPDATE students SET name = $1, avatar = $2, about = $3, semester = $4 WHERE enrollment = $5 RETURNING *',
+                [newName, newAvatar, newAbout, newSemester, normEnrollment]
             );
             const row = upd.rows[0];
 
@@ -851,6 +862,7 @@ const server = http.createServer(async (req, res) => {
                     name: row.name,
                     enrollment: row.enrollment,
                     section: row.section,
+                    semester: row.semester || '',
                     avatar: row.avatar,
                     about: row.about
                 }
@@ -964,7 +976,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             // Check if student exists
-            const stCheck = await pool.query('SELECT enrollment, name, section FROM students WHERE email = $1', [user.email]);
+            const stCheck = await pool.query('SELECT enrollment, name, section, semester FROM students WHERE email = $1', [user.email]);
             if (!stCheck.rows.length) {
                 return send(res, 200, { ok: true, require_registration: true, email: user.email });
             }
@@ -983,6 +995,9 @@ const server = http.createServer(async (req, res) => {
                     if (!resolvedSection && subjR.rows[0].section) resolvedSection = subjR.rows[0].section;
                     if (subjR.rows[0].semester) resolvedSemester = subjR.rows[0].semester;
                 }
+            }
+            if (!resolvedSemester && student.semester) {
+                resolvedSemester = student.semester;
             }
 
             // Check duplicate attendance
@@ -1016,7 +1031,7 @@ const server = http.createServer(async (req, res) => {
 
         // --- unified register-and-mark for QR scanning ---
         if (req.method === 'POST' && pathname === '/api/student/register-and-mark') {
-            const { access_token, name, enrollment, qr_token } = await readBody(req);
+            const { access_token, name, enrollment, qr_token, semester } = await readBody(req);
             if (!access_token || !name || !enrollment || !supabase) return send(res, 400, { error: 'Missing required fields' });
             
             const v = validateStudentFields(name, enrollment, '');
@@ -1047,14 +1062,16 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
+            const studentSemester = (semester || resolvedSemester || '').trim();
+
             // Create student record
             await pool.query(
-                'INSERT INTO students (enrollment, name, section, avatar, about, email) VALUES ($1, $2, $3, $4, $5, $6)',
-                [v.enrollment, v.name, resolvedSection, '', '', user.email]
+                'INSERT INTO students (enrollment, name, section, semester, avatar, about, email) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                [v.enrollment, v.name, resolvedSection, studentSemester, '', '', user.email]
             );
 
             if (!session) {
-                return send(res, 200, { ok: true, profile: { name: v.name, enrollment: v.enrollment } });
+                return send(res, 200, { ok: true, profile: { name: v.name, enrollment: v.enrollment, section: resolvedSection, semester: studentSemester } });
             }
 
             // Mark attendance
@@ -1066,7 +1083,7 @@ const server = http.createServer(async (req, res) => {
             return send(res, 200, {
                 ok: true, already: false, subject: session.subject || 'Class Session',
                 teacherName: session.teacher_name || 'Instructor',
-                time: new Date().toISOString(), section: resolvedSection, semester: resolvedSemester
+                time: new Date().toISOString(), section: resolvedSection, semester: resolvedSemester || studentSemester
             });
         }
 
@@ -1728,13 +1745,13 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'GET' && pathname === '/api/admin/students') {
             if (!authenticateAdmin(req, res)) return;
-            const r = await pool.query('SELECT enrollment, name, section, email FROM students ORDER BY name ASC');
+            const r = await pool.query('SELECT enrollment, name, section, semester, email FROM students ORDER BY name ASC');
             return send(res, 200, r.rows);
         }
 
         if (req.method === 'POST' && pathname === '/api/admin/students/edit') {
             if (!authenticateAdmin(req, res)) return;
-            const { oldEnrollment, name, enrollment, email } = await readBody(req);
+            const { oldEnrollment, name, enrollment, email, section, semester } = await readBody(req);
             if (!oldEnrollment) return send(res, 400, { error: 'Old Enrollment is required' });
             
             const normalizedOld = oldEnrollment.trim().toUpperCase();
@@ -1749,8 +1766,8 @@ const server = http.createServer(async (req, res) => {
                 await client.query('BEGIN');
                 
                 await client.query(
-                    'UPDATE students SET name = $1, enrollment = $2, email = $3 WHERE enrollment = $4',
-                    [name.trim(), normalizedNew, normalizedEmail, normalizedOld]
+                    'UPDATE students SET name = $1, enrollment = $2, email = $3, section = COALESCE($4, section), semester = COALESCE($5, semester) WHERE enrollment = $6',
+                    [name.trim(), normalizedNew, normalizedEmail, section !== undefined ? (section || '').trim().toUpperCase() : null, semester !== undefined ? (semester || '').trim() : null, normalizedOld]
                 );
                 
                 if (normalizedOld !== normalizedNew) {

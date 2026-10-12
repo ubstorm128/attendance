@@ -104,7 +104,14 @@ async function loginStudent() {
         }
         
         localStorage.setItem('student_token', data.token);
-        localStorage.setItem('student_data', JSON.stringify({ enrollment: data.enrollment, name: data.name }));
+        const sData = {
+            enrollment: data.enrollment,
+            name: data.name,
+            section: data.section || '',
+            semester: data.semester || ''
+        };
+        localStorage.setItem('student_data', JSON.stringify(sData));
+        localStorage.setItem('profile', JSON.stringify(sData));
         const urlParams = new URLSearchParams(window.location.search);
         const redirect = urlParams.get('redirect');
         window.location.href = redirect ? decodeURIComponent(redirect) : '/student/profile';

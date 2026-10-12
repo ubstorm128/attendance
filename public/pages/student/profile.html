@@ -70,7 +70,28 @@
                             <div class="profile-meta-text">
                                 <h2 class="profile-student-name" id="dashStudentName">Student Name</h2>
                                 <div class="profile-enrollment-badge" id="dashEnrollment">ADTU/...</div>
-                                <div class="profile-section-pill" id="dashSectionPill">Standard</div>
+                                <div class="profile-pills-row" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px;">
+                                    <div class="profile-section-pill" id="dashSemesterPill" style="display: none;"></div>
+                                    <div class="profile-section-pill" id="dashSectionPill">Standard</div>
+                                    <button type="button" class="about-edit-btn" id="editSemesterBtn" onclick="toggleEditSemester()" title="Update Semester" style="padding: 2px 7px; font-size: 11px; margin: 0; height: 22px; line-height: 1;">
+                                        <i class="small-control-icon" data-lucide="pencil" style="width: 11px; height: 11px;"></i> Sem
+                                    </button>
+                                </div>
+                                <div id="semesterEditRow" style="display: none; margin-top: 8px; gap: 6px; align-items: center;">
+                                    <select id="editSemesterSelect" class="form-control" style="padding: 4px 8px; font-size: 12px; height: 30px; width: auto; min-width: 110px;">
+                                        <option value="">No Semester</option>
+                                        <option value="1st Sem">1st Sem</option>
+                                        <option value="2nd Sem">2nd Sem</option>
+                                        <option value="3rd Sem">3rd Sem</option>
+                                        <option value="4th Sem">4th Sem</option>
+                                        <option value="5th Sem">5th Sem</option>
+                                        <option value="6th Sem">6th Sem</option>
+                                        <option value="7th Sem">7th Sem</option>
+                                        <option value="8th Sem">8th Sem</option>
+                                    </select>
+                                    <button type="button" class="btn-about-save" onclick="saveSemester()" style="padding: 4px 10px; font-size: 11px; height: 30px; border-radius: 6px;">Save</button>
+                                    <button type="button" class="btn-about-cancel" onclick="toggleEditSemester(false)" style="padding: 4px 8px; font-size: 11px; height: 30px; border-radius: 6px;">Cancel</button>
+                                </div>
                                 <button type="button" id="removeAvatarBtn" class="btn-remove-avatar"
                                     onclick="removeAvatarPhoto(event)" hidden title="Remove Photo">
                                     <i class="small-control-icon" data-lucide="x"></i> Remove photo

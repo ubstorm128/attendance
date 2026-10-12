@@ -25,10 +25,27 @@ function showMsg(msg, isSuccess = false) {
     else regMsg.classList.remove('success');
 }
 
+function handleSemesterChange(select) {
+    const customInput = document.getElementById('regStudentSemesterCustom');
+    if (!customInput) return;
+    if (select.value === '__custom__') {
+        customInput.style.display = 'block';
+        customInput.focus();
+    } else {
+        customInput.style.display = 'none';
+        customInput.value = '';
+    }
+}
+
 async function registerStudent() {
     const name = document.getElementById('regStudentName').value.trim();
     const enrollment = document.getElementById('regStudentId').value.trim();
     const email = document.getElementById('regStudentEmail').value.trim();
+    const semSelect = document.getElementById('regStudentSemester');
+    let semester = semSelect ? semSelect.value : '';
+    if (semester === '__custom__') {
+        semester = (document.getElementById('regStudentSemesterCustom')?.value || '').trim();
+    }
     const section = document.getElementById('regStudentSection').value.trim();
     const password = document.getElementById('regStudentPass').value;
     
@@ -41,7 +58,7 @@ async function registerStudent() {
         const res = await fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, enrollment, email, section, password })
+            body: JSON.stringify({ name, enrollment, email, section, semester, password })
         });
         
         const data = await res.json();
