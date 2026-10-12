@@ -3986,3 +3986,83 @@
             .logout-icon-btn { width: 100%; border-radius: 12px; padding: 10px; height: auto; justify-content: center; }
             .logout-icon-btn::after { content: 'Sign Out'; margin-left: 8px; font-weight: 500; }
         }
+
+.month-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; margin-top: 16px; margin-bottom: 16px; flex-grow: 1; }
+.month-btn { padding: 8px 12px; border-radius: 8px; border: 1px solid #E2E8F0; background: #ffffff; cursor: pointer; font-size: 13px; font-weight: 500; color: #64748B; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); text-align: center; }
+.month-btn:hover { background: #F8FAFC; color: #0878F9; border-color: #0878F9; transform: translateY(-1px); }
+.month-btn.active { background: #0878F9; color: #ffffff; border-color: #0878F9; box-shadow: 0 4px 12px rgba(8, 120, 249, 0.25); }
+
+/* Subject Attendance View Subtabs */
+.subject-subtabs-bar {
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.03);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid var(--hair);
+    width: fit-content;
+    max-width: 100%;
+    flex-wrap: wrap;
+}
+.subject-subtab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.subject-subtab-btn:hover {
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.6);
+}
+.subject-subtab-btn.active {
+    background: #ffffff;
+    color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Sessions List within Subject Attendance */
+.subject-sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.session-card-row {
+    background: #ffffff;
+    border: 1px solid var(--hair);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    transition: all 0.2s ease;
+}
+.session-card-row:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    border-color: rgba(8, 120, 249, 0.25);
+}
+.session-info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.compact-button {
+    height: 34px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    border-radius: 8px !important;
+}
+
+

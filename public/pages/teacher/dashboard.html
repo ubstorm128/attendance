@@ -7,6 +7,7 @@
     <title>Teacher Register</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 
     <link rel="stylesheet" href="/styles/shared/main.css">
@@ -296,6 +297,64 @@
                 <!-- Subject Filter Chips -->
                 <div class="filter-chips" id="historyFilters"></div>
                 <div id="histList" class="hist-list"></div>
+            </div>
+
+            <!-- Tab 4: Dedicated Attendance View Tab -->
+            <div id="attendanceTab" class="card" hidden>
+                <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <button class="btn btn-secondary" onclick="showTab('subjects')" aria-label="Back to Subjects">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                            Back
+                        </button>
+                        <div>
+                            <h2 class="card-title" id="pageSubjTitle" style="margin: 0; font-size: 19px;">Subject Attendance</h2>
+                            <p class="sub" id="pageSubjMeta" style="margin: 0; font-size: 13px;">Subject Attendance Report</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-primary compact-button" onclick="launchLiveSessionForCurrentSubject()" title="Launch live attendance session for this subject">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <path d="M12 7v5l3 3"></path>
+                            </svg>
+                            Launch Session
+                        </button>
+                        <!-- Hidden File Input for Excel Upload -->
+                        <input type="file" id="bulkUploadInput" accept=".xlsx, .xls" style="display: none;" onchange="handleBulkAttendanceUpload(event)">
+                        
+                        <button class="btn btn-secondary compact-button" onclick="document.getElementById('bulkUploadInput').click()" title="Upload Attendance via Excel">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload Excel
+                        </button>
+                        
+                        <button class="btn btn-secondary compact-button" onclick="downloadAttendanceExcel()" title="Download Attendance Excel">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Export Excel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Page Content Body -->
+                <div class="subject-report-content" style="padding: 16px;">
+                    <div class="month-filter-grid" id="pageMonthFilterGrid" style="margin-top: 0;">
+                        <!-- buttons populated by script -->
+                    </div>
+                    
+                    <div id="pageRosterContent">
+                        <p class="subject-report-loading">Please select a subject to view attendance.</p>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

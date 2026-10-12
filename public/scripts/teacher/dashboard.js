@@ -38,6 +38,10 @@
         let _activeEventSource = null;
         let _reconnectDelay = 3000;
         let _reconnectTimer = null;
+        let currentAttendanceSubjectId = null;
+        let currentAttendanceMonth = 'all';
+        let currentAttendanceData = null;
+        let currentAttendanceSubTab = 'roster';
 
         // Helper: fetch() with Authorization header automatically attached
         function apiFetch(url, options = {}) {
@@ -197,12 +201,14 @@
             document.getElementById('subjectsTab').hidden = tab !== 'subjects';
             document.getElementById('liveTab').hidden = tab !== 'live';
             document.getElementById('historyTab').hidden = tab !== 'history';
+            const attTab = document.getElementById('attendanceTab');
+            if (attTab) attTab.hidden = tab !== 'attendance';
 
-            document.getElementById('tabSubj').classList.toggle('active', tab === 'subjects');
+            document.getElementById('tabSubj').classList.toggle('active', tab === 'subjects' || tab === 'attendance');
             document.getElementById('tabLive').classList.toggle('active', tab === 'live');
             document.getElementById('tabHist').classList.toggle('active', tab === 'history');
 
-            document.getElementById('tabs').dataset.activeTab = tab;
+            document.getElementById('tabs').dataset.activeTab = tab === 'attendance' ? 'subjects' : tab;
 
             if (tab === 'subjects') loadSubjects();
             if (tab === 'history') loadHistory();
@@ -215,6 +221,18 @@
                 teacherSubjects = await r.json();
                 renderSubjectsGrid();
                 renderHistoryFilters();
+                const activeSess = teacherSubjects.find(s => s.isActive);
+                if (activeSess && !currentSelectedSubject) {
+                    currentSelectedSubject = activeSess;
+                    const liveSelect = document.getElementById('liveSubjectSelect');
+                    if (liveSelect) liveSelect.value = activeSess.id;
+                    document.getElementById('crumbSubjectName').textContent = activeSess.name;
+                    const metaParts = [activeSess.department || 'GENERAL'];
+                    if (activeSess.section) metaParts.push('Sec ' + activeSess.section);
+                    if (activeSess.semester) metaParts.push(activeSess.semester);
+                    document.getElementById('crumbSubjectDept').textContent = metaParts.join(' · ');
+                    document.getElementById('subjectBanner').hidden = false;
+                }
             } catch (e) {
                 console.error('Failed to load subjects:', e);
             }
@@ -299,7 +317,7 @@
                         </div>
                     </div>
                     <div class="subject-card-footer">
-                        <button class="btn btn-secondary subject-card-action" onclick="openSubjectAttendanceModal('${esc(s.id)}')">
+                        <button class="btn btn-secondary subject-card-action" onclick="openSubjectAttendancePage('${esc(s.id)}')">
                             <svg class="subject-card-action-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
                             View Attendance
                         </button>
@@ -334,87 +352,131 @@
             showTab('live');
         }
 
-        /* ── Subject Attendance Modal (Subject-Wise Records & Analytics) ── */
-        async function openSubjectAttendanceModal(subjectId) {
-            closeModal();
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+        /* ── Subject Attendance Page & Session Management ── */
+        async function openSubjectAttendancePage(subjectId) {
+            currentAttendanceSubjectId = subjectId;
+            currentAttendanceMonth = 'all';
+            currentAttendanceSubTab = 'roster';
+            showTab('attendance');
+            await loadSubjectAttendancePage(subjectId, 'all');
+        }
 
-            overlay.innerHTML = `
-                <div class="modal-dialog wide modal-dialog-scroll">
-                    <div class="subject-report-header">
-                        <div>
-                            <div class="subject-report-heading">
-                                <h2 class="subject-report-title" id="modalSubjTitle">Loading Subject Attendance…</h2>
-                            </div>
-                            <p class="sub subject-report-meta" id="modalSubjMeta">Subject Attendance Report</p>
-                        </div>
-                        <div class="subject-report-tools">
-                            <label class="subject-switcher-label" for="modalSubjectSwitcher">Subject:</label>
-                            <select id="modalSubjectSwitcher" class="subject-switcher" onchange="openSubjectAttendanceModal(this.value)">
-                                ${teacherSubjects.map(s => `<option value="${esc(s.id)}" ${s.id === subjectId ? 'selected' : ''}>${esc(s.code ? s.code + ' ' : '')}${esc(s.name)}${s.section ? ' (Sec ' + esc(s.section) + ')' : ''}</option>`).join('')}
-                            </select>
+        function openSubjectAttendanceModal(subjectId) {
+            return openSubjectAttendancePage(subjectId);
+        }
 
-                        </div>
-                    </div>
+        async function loadSubjectAttendancePage(subjectId, month = 'all') {
+            if (!subjectId) subjectId = currentAttendanceSubjectId;
+            if (!subjectId) return;
+            currentAttendanceSubjectId = subjectId;
+            currentAttendanceMonth = month;
 
-                    <div id="modalRosterContent" class="subject-report-content">
-                        <p class="subject-report-loading">Fetching subject records…</p>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
+            // Render Month Buttons in #pageMonthFilterGrid
+            const monthGrid = document.getElementById('pageMonthFilterGrid');
+            if (monthGrid) {
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                let btnHtml = `<button class="month-btn ${month === 'all' ? 'active' : ''}" onclick="loadSubjectAttendancePage('${esc(subjectId)}', 'all')">All Months</button>`;
+                months.forEach((m, idx) => {
+                    const mVal = idx + 1;
+                    btnHtml += `<button class="month-btn ${month == mVal ? 'active' : ''}" onclick="loadSubjectAttendancePage('${esc(subjectId)}', ${mVal})">${m}</button>`;
+                });
+                monthGrid.innerHTML = btnHtml;
+            }
+
+            const contentEl = document.getElementById('pageRosterContent');
+            if (!contentEl) return;
+            contentEl.innerHTML = `<p class="subject-report-loading" style="padding: 30px 0;"><span class="dot-live" style="margin-right: 8px;"></span>Fetching subject records & session history…</p>`;
 
             try {
-                const r = await apiFetch(`/api/teacher/subject-attendance?subjectId=${encodeURIComponent(subjectId)}`);
+                const r = await apiFetch(`/api/teacher/subject-attendance?subjectId=${encodeURIComponent(subjectId)}&month=${encodeURIComponent(month)}`);
                 const data = await r.json();
                 if (!r.ok) {
-                    document.getElementById('modalRosterContent').innerHTML = `<p class="subject-report-error">${esc(data.error || 'Failed to load subject records')}</p>`;
+                    contentEl.innerHTML = `<p class="subject-report-error" style="padding: 30px 0;">${esc(data.error || 'Failed to load subject records')}</p>`;
                     return;
                 }
 
+                currentAttendanceData = data;
                 const s = data.subject;
-                const metaParts = [s.department || 'GENERAL'];
+                const metaParts = [];
+                if (s.code) metaParts.push(s.code);
+                if (s.department) metaParts.push(s.department);
                 if (s.section) metaParts.push('Sec ' + s.section);
                 if (s.semester) metaParts.push(s.semester);
-                if (s.code) metaParts.push(s.code);
 
-                document.getElementById('modalSubjTitle').textContent = s.name;
-                document.getElementById('modalSubjMeta').textContent = metaParts.join(' · ');
+                const titleEl = document.getElementById('pageSubjTitle');
+                if (titleEl) titleEl.textContent = s.name;
+                const metaEl = document.getElementById('pageSubjMeta');
+                if (metaEl) metaEl.textContent = metaParts.length ? metaParts.join(' · ') : 'Subject Attendance Report';
 
                 const students = data.students || [];
+                const sessions = data.sessions || [];
                 const totalHeld = data.totalHeld || 0;
                 const totalPresentAgg = students.reduce((acc, st) => acc + (st.attended || 0), 0);
                 const avgPct = (students.length > 0 && totalHeld > 0)
                     ? Math.round((totalPresentAgg / (students.length * totalHeld)) * 100)
-                    : 0;
+                    : (totalHeld > 0 ? 0 : 100);
 
-                const contentEl = document.getElementById('modalRosterContent');
-                contentEl.innerHTML = `
-                    <!-- 3 KPI Cards -->
-                    <div class="subject-report-kpis">
-                        <div class="subject-report-kpi">
-                            <div class="subject-report-kpi-label">Total Classes Held</div>
-                            <div class="subject-report-kpi-value">${totalHeld} <span class="subject-report-kpi-unit">Sessions</span></div>
-                        </div>
-                        <div class="subject-report-kpi">
-                            <div class="subject-report-kpi-label">Students Recorded</div>
-                            <div class="subject-report-kpi-value">${students.length} <span class="subject-report-kpi-unit">Students</span></div>
-                        </div>
-                        <div class="subject-report-kpi">
-                            <div class="subject-report-kpi-label">Average Attendance</div>
-                            <div class="subject-report-kpi-value ${avgPct >= 75 ? 'is-good' : 'is-warning'}">${totalHeld > 0 ? avgPct + '%' : 'N/A'}</div>
-                        </div>
+                renderSubjectAttendanceBody(data, avgPct);
+            } catch (err) {
+                console.error(err);
+                contentEl.innerHTML = `<p class="subject-report-error" style="padding: 30px 0;">Network error loading subject attendance.</p>`;
+            }
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function renderSubjectAttendanceBody(data, avgPct) {
+            const contentEl = document.getElementById('pageRosterContent');
+            if (!contentEl) return;
+
+            const students = data.students || [];
+            const sessions = data.sessions || [];
+            const totalHeld = data.totalHeld || 0;
+            const s = data.subject;
+
+            contentEl.innerHTML = `
+                <!-- 3 KPI Summary Cards -->
+                <div class="subject-report-kpis">
+                    <div class="subject-report-kpi">
+                        <div class="subject-report-kpi-label">Total Classes Held</div>
+                        <div class="subject-report-kpi-value">${totalHeld} <span class="subject-report-kpi-unit">Sessions</span></div>
                     </div>
+                    <div class="subject-report-kpi">
+                        <div class="subject-report-kpi-label">Students Recorded</div>
+                        <div class="subject-report-kpi-value">${students.length} <span class="subject-report-kpi-unit">Students</span></div>
+                    </div>
+                    <div class="subject-report-kpi">
+                        <div class="subject-report-kpi-label">Average Attendance</div>
+                        <div class="subject-report-kpi-value ${avgPct >= 75 ? 'is-good' : 'is-warning'}">${totalHeld > 0 ? avgPct + '%' : 'N/A'}</div>
+                    </div>
+                </div>
 
-                    <!-- Search filter bar -->
+                <!-- View Switch Tabs: Roster vs Sessions -->
+                <div class="subject-subtabs-bar">
+                    <button class="subject-subtab-btn ${currentAttendanceSubTab === 'roster' ? 'active' : ''}" onclick="switchAttendanceSubTab('roster')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Student Attendance Roster (${students.length})
+                    </button>
+                    <button class="subject-subtab-btn ${currentAttendanceSubTab === 'sessions' ? 'active' : ''}" onclick="switchAttendanceSubTab('sessions')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Class Sessions Held (${sessions.length})
+                    </button>
+                </div>
+
+                <!-- Subtab 1: Student Roster Container -->
+                <div id="subtabRosterView" ${currentAttendanceSubTab === 'roster' ? '' : 'hidden'}>
                     <div class="subject-report-toolbar">
                         <div class="subject-report-heading-text">Student Attendance Records for this Subject</div>
                         <input type="search" id="rosterSearchInput" class="form-control subject-report-search" oninput="filterRosterTable()" placeholder="Search student name or enrollment…">
                     </div>
 
-                    <!-- Roster Table -->
                     <div class="subject-report-table-scroll">
                         <table class="roster-table roster-table-flush" id="rosterTable">
                             <thead>
@@ -432,14 +494,22 @@
                             <tbody id="rosterTableBody">
                                 ${students.length === 0 ? `
                                     <tr>
-                                        <td colspan="8" class="roster-empty-cell">No attendance records recorded for this subject yet.</td>
+                                        <td colspan="8" class="roster-empty-cell">
+                                            No student records found for this period. Click "Launch Session" to take live attendance or "Upload Excel" to import existing records.
+                                        </td>
                                     </tr>
                                 ` : students.map(st => {
-                    const isSafe = st.percentage >= 75;
-                    const dateStr = st.lastAttended ? new Date(st.lastAttended).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
-                    return `
-                                        <tr class="roster-row" data-search="${esc((st.name + ' ' + st.enrollment + ' ' + st.section).toLowerCase())}">
-                                            <td><strong>${esc(st.name)}</strong></td>
+                                    const isSafe = st.percentage >= 75;
+                                    const dateStr = st.lastAttended ? new Date(st.lastAttended).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
+                                    const initials = getInitials(st.name);
+                                    return `
+                                        <tr class="roster-row" data-search="${esc((st.name + ' ' + st.enrollment + ' ' + (st.section || '')).toLowerCase())}">
+                                            <td>
+                                                <div class="student-cell">
+                                                    <div class="student-avatar">${initials}</div>
+                                                    <span class="cell-name">${esc(st.name)}</span>
+                                                </div>
+                                            </td>
                                             <td class="roster-enrollment">${esc(st.enrollment)}</td>
                                             <td><span class="cell-section">${esc(st.section || '–')}</span></td>
                                             <td><strong class="roster-attended">${st.attended}</strong></td>
@@ -453,21 +523,76 @@
                                             <td class="roster-date">${dateStr}</td>
                                         </tr>
                                     `;
-                }).join('')}
+                                }).join('')}
                             </tbody>
                         </table>
                     </div>
+                </div>
 
-                    <div class="subject-report-actions">
-                        <button class="btn btn-secondary" onclick="closeModal()">Close</button>
-                        <button class="btn btn-primary" onclick="closeModal(); selectSubjectById('${esc(s.id)}')">Launch Live Session</button>
+                <!-- Subtab 2: Sessions List Container -->
+                <div id="subtabSessionsView" ${currentAttendanceSubTab === 'sessions' ? '' : 'hidden'}>
+                    <div class="subject-report-toolbar">
+                        <div class="subject-report-heading-text">Classroom Sessions Recorded for ${esc(s.name)}</div>
+                        <button class="btn btn-primary compact-button" onclick="launchLiveSessionForCurrentSubject()">+ Launch New Session</button>
                     </div>
-                `;
-            } catch (err) {
-                console.error(err);
-                document.getElementById('modalRosterContent').innerHTML = `<p class="subject-report-error">Network error loading subject attendance.</p>`;
-            }
+
+                    <div class="subject-sessions-list" id="subjectSessionsList">
+                        ${sessions.length === 0 ? `
+                            <div class="history-empty" style="background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px dashed var(--hair); padding: 36px 16px;">
+                                <p style="margin: 0 0 12px; font-weight: 500;">No attendance sessions held for this subject yet.</p>
+                                <button class="btn btn-primary compact-button" onclick="launchLiveSessionForCurrentSubject()">Launch First Session</button>
+                            </div>
+                        ` : sessions.map(sess => {
+                            const dateStr = new Date(sess.createdAt).toLocaleDateString([], {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            return `
+                                <div class="hist-row session-card-row">
+                                    <div class="session-info-col">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <strong style="font-size: 15px; color: var(--ink);">${esc(sess.subject || s.name)}</strong>
+                                            <span class="badge ${sess.active ? '' : 'closed'}">${sess.active ? 'active' : 'closed'}</span>
+                                        </div>
+                                        <span class="muted" style="font-size: 13px;">${dateStr} · <strong style="color: var(--primary);">${sess.count || 0}</strong> students checked in</span>
+                                    </div>
+                                    <div class="history-row-actions">
+                                        <button class="btn btn-secondary compact-button" onclick="openSessionDetailModal(${sess.id})" title="View attendees">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            View Students
+                                        </button>
+                                        <button class="card-action-btn" onclick="location.href='/api/export?id=${sess.id}'" title="Export CSV">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        </button>
+                                        <button class="card-action-btn delete-btn" onclick="deleteSessionFromSubject(${sess.id})" title="Delete Session">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
             if (window.lucide) window.lucide.createIcons();
+        }
+
+        function switchAttendanceSubTab(subTab) {
+            currentAttendanceSubTab = subTab;
+            const rView = document.getElementById('subtabRosterView');
+            const sView = document.getElementById('subtabSessionsView');
+            if (rView) rView.hidden = subTab !== 'roster';
+            if (sView) sView.hidden = subTab !== 'sessions';
+
+            const btns = document.querySelectorAll('.subject-subtab-btn');
+            btns.forEach(b => {
+                const isRosterBtn = b.textContent.includes('Student Attendance Roster');
+                b.classList.toggle('active', (subTab === 'roster' && isRosterBtn) || (subTab === 'sessions' && !isRosterBtn));
+            });
         }
 
         function filterRosterTable() {
@@ -477,6 +602,360 @@
                 const text = r.getAttribute('data-search') || '';
                 r.hidden = Boolean(query) && !text.includes(query);
             });
+        }
+
+        function launchLiveSessionForCurrentSubject() {
+            if (!currentAttendanceSubjectId) return;
+            selectSubjectById(currentAttendanceSubjectId);
+        }
+
+        /* ── Session Detail Modal ── */
+        async function openSessionDetailModal(sessionId) {
+            closeModal();
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+            overlay.innerHTML = `
+                <div class="modal-dialog wide modal-dialog-scroll">
+                    <div class="subject-report-header" style="margin-bottom: 16px;">
+                        <div>
+                            <h2 class="subject-report-title" id="sessionModalTitle">Session Attendance</h2>
+                            <p class="sub subject-report-meta" id="sessionModalMeta">Loading session records…</p>
+                        </div>
+                        <div class="subject-report-tools">
+                            <button class="btn btn-secondary compact-button" onclick="location.href='/api/export?id=${sessionId}'" title="Download CSV">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Export CSV
+                            </button>
+                            <button class="btn btn-secondary compact-button" onclick="closeModal()">Close</button>
+                        </div>
+                    </div>
+                    <div id="sessionModalContent" style="min-height: 180px;">
+                        <p class="subject-report-loading" style="padding: 30px 0;">Loading students present in this session…</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('active'));
+
+            try {
+                const r = await apiFetch(`/api/session?id=${sessionId}`);
+                const sess = await r.json();
+                if (!r.ok || !sess) {
+                    document.getElementById('sessionModalContent').innerHTML = `<p class="subject-report-error">${esc(sess.error || 'Failed to load session records')}</p>`;
+                    return;
+                }
+
+                const dateStr = new Date(sess.createdAt).toLocaleDateString([], {
+                    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                document.getElementById('sessionModalTitle').textContent = sess.subject || 'Class Session';
+                document.getElementById('sessionModalMeta').textContent = `${dateStr} · Status: ${sess.active ? 'Active' : 'Closed'}`;
+
+                const students = Object.values(sess.present || {});
+
+                const contentEl = document.getElementById('sessionModalContent');
+                contentEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="font-weight: 600; font-size: 14px; color: var(--ink);">
+                            Present Students: <span style="color: var(--primary); font-weight: 700;">${students.length}</span>
+                        </div>
+                        <input type="search" class="form-control" style="max-width: 240px; height: 34px; font-size: 13px;" placeholder="Search session attendees…" oninput="filterSessionAttendees(this.value)">
+                    </div>
+                    <div class="subject-report-table-scroll" style="max-height: 380px;">
+                        <table class="roster-table roster-table-flush" id="sessionAttendeesTable">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Enrollment ID</th>
+                                    <th>Section</th>
+                                    <th>Check-in Time</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${students.length === 0 ? `
+                                    <tr><td colspan="5" class="roster-empty-cell">No students recorded present in this session.</td></tr>
+                                ` : students.map(st => {
+                                    const timeStr = st.time ? new Date(st.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '–';
+                                    const initials = getInitials(st.name);
+                                    return `
+                                        <tr class="session-attendee-row" data-search="${esc((st.name + ' ' + st.enrollment + ' ' + (st.section || '')).toLowerCase())}">
+                                            <td>
+                                                <div class="student-cell">
+                                                    <div class="student-avatar">${initials}</div>
+                                                    <span class="cell-name">${esc(st.name)}</span>
+                                                </div>
+                                            </td>
+                                            <td class="roster-enrollment">${esc(st.enrollment)}</td>
+                                            <td><span class="cell-section">${esc(st.section || '–')}</span></td>
+                                            <td class="attendance-time">${timeStr}</td>
+                                            <td class="text-right">
+                                                <button class="card-action-btn delete-btn" title="Remove from session" onclick="deleteStudentFromSession(${sessionId}, '${esc(st.enrollment)}')">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="subject-report-actions" style="margin-top: 16px;">
+                        <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                    </div>
+                `;
+            } catch (e) {
+                console.error(e);
+                document.getElementById('sessionModalContent').innerHTML = `<p class="subject-report-error">Error loading session.</p>`;
+            }
+        }
+
+        function filterSessionAttendees(query) {
+            const q = (query || '').trim().toLowerCase();
+            const rows = document.querySelectorAll('#sessionAttendeesTable tbody .session-attendee-row');
+            rows.forEach(r => {
+                const text = r.getAttribute('data-search') || '';
+                r.hidden = Boolean(q) && !text.includes(q);
+            });
+        }
+
+        async function deleteStudentFromSession(sessionId, enrollment) {
+            if (!confirm(`Remove ${enrollment} from this session's attendance?`)) return;
+            try {
+                const r = await apiFetch(`/api/session/${sessionId}/student/delete`, {
+                    method: 'POST',
+                    body: JSON.stringify({ enrollment })
+                });
+                if (r.ok) {
+                    openSessionDetailModal(sessionId);
+                    if (currentAttendanceSubjectId) {
+                        loadSubjectAttendancePage(currentAttendanceSubjectId, currentAttendanceMonth);
+                    }
+                    loadHistory();
+                    refreshStats();
+                    loadSubjects();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function deleteSessionFromSubject(sessionId) {
+            if (!confirm('Delete this session? This will permanently remove all attendance records for it.')) return;
+            try {
+                await apiFetch('/api/delete-session', {
+                    method: 'POST',
+                    body: JSON.stringify({ sessionId })
+                });
+                if (currentAttendanceSubjectId) {
+                    loadSubjectAttendancePage(currentAttendanceSubjectId, currentAttendanceMonth);
+                }
+                loadHistory();
+                refreshStats();
+                loadSubjects();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        /* ── Excel Export ── */
+        function downloadAttendanceExcel() {
+            if (!currentAttendanceData || !currentAttendanceData.subject) {
+                alert('Please select and open a subject attendance report first.');
+                return;
+            }
+            if (typeof XLSX === 'undefined') {
+                alert('Excel library is still loading. Please try again in a moment.');
+                return;
+            }
+
+            const s = currentAttendanceData.subject;
+            const students = currentAttendanceData.students || [];
+            const sessions = currentAttendanceData.sessions || [];
+            const totalHeld = currentAttendanceData.totalHeld || 0;
+
+            const wb = XLSX.utils.book_new();
+
+            // Sheet 1: Student Roster
+            const rosterData = [
+                ['Course / Subject', s.name],
+                ['Course Code', s.code || '–'],
+                ['Department', s.department || '–'],
+                ['Section', s.section || '–'],
+                ['Semester', s.semester || '–'],
+                ['Total Classes Held', totalHeld],
+                [],
+                ['#', 'Student Name', 'Enrollment ID', 'Section', 'Classes Attended', 'Classes Absent', 'Total Classes', 'Attendance %', 'Status', 'Last Attended']
+            ];
+
+            students.forEach((st, idx) => {
+                const status = st.percentage >= 75 ? 'Eligible' : 'Shortage (< 75%)';
+                const lastAtt = st.lastAttended ? new Date(st.lastAttended).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
+                rosterData.push([
+                    idx + 1,
+                    st.name,
+                    st.enrollment,
+                    st.section || '–',
+                    st.attended,
+                    st.absent,
+                    st.totalHeld,
+                    `${st.percentage}%`,
+                    status,
+                    lastAtt
+                ]);
+            });
+
+            const wsRoster = XLSX.utils.aoa_to_sheet(rosterData);
+            wsRoster['!cols'] = [
+                { wch: 5 },
+                { wch: 26 },
+                { wch: 28 },
+                { wch: 10 },
+                { wch: 16 },
+                { wch: 14 },
+                { wch: 14 },
+                { wch: 14 },
+                { wch: 18 },
+                { wch: 22 }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsRoster, 'Student Roster');
+
+            // Sheet 2: Sessions List
+            const sessionData = [
+                ['Course / Subject', s.name],
+                ['Total Sessions Held', totalHeld],
+                [],
+                ['#', 'Session ID', 'Date & Time', 'Students Checked In', 'Session Status']
+            ];
+
+            sessions.forEach((sess, idx) => {
+                const sessDate = sess.createdAt ? new Date(sess.createdAt).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
+                sessionData.push([
+                    idx + 1,
+                    sess.id,
+                    sessDate,
+                    sess.count || 0,
+                    sess.active ? 'Active' : 'Completed'
+                ]);
+            });
+
+            const wsSessions = XLSX.utils.aoa_to_sheet(sessionData);
+            wsSessions['!cols'] = [
+                { wch: 5 },
+                { wch: 12 },
+                { wch: 24 },
+                { wch: 22 },
+                { wch: 16 }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsSessions, 'Class Sessions');
+
+            const cleanSubj = (s.name || 'Subject').replace(/[^a-zA-Z0-9_-]/g, '_');
+            const monthLabel = currentAttendanceMonth === 'all' ? 'All_Months' : `Month_${currentAttendanceMonth}`;
+            const filename = `${cleanSubj}_Attendance_${monthLabel}.xlsx`;
+
+            XLSX.writeFile(wb, filename);
+        }
+
+        /* ── Bulk Attendance Excel Upload ── */
+        async function handleBulkAttendanceUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            event.target.value = '';
+
+            if (!currentAttendanceSubjectId) {
+                alert('Please choose or open a subject before uploading attendance.');
+                return;
+            }
+            if (typeof XLSX === 'undefined') {
+                alert('Excel library is still loading. Please try again.');
+                return;
+            }
+
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const rawJson = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                if (!rawJson || rawJson.length < 2) {
+                    alert('The Excel file appears to be empty or lacks data rows.');
+                    return;
+                }
+
+                let headerRowIdx = -1;
+                let colEnrollment = -1;
+                let colName = -1;
+                let colSection = -1;
+
+                for (let i = 0; i < Math.min(10, rawJson.length); i++) {
+                    const row = rawJson[i];
+                    if (!Array.isArray(row)) continue;
+                    for (let j = 0; j < row.length; j++) {
+                        const cell = String(row[j] || '').trim().toLowerCase();
+                        if (/enrollment|enrolment|roll|reg|student\s*id/i.test(cell)) colEnrollment = j;
+                        if (/^(student\s*)?name|full\s*name$/i.test(cell)) colName = j;
+                        if (/section|batch|sec$/i.test(cell)) colSection = j;
+                    }
+                    if (colEnrollment !== -1) {
+                        headerRowIdx = i;
+                        break;
+                    }
+                }
+
+                if (headerRowIdx === -1) {
+                    alert('Could not find an "Enrollment ID" or "Roll No" column in the Excel file.\n\nPlease ensure your spreadsheet includes a column header for Enrollment ID.');
+                    return;
+                }
+
+                const records = [];
+                for (let r = headerRowIdx + 1; r < rawJson.length; r++) {
+                    const row = rawJson[r];
+                    if (!row || !row[colEnrollment]) continue;
+                    const enrollment = String(row[colEnrollment] || '').trim().toUpperCase();
+                    if (!enrollment) continue;
+
+                    const name = colName !== -1 && row[colName] ? String(row[colName]).trim() : enrollment;
+                    const section = colSection !== -1 && row[colSection] ? String(row[colSection]).trim() : '';
+
+                    records.push({ enrollment, name, section });
+                }
+
+                if (records.length === 0) {
+                    alert('No valid student records found in the uploaded file.');
+                    return;
+                }
+
+                if (!confirm(`Found ${records.length} students in "${file.name}".\n\nUpload and record attendance for these students?`)) {
+                    return;
+                }
+
+                const res = await apiFetch('/api/teacher/attendance/bulk-upload', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        subjectId: currentAttendanceSubjectId,
+                        records,
+                        sessionDate: new Date().toISOString()
+                    })
+                });
+
+                const resData = await res.json();
+                if (!res.ok) {
+                    alert(resData.error || 'Failed to upload attendance records.');
+                    return;
+                }
+
+                alert(`Successfully recorded attendance for ${resData.count} students!`);
+                loadSubjectAttendancePage(currentAttendanceSubjectId, currentAttendanceMonth);
+                refreshStats();
+                loadSubjects();
+            } catch (e) {
+                console.error('Error parsing Excel:', e);
+                alert('Error parsing Excel file. Please ensure it is a valid .xlsx or .xls file.');
+            }
         }
 
         /* ── Subject Modals ── */
@@ -779,7 +1258,7 @@
             if (text) text.innerHTML = `Inactive · <span id="statSessions" class="stat-session-total">${total}</span>`;
         }
 
-        function renderQr(qrToken) {
+        function renderQr(qrToken, customSubjectTitle) {
             const box = document.getElementById('qrBox');
             const shell = document.getElementById('qrShell');
             const placeholder = document.getElementById('qrPlaceholder');
@@ -825,7 +1304,8 @@
                 });
             }
 
-            const subjectVal = document.getElementById('subject').value.trim() || 'Class Session';
+            const subjectVal = (customSubjectTitle || document.getElementById('subject').value || (currentSelectedSubject ? currentSelectedSubject.name : '') || 'Class Session').trim();
+            document.getElementById('subject').value = subjectVal;
             document.getElementById('qrSubjectName').textContent = subjectVal;
             const projTitle = document.getElementById('projectorSubjectTitle');
             if (projTitle) projTitle.textContent = subjectVal;
@@ -921,7 +1401,7 @@
                 if (data.type === 'new-session') {
                     presentList = [];
                     renderRows();
-                    renderQr(data.session.qrToken);
+                    renderQr(data.session.qrToken, data.session.subject);
                     currentSessionId = data.session.id;
                     setSessionActionState(true);
                     document.getElementById('statSubject').textContent = data.session.subject || '–';
@@ -944,7 +1424,7 @@
                 }
                 if (data.type === 'init' && data.session) {
                     currentSessionId = data.session.id;
-                    renderQr(data.session.active ? data.session.qrToken : null);
+                    renderQr(data.session.active ? data.session.qrToken : null, data.session.subject);
                     setSessionActionState(data.session.active);
                     document.getElementById('statSubject').textContent = data.session.subject || '–';
                     presentList = Object.values(data.session.present || {});

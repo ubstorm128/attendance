@@ -1148,11 +1148,23 @@ const server = http.createServer(async (req, res) => {
             if (!sCheck.rows.length) return send(res, 404, { error: 'Subject not found' });
             const subject = sCheck.rows[0];
 
-            // All sessions strictly for this subject
-            const sessR = await pool.query(
-                'SELECT id, subject, active, created_at FROM sessions WHERE subject_id = $1 ORDER BY id DESC',
-                [subjectId]
-            );
+            const monthStr = searchParams.get('month');
+            const filterMonth = (monthStr && monthStr !== 'all') ? parseInt(monthStr, 10) : -1;
+
+            // All sessions strictly for this subject with attendee counts
+            const sessR = await pool.query(`
+                SELECT
+                    s.id,
+                    s.subject,
+                    s.active,
+                    s.created_at,
+                    COUNT(a.id)::int AS count
+                FROM sessions s
+                LEFT JOIN attendance a ON a.session_id = s.id
+                WHERE s.subject_id = $1 AND ($2 = -1 OR EXTRACT(MONTH FROM s.created_at) = $2)
+                GROUP BY s.id, s.subject, s.active, s.created_at
+                ORDER BY s.id DESC
+            `, [subjectId, filterMonth]);
             const sessions = sessR.rows;
             const totalHeld = sessions.length;
 
@@ -1167,10 +1179,10 @@ const server = http.createServer(async (req, res) => {
                 FROM attendance a
                 JOIN sessions s ON s.id = a.session_id
                 LEFT JOIN students st ON st.enrollment = a.enrollment
-                WHERE s.subject_id = $1
+                WHERE s.subject_id = $1 AND ($2 = -1 OR EXTRACT(MONTH FROM s.created_at) = $2)
                 GROUP BY a.enrollment, COALESCE(st.name, a.name), COALESCE(st.section, a.section)
                 ORDER BY attended DESC, name ASC
-            `, [subjectId]);
+            `, [subjectId, filterMonth]);
 
             const students = attR.rows.map(row => {
                 const attended = row.attended;
@@ -1204,10 +1216,77 @@ const server = http.createServer(async (req, res) => {
                     id: s.id,
                     subject: s.subject,
                     active: s.active,
+                    count: s.count || 0,
                     createdAt: s.created_at.toISOString()
                 })),
                 students
             });
+        }
+
+        // --- teacher: bulk attendance upload via excel ---
+        if (req.method === 'POST' && pathname === '/api/teacher/attendance/bulk-upload') {
+            const auth = authenticate(req, res);
+            if (!auth) return;
+            const { teacherId } = auth;
+            const { subjectId, records, sessionDate, sessionTitle } = await readBody(req);
+
+            if (!subjectId) return send(res, 400, { error: 'subjectId is required' });
+            if (!Array.isArray(records) || records.length === 0) {
+                return send(res, 400, { error: 'At least one student record is required' });
+            }
+
+            const sCheck = await pool.query(
+                'SELECT id, name, code, section FROM subjects WHERE id = $1 AND teacher_id = $2',
+                [subjectId, teacherId]
+            );
+            if (!sCheck.rows.length) return send(res, 404, { error: 'Subject not found or not authorized' });
+            const subj = sCheck.rows[0];
+
+            const defaultTitle = `${subj.code ? subj.code + ' ' : ''}${subj.name}${subj.section ? ' (Sec ' + subj.section + ')' : ''}`;
+            const title = (sessionTitle || '').trim() || defaultTitle;
+            const sessDate = sessionDate ? new Date(sessionDate) : new Date();
+
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+
+                // Create a closed session for this uploaded date
+                const sessIns = await client.query(
+                    'INSERT INTO sessions (teacher_id, teacher_name, subject, subject_id, active, created_at) VALUES ($1, $2, $3, $4, false, $5) RETURNING id',
+                    [teacherId, auth.teacherName || 'Instructor', title, subjectId, isNaN(sessDate.getTime()) ? new Date() : sessDate]
+                );
+                const sessionId = sessIns.rows[0].id;
+
+                let insertedCount = 0;
+                for (const row of records) {
+                    const normEnrollment = (row.enrollment || row.id || row.roll || '').toString().trim().toUpperCase();
+                    if (!normEnrollment) continue;
+                    const studentName = (row.name || normEnrollment).toString().trim();
+                    const studentSection = (row.section || subj.section || '').toString().trim().toUpperCase();
+
+                    // Upsert student record
+                    await client.query(
+                        'INSERT INTO students (enrollment, name, section) VALUES ($1, $2, $3) ON CONFLICT (enrollment) DO UPDATE SET name = COALESCE(EXCLUDED.name, students.name), section = COALESCE(NULLIF(EXCLUDED.section, \'\'), students.section)',
+                        [normEnrollment, studentName, studentSection]
+                    );
+
+                    // Insert attendance for this session
+                    await client.query(
+                        'INSERT INTO attendance (session_id, enrollment, name, section, time) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (session_id, enrollment) DO NOTHING',
+                        [sessionId, normEnrollment, studentName, studentSection, sessDate]
+                    );
+                    insertedCount++;
+                }
+
+                await client.query('COMMIT');
+                return send(res, 200, { ok: true, sessionId, count: insertedCount });
+            } catch (err) {
+                await client.query('ROLLBACK');
+                console.error('Error during bulk attendance upload:', err);
+                return send(res, 500, { error: 'Failed to process bulk attendance upload' });
+            } finally {
+                client.release();
+            }
         }
 
         // --- teacher subjects: create ---
