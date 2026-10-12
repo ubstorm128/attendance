@@ -104,6 +104,7 @@ async function initDb() {
             );
             ALTER TABLE students ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
             ALTER TABLE students ADD COLUMN IF NOT EXISTS about TEXT DEFAULT '';
+            ALTER TABLE students ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT '';
             ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
             ALTER TABLE students ADD COLUMN IF NOT EXISTS password TEXT;
             ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
@@ -664,6 +665,7 @@ const server = http.createServer(async (req, res) => {
             if (!stCheck.rows.length) return send(res, 404, { error: 'Student not registered' });
             const currentStudent = stCheck.rows[0];
             const studentSection = currentStudent.section || '';
+            const studentSemester = (currentStudent.semester || '').trim();
 
             // 2. Per-subject attendance breakdown — strictly filtered by subject_id
             const bySubjectRows = await pool.query(`
@@ -684,17 +686,12 @@ const server = http.createServer(async (req, res) => {
                     ON a.session_id = sess.id
                 WHERE (
                     ($2 != '' AND subj.section != '' AND subj.section = $2)
-                    OR subj.section = ''
-                    OR $2 = ''
-                    OR EXISTS (
-                        SELECT 1 FROM attendance att2
-                        JOIN sessions s2 ON att2.session_id = s2.id
-                        WHERE att2.enrollment = $1 AND s2.subject_id = subj.id
-                    )
+                    OR subj.section = '' OR $2 = ''
                 )
+                AND ($4::text = '' OR regexp_replace(subj.semester,'[^0-9]','','g') = regexp_replace($4::text,'[^0-9]','','g'))
                 GROUP BY subj.id, subj.name, subj.code, subj.department, subj.section, subj.semester
                 ORDER BY subj.name ASC
-            `, [enrollment, studentSection, filterMonth]);
+                `, [enrollment, studentSection, filterMonth, studentSemester]);
 
             let totalHeldOverall = 0;
             let totalAttendedOverall = 0;
