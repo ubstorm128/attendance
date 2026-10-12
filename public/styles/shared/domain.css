@@ -768,6 +768,13 @@
             white-space: nowrap;
         }
 
+        .attendance-back-button {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            flex: none;
+        }
+
         /* ── QR Stage (Left Column) ── */
         .qr-card {
             display: flex;
@@ -1330,6 +1337,10 @@
         }
 
         @media (max-width: 640px) {
+            .attendance-count-label {
+                display: none;
+            }
+
             .ribbon {
                 padding: 10px 16px;
                 flex-wrap: wrap;
@@ -4066,4 +4077,3 @@
     gap: 6px !important;
     border-radius: 8px !important;
 }
-
