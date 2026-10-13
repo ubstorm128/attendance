@@ -347,7 +347,9 @@ if (switchProfileBtn) {
                                 </div>
                             </div>
 
-                            <progress class="subject-progress-fill ${pctClass}" max="100" value="${fillWidth}">${fillWidth}%</progress>
+                            <div class="subject-progress-track" role="progressbar" aria-valuenow="${fillWidth}" aria-valuemin="0" aria-valuemax="100">
+                                <div class="subject-progress-fill ${pctClass}" style="width: ${fillWidth}%;"></div>
+                            </div>
 
                             ${redFlagNotice}
                         </div>

@@ -2455,37 +2455,50 @@
 
         .subject-progress-fill {
             display: block;
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .subject-progress-fill.safe {
+            background: linear-gradient(90deg, #34C759 0%, #248A3D 100%);
+        }
+
+        .subject-progress-fill.danger {
+            background: linear-gradient(90deg, #FF3B30 0%, #D70015 100%);
+        }
+
+        progress.subject-progress-fill {
+            border: none;
             -webkit-appearance: none;
             appearance: none;
             width: 100%;
             height: 7px;
-            border-radius: 999px;
-            transition: width 0.4s ease;
             overflow: hidden;
             background: rgba(0, 0, 0, 0.08);
         }
 
-        .subject-progress-fill::-webkit-progress-bar {
+        progress.subject-progress-fill::-webkit-progress-bar {
             background: rgba(0, 0, 0, 0.08);
             border-radius: 999px;
         }
 
-        .subject-progress-fill.safe::-webkit-progress-value {
+        progress.subject-progress-fill.safe::-webkit-progress-value {
             background: linear-gradient(90deg, #34C759 0%, #248A3D 100%);
             border-radius: 999px;
         }
 
-        .subject-progress-fill.danger::-webkit-progress-value {
+        progress.subject-progress-fill.danger::-webkit-progress-value {
             background: linear-gradient(90deg, #FF3B30 0%, #D70015 100%);
             border-radius: 999px;
         }
 
-        .subject-progress-fill.safe::-moz-progress-bar {
+        progress.subject-progress-fill.safe::-moz-progress-bar {
             background: linear-gradient(90deg, #34C759 0%, #248A3D 100%);
             border-radius: 999px;
         }
 
-        .subject-progress-fill.danger::-moz-progress-bar {
+        progress.subject-progress-fill.danger::-moz-progress-bar {
             background: linear-gradient(90deg, #FF3B30 0%, #D70015 100%);
             border-radius: 999px;
         }

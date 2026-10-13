@@ -28,6 +28,9 @@ label:first-child { margin-top: 0; }
     box-shadow: 0 0 0 3.5px var(--primary-tint);
 }
 .form-control::placeholder { color: var(--ink-3); }
+select.form-control {
+    cursor: pointer;
+}
 
 /* Password wrapper */
 .password-wrap { position: relative; }

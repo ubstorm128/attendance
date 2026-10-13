@@ -1,17 +1,21 @@
 ---
 name: Attendance App Design System
-description: Cupertino-inspired academic command center with frosted glass surfaces and high-contrast telemetry
+description: Cupertino-inspired academic command center with frosted glass surfaces, high-contrast telemetry, and multi-portal role architecture
 colors:
   primary: "#0066CC"
   primary-hover: "#0055B3"
+  primary-press: "#004494"
   surface: "#F5F5F7"
+  canvas: "#FAFAFC"
   card: "#FFFFFF"
   ink: "#1D1D1F"
   ink-secondary: "#48484A"
   ink-tertiary: "#59595E"
   success: "#248A3D"
   success-text: "#135B25"
-  destructive: "#D70015"
+  warning: "#B25E00"
+  danger: "#D70015"
+  coordinator-purple: "#7C3AED"
 typography:
   display:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif"
@@ -38,10 +42,14 @@ typography:
     fontSize: "11.5px"
     fontWeight: "600"
     letterSpacing: "0.02em"
+  mono:
+    fontFamily: "ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace"
 rounded:
   sm: "8px"
-  card: "18px"
-  outer: "22px"
+  md: "12px"
+  lg: "18px"
+  xl: "22px"
+  card: "20px"
   pill: "999px"
 spacing:
   xs: "6px"
@@ -51,75 +59,136 @@ spacing:
   xl: "32px"
 ---
 
-# Design System: Cupertino Academic Command
+# Design System: Cupertino Academic Command Center
 
-## Overview
+## 1. System Vision & Philosophy
 
-**Creative North Star: "The Lecture Hall Sanctuary"**
+**Creative North Star: "The Ambient Lecture Sanctuary"**
 
-The Attendance App design language is built on Apple Human Interface Guidelines principles: quiet confidence, tactile responsiveness, frosted optical materials, and extreme legibility. It replaces chaotic roll-call clipboards and cluttered enterprise grids with a calm, glanceable control center tailored for university lecture halls.
+The Attendance App design language is built on Apple Human Interface Guidelines principles: quiet confidence, optical transparency, tactile feedback, and extreme glanceability. The system replaces chaotic manual attendance sheets and cluttered enterprise portals with an unified, glassmorphic command center tailored for lecture auditoriums, student mobile devices, and institutional administration.
 
-**Key Characteristics:**
-- Restrained, warm-gray canvas (`#F5F5F7`) that avoids eye fatigue in darkened auditoriums.
-- Frosted squircle surfaces with 0.5px hairline boundaries and soft diffuse drop shadows.
-- Distinct split-stage topology: elevated projector-ready QR stage on the left, dynamic live SSE stream on the right.
-- High-contrast, WCAG AA compliant typography (all text >= 4.5:1 contrast against ambient backgrounds).
+### Core Architecture Across Portals
+1. **Teacher Admin (`/dashboard.html` / `teacher-admin-page`)**: High-performance podium cockpit featuring live QR session projection, real-time SSE student check-in feeds, subject catalog management, and attendance history logs.
+2. **Student Portal (`/profile.html` & `/dashboard.html`)**: Personal telemetry hub featuring camera QR scanning with sensory haptics, attendance streak metrics, course breakdown gauges, class leaderboard, and Class Coordinator management workspace.
+3. **Attendance Admin (`/attendance-admin/dashboard.html`)**: System administration command deck featuring Cupertino pill-based section toggles (`Teachers`, `Students`, `Security`), account management, and floating-label credential security.
+4. **Auth Experience (`/main`, `/login.html`, `/register-*.html`, `/reset-password.html`)**: Minimalist glassmorphic auth cards with tabbed student/staff switching, enrollment validation, and Supabase Google OAuth integration.
 
-## Colors
+---
 
-- **Primary (`#0066CC`)**: Apple Royal Blue. Reserved for intentional primary actions (Start Session, Sign In, primary tab focus).
-- **Primary Hover (`#0055B3`) / Press (`#004494`)**: Deepened blue for tactile touch and pointer feedback.
-- **Success (`#248A3D`) / Text (`#135B25`)**: Cupertino Emerald. Denotes verified student check-ins, active live sessions, and valid statuses.
-- **Destructive (`#D70015`)**: Apple Crimson. Strictly for irreversible actions (Close Session, Remove Attendance, Delete Record).
-- **Ink Primary (`#1D1D1F`)**: Deepest near-black for primary numerals, student names, and titles.
-- **Ink Secondary (`#48484A`)**: High-contrast slate for supporting metadata, enrollment IDs, and timestamps.
-- **Ink Tertiary (`#59595E`)**: Subtle captions and label text, balanced to maintain WCAG AA readability.
+## 2. Color System & Contrast Standards
 
-**The Calibrated Contrast Rule.** No text token may fall below 4.5:1 contrast against its background. When using tinted pill badges, the text color must derive from the dark shade of the chromatic hue.
+### Backgrounds & Surfaces
+- **Canvas (`--bg-0` / `#F5F5F7`)**: Warm, low-strain neutral canvas optimized for long lecture hall visibility and low ambient glare.
+- **Card Surface (`--bg-card` / `#FFFFFF`)**: Pure white squircle card material with soft diffuse elevation.
+- **Elevated Glass (`--bg-card-elevated`)**: `rgba(255, 255, 255, 0.92)` to `0.96` with `backdrop-filter: blur(20px) saturate(160%)`.
+- **Input Neutral (`--bg-input` / `#F6F7F9`)**: Subtle inset fill for form fields, switching to pure white on `:focus`.
 
-## Typography
+### Ink Hierarchy
+- **Ink Primary (`--ink` / `#1D1D1F`)**: Deepest near-black for primary numerals, card titles, and active tabs. Contrast >= 12:1 against canvas.
+- **Ink Secondary (`--ink-2` / `#48484A`)**: Slate neutral for timestamps, table metadata, and inactive navigation labels. Contrast >= 7:1.
+- **Ink Tertiary (`--ink-3` / `#59595E`)**: Supporting caption text, input placeholders, and inactive icons. Contrast >= 4.5:1 (WCAG AA compliant).
 
-- **Display & Large Numerals**: SF Pro Display, 26px–30px, 600 weight, tight letter-spacing (-0.02em). Glanceable across lecture podiums.
-- **Titles & Subheadings**: SF Pro Display / Text, 15px–18px, 600 weight.
-- **Body & Table Data**: SF Pro Text, 13px–14px, 400 weight. Monospace stack applied for enrollment IDs.
-- **Labels**: SF Pro Text, 11px–12px, 600 weight, slightly expanded tracking (+0.02em) for rapid scanning.
+### Semantic & Accent Colors
+- **Primary Brand (`--primary` / `#0066CC`)**: Apple Royal Blue. Reserved for affirmative focal actions (Launch Session, Save, Active Pill, Active Nav Icons).
+  - Hover: `#0055B3` | Press: `#004494` | Tint: `rgba(0, 102, 204, 0.10)`
+- **Success (`--success` / `#248A3D` | Text: `#135B25`)**: Cupertino Emerald. Used for verified check-in badges, Good Standing status indicators, and live session pulses.
+- **Warning (`--warning` / `#B25E00`)**: Amber. Used for warning attendance bands (<75%) and cautionary alerts.
+- **Danger (`--danger` / `#D70015`)**: Apple Crimson. Strictly for destructive, irreversible actions (End Session, Delete Record, Cancel).
+- **Coordinator Accent (`#7C3AED` / `rgba(124, 58, 237, 0.12)`)**: Royal Violet for student class coordinator badges and elective management notices.
 
-## Layout
+---
 
-- **Desktop Workspace**: Centered max-width container (1280px) with fluid padding (32px–36px).
-- **Two-Column Split Stage**: 360px fixed-width left rail for QR generation and state controls; fluid right rail for real-time attendance telemetry.
-- **Mobile Graceful Degradation**: Stacks into single-column layout on viewports under 960px; segmented control transitions to full-width dual pill tabs.
+## 3. Typography & Hierarchy
 
-**The Proximity Hierarchy Rule.** The controls that change a session's state (Subject, Start, Close, Projector) sit directly alongside the projected asset (QR code), not detached across distant navigation bars.
+The system uses Apple's native system font stack: `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif`.
 
-## Elevation & Depth
+| Text Level | Size | Weight | Tracking | Usage |
+| :--- | :--- | :--- | :--- | :--- |
+| **Display / Telemetry** | 24px–32px | 700 / 600 | -0.02em | Glanceable counts, attendance % metrics, projector numbers |
+| **Headline (H2)** | 18px–20px | 600 | -0.015em | Panel headings, modal titles, section headers |
+| **Title (H3)** | 15px–16px | 600 | -0.01em | Subject card titles, profile card headers |
+| **Body Standard** | 13px–14.5px | 400 / 500 | 0.00em | Form inputs, table cells, description copy |
+| **Metadata & Sub** | 12px–13px | 400 / 500 | -0.01em | Subtitles, timestamps, breadcrumbs, table captions |
+| **Pill / Badge Label** | 11px–12px | 600 | +0.02em | Section pills, semester badges, live state indicators |
+| **Monospace Stack** | 12px–13px | 500 / 600 | 0.00em | Institutional enrollment IDs (`ADTU/1/2023-26/BCAO/012`) |
 
-- **Ambient Glass**: `rgba(255, 255, 255, 0.88)` with `backdrop-filter: blur(28px) saturate(180%)`.
-- **Borders**: 0.5px to 1px hairline translucent borders (`rgba(255, 255, 255, 0.95)` on light mode, `rgba(0, 0, 0, 0.08)` for container rails).
-- **Shadows**: Two-tier ambient occlusion: `0 2px 6px rgba(0,0,0,0.03), 0 20px 40px -14px rgba(0,0,0,0.07)`.
+---
 
-## Shapes
+## 4. Layout & Spacing Principles
 
-- **Squircles**: Continuous curvature applied to cards (18px) and outer shells (22px).
-- **Pills**: Completely rounded ends (999px) for segmented controls, badges, avatar tokens, and status pills.
+- **Desktop Container**: Standard viewport max-width of `1280px` (`1120px` for Admin), centered with `24px` to `36px` fluid padding.
+- **Consistent Vertical Rhythm**:
+  - Panel header row margin-bottom: `24px`.
+  - Form field vertical gaps: `16px`.
+  - Grid card gaps: `16px`–`20px`.
+  - Card internal padding: `24px`–`28px` (`16px` on compact mobile).
+- **Sticky Glass Navbar (`.global-navbar`)**:
+  - Height: `64px` (`58px` mobile) with `border-radius: 18px`.
+  - `backdrop-filter: blur(20px) saturate(160%)` with hairline border `rgba(29, 29, 31, 0.08)`.
+  - Houses the brand mark squircle, institutional title, profile badge, and tactile logout trigger.
 
-## Components
+---
 
-- **Segmented Control (`.tabs`)**: Gray track (`rgba(118, 118, 128, 0.12)`) housing a sliding pure-white pill (`#FFFFFF`) with a 0.26s cubic-bezier transition.
-- **Metric Cards (`.stat`)**: 3-column glanceable summary blocks displaying live student counts, active subject, and session duration.
-- **Projector QR Shell (`.qr-shell`)**: High-contrast white canvas with generous quiet zone, status pills, and full-screen projector mode.
-- **Roster Stream (`table`)**: Dynamic table with student initial avatars, enrollment monospace pills, section tags, arrival times, and animated Present stamps.
-- **Modals (`.modal-card`)**: Floating frosted cards with clear destructive vs. secondary button separation.
+## 5. Core Component Specifications
 
-## Do's and Don'ts
+### 5.1 Cupertino Segmented Pill Control (`.tabs`, `.segmented-control`)
+- **Structure**: An outer rounded pill track (`border-radius: var(--radius-pill)`, `background: rgba(118, 118, 128, 0.12)`) containing an animated white sliding pill (`.tab-pill`) and interactive links/buttons (`.nav-link`, `.seg-btn`).
+- **Sliding Physics**: Hardware-accelerated sliding transition (`transition: transform 260ms cubic-bezier(0.25, 1, 0.5, 1)`).
+- **Positioning**: Controlled via `data-active-tab` attribute on the container:
+  - Tab 1: `transform: translateX(0%)`
+  - Tab 2: `transform: translateX(100%)`
+  - Tab 3: `transform: translateX(200%)`
+- **Sizing Variants**:
+  - **Teacher Dashboard**: Width: `160px` per item (~`486px` total), `min-height: 42px`, `padding: 8px 16px`, `17px` SVG icons.
+  - **Attendance Admin**: Width: fluid `flex: 1 1 0` with `max-width: 520px`, `min-height: 44px`, `17px` SVG icons.
+  - **Mobile Responsive**: Adapts fluidly to `calc(100% / 3)` width with icon-first readability.
+
+### 5.2 Floating Label Form Fields (`.floating-field`, `.password-wrap`)
+- **Container**: `position: relative`, `height: 52px`–`54px`, `margin-bottom: 16px`.
+- **Resting State (Unfocused & Empty)**: Label sits centered inside the input field (`top: 50%`, `transform: translateY(-50%)`, `color: var(--ink-3)`, `font-size: 13.5px`).
+- **Active / Filled State (`:focus`, `:not(:placeholder-shown)`, and `:-webkit-autofill`)**: Label smoothly scales and floats to the top-left inside the input box (`top: 13px`, `font-size: 11px`, `font-weight: 600`, `color: var(--primary)`).
+- **Password Visibility Eye Toggle (`.password-toggle`)**: Positioned at `right: 10px`, swapping between open and slashed eye SVGs on toggle.
+
+### 5.3 Frosted Glass Modal Dialogs (`.modal-overlay`, `.modal-dialog`)
+- **Overlay**: Fixed fullscreen backdrop (`background: rgba(0, 0, 0, 0.35)`, `backdrop-filter: blur(16px)`).
+- **Activation Lifecycle**: Defaults to `display: none; opacity: 0;`. Transitions into view on `.modal-overlay.active` (`display: flex; opacity: 1;`).
+- **Dismiss Interaction**: Backdrop click detection (`if (e.target === overlay) closeModal()`) with smooth exit transition.
+
+### 5.4 Course Subject Cards (`.card` in Teacher Grid)
+- **Top Row**: Department pill, section tag, semester badge, code tag, and right-aligned action buttons (`.card-action-btn`).
+- **Action Buttons**: `32px × 32px` touch targets with hover tinting; **Edit Subject** opens populated detail dialog; **Remove Subject** triggers confirmation modal.
+- **Card Footer**: Split primary/secondary action triggers (`View Attendance` and `Launch Session` / `Resume Session`).
+
+### 5.5 Sensory Feedback & Haptics
+- **Haptic Pulse**: Triggered upon successful QR scan on mobile (`navigator.vibrate([35, 45, 35])`).
+- **Synthesized Audio Chime**: Synthesized Web Audio API chord chime upon attendance check-in verification, eliminating external sound asset dependencies.
+
+---
+
+## 6. Portal Feature Matrix
+
+| Feature | Teacher Portal | Student Portal | Admin Portal |
+| :--- | :---: | :---: | :---: |
+| **Cupertino Pill Tabs** | `160px` 3-tab pill | 2-tab Coordinator bar | `520px` 3-tab pill |
+| **Live QR Session** | Generator & Projector Mode | Camera QR Scanner | — |
+| **Real-Time Telemetry** | SSE Roster Stream | Streak & Health Gauge | Record Counters |
+| **Subject Catalog** | Full CRUD & Batch Assignment | Class Coordinator Roster | — |
+| **Excel (.xlsx) Import/Export** | Session CSV Export | Bulk Roster Excel Upload | — |
+| **Security Credentialing** | Session Auth & Supabase | Password Reset | Floating Label Security |
+
+---
+
+## 7. Design Do's and Don'ts
 
 ### Do
-- Keep the interface distraction-free and calm; let student attendance records be the focal point.
-- Use native cubic-bezier transitions (`(0.22, 1, 0.36, 1)`) for card entrances and tab switches.
-- Test QR legibility on both close-range laptops and distant 1080p/4K projectors.
-- Maintain persistent SSE connection indicators with clear status badges.
+- Always use `.active` on `.modal-overlay` when mounting dynamic dialogs to ensure proper display and backdrop transitions.
+- Maintain `data-active-tab` bindings on `.tabs` and `.segmented-control` to trigger CSS-driven pill translations.
+- Use `type="button"` and `event.stopPropagation()` on nested card buttons to prevent unwanted bubbling.
+- Maintain `24px` consistent vertical spacing between panel headers/subtitles and form fields.
+- Use type-agnostic comparisons (`s.id == id || String(s.id) === String(id)`) when matching database IDs across template literals and payloads.
 
 ### Don't
-- Don't use decorative pulsing animations for idle or static states; reserve indicators for genuine real-time changes.
-- Don't use low-contrast gray text (`#8E8E93` or lighter) on light backgrounds.
-- Don't add nested multi-step dialogs or intrusive alerts during active class sessions.
+- Don't use raw external `<label>` elements without structured spacing above form controls.
+- Don't hardcode fixed-pixel widths on responsive segmented controls in mobile breakpoints.
+- Don't use decorative continuous pulsing animations on static idle state elements; reserve animated pulses exclusively for active live sessions (`.dot-live`).
+- Don't allow text contrast to fall below `4.5:1` against ambient card and canvas backgrounds.

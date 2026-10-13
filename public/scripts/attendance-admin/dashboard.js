@@ -459,7 +459,11 @@ async function addTeacher() {
                     <label>Enrollment</label>
                     <input type="text" id="editStudentEnrollment" class="form-control" value="${enrollment}">
                     <label>Semester</label>
-                    <input type="text" id="editStudentSemester" class="form-control" value="${semester}" placeholder="1st Sem">
+                    <select id="editStudentSemester" class="form-control">
+                        <option value="">Select Semester</option>
+                        ${['1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem', '7th Sem', '8th Sem'].map(s => `<option value="${s}" ${semester === s ? 'selected' : ''}>${s}</option>`).join('')}
+                        ${semester && !['1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem', '7th Sem', '8th Sem'].includes(semester) ? `<option value="${semester}" selected>${semester}</option>` : ''}
+                    </select>
                     <label>Section</label>
                     <input type="text" id="editStudentSection" class="form-control" value="${section}" placeholder="A">
                     <label>Email</label>
