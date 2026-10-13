@@ -51,6 +51,11 @@ function showTab(tab) {
         panel.hidden = !isActive;
     });
 
+    const tabsContainer = document.getElementById('tabs') || document.querySelector('.segmented-control');
+    if (tabsContainer) {
+        tabsContainer.dataset.activeTab = tab;
+    }
+
     if (tab === 'teachers') loadTeachers();
     if (tab === 'students') loadStudents();
 }
