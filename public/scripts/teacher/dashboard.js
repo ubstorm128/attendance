@@ -302,10 +302,10 @@
                                 <span class="code-tag">${esc(s.code || '')}</span>
                             </div>
                             <div class="subject-card-tools">
-                                <button class="card-action-btn" title="Edit Subject" onclick="openEditSubjectModal('${esc(s.id)}')">
+                                <button type="button" class="card-action-btn" title="Edit Subject" onclick="event.stopPropagation(); openEditSubjectModal('${esc(s.id)}')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 </button>
-                                <button class="card-action-btn delete-btn" title="Remove Subject" onclick="openDeleteSubjectModal('${esc(s.id)}')">
+                                <button type="button" class="card-action-btn delete-btn" title="Remove Subject" onclick="event.stopPropagation(); openDeleteSubjectModal('${esc(s.id)}')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                 </button>
                             </div>
@@ -1028,6 +1028,7 @@
                 </div>
             `;
             document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('active'));
             document.getElementById('newSubjName').focus({ preventScroll: true });
         }
 
@@ -1075,7 +1076,7 @@
         }
 
         function openEditSubjectModal(subjectId) {
-            const subj = teacherSubjects.find(s => s.id === subjectId);
+            const subj = teacherSubjects.find(s => s.id == subjectId || String(s.id) === String(subjectId));
             if (!subj) return;
             const currentSemester = subj.semester || '';
             const semesterChoices = buildSemesterChoices(currentSemester);
@@ -1140,6 +1141,7 @@
                 </div>
             `;
             document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('active'));
             document.getElementById('editSubjName').focus({ preventScroll: true });
         }
 
@@ -1187,7 +1189,7 @@
         }
 
         function openDeleteSubjectModal(subjectId) {
-            const subj = teacherSubjects.find(s => s.id === subjectId);
+            const subj = teacherSubjects.find(s => s.id == subjectId || String(s.id) === String(subjectId));
             if (!subj) return;
 
             const overlay = document.createElement('div');
@@ -1206,6 +1208,7 @@
                 </div>
             `;
             document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('active'));
         }
 
         async function confirmDeleteSubject(subjectId) {
@@ -1610,7 +1613,10 @@
         /* ── Student Edit/Delete Modal Helpers ── */
         function closeModal() {
             const overlay = document.querySelector('.modal-overlay');
-            if (overlay) overlay.remove();
+            if (overlay) {
+                overlay.classList.remove('active');
+                setTimeout(() => overlay.remove(), 180);
+            }
         }
 
         function openEditModal(btn) {
@@ -1639,6 +1645,7 @@
                 </div>
             `;
             document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('active'));
             document.getElementById('editName').focus();
         }
 
@@ -1699,6 +1706,7 @@
                 </div>
             `;
             document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('active'));
         }
 
         async function confirmDelete(enrollment) {
@@ -1721,3 +1729,11 @@
                 closeModal();
             }
         }
+
+        window.openEditSubjectModal = openEditSubjectModal;
+        window.openDeleteSubjectModal = openDeleteSubjectModal;
+        window.submitEditSubject = submitEditSubject;
+        window.confirmDeleteSubject = confirmDeleteSubject;
+        window.openAddSubjectModal = openAddSubjectModal;
+        window.submitAddSubject = submitAddSubject;
+        window.closeModal = closeModal;

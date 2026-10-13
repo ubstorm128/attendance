@@ -18,19 +18,32 @@ function adminApiFetch(url, options = {}) {
     return fetch(url, options);
 }
 
+function togglePassVisibility(btn) {
+    const wrap = btn.closest('.password-wrap');
+    if (!wrap) return;
+    const input = wrap.querySelector('input');
+    if (!input) return;
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    btn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    btn.setAttribute('aria-pressed', String(isHidden));
+    const openEye = btn.querySelector('.eye-open');
+    const slashedEye = btn.querySelector('.eye-slashed');
+    if (openEye && slashedEye) {
+        openEye.style.display = isHidden ? 'none' : 'block';
+        slashedEye.style.display = isHidden ? 'block' : 'none';
+    }
+}
+window.togglePassVisibility = togglePassVisibility;
+
 function setupPasswordToggles() {
     const toggles = document.querySelectorAll('[data-password-toggle]');
     toggles.forEach((toggle) => {
-        toggle.addEventListener('click', () => {
-            const input = toggle.closest('.password-wrap').querySelector('input');
-            const isHidden = input.type === 'password';
-            input.type = isHidden ? 'text' : 'password';
-            toggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
-            toggle.setAttribute('aria-pressed', String(isHidden));
-        });
+        toggle.addEventListener('click', () => togglePassVisibility(toggle));
     });
 }
 
+document.addEventListener('DOMContentLoaded', setupPasswordToggles);
 setupPasswordToggles();
 
 function showTab(tab) {

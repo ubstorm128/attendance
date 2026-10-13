@@ -1,15 +1,20 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Attendance Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+
 
     <link rel="stylesheet" href="/styles/shared/main.css?v=2">
     <link rel="stylesheet" href="/styles/attendance-admin/dashboard.css">
     <style>
         @media (max-width: 768px) {
-            .logout-text { display: none !important; }
+            .logout-text {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -18,12 +23,19 @@
     <div id="dash">
         <div class="global-navbar">
             <div class="brand">
-                <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="white" stroke-width="2" stroke-linejoin="round"></path><path d="M8 9h6M8 13h8" stroke="white" stroke-width="2" stroke-linecap="round"></path></svg></div>
-                Attendance Admin Dashboard
+                <div class="mark"><svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="white"
+                            stroke-width="2" stroke-linejoin="round"></path>
+                        <path d="M8 9h6M8 13h8" stroke="white" stroke-width="2" stroke-linecap="round"></path>
+                    </svg></div>
+                Attendance Admin
             </div>
             <div class="ribbon-spacer"></div>
             <button type="button" class="logout" onclick="logout()" aria-label="Log out">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
                 <span class="logout-text">Logout</span>
             </button>
         </div>
@@ -31,10 +43,13 @@
         <main>
             <!-- 3-Segment Cupertino Pill Control -->
             <div style="display: flex; justify-content: center; margin-bottom: 24px;">
-                <nav class="tabs segmented-control" id="tabs" role="tablist" aria-label="Admin sections" data-active-tab="teachers">
+                <nav class="tabs segmented-control" id="tabs" role="tablist" aria-label="Admin sections"
+                    data-active-tab="teachers">
                     <div class="tab-pill" id="tabPill"></div>
-                    <button type="button" class="nav-link seg-btn active" id="tabTeachers" role="tab" aria-selected="true" aria-controls="panelTeachers" onclick="showTab('teachers')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                    <button type="button" class="nav-link seg-btn active" id="tabTeachers" role="tab"
+                        aria-selected="true" aria-controls="panelTeachers" onclick="showTab('teachers')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
                             <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -42,15 +57,19 @@
                         </svg>
                         <span>Teachers</span>
                     </button>
-                    <button type="button" class="nav-link seg-btn" id="tabStudents" role="tab" aria-selected="false" aria-controls="panelStudents" onclick="showTab('students')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                    <button type="button" class="nav-link seg-btn" id="tabStudents" role="tab" aria-selected="false"
+                        aria-controls="panelStudents" onclick="showTab('students')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                             <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
                             <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
                         </svg>
                         <span>Students</span>
                     </button>
-                    <button type="button" class="nav-link seg-btn" id="tabSecurity" role="tab" aria-selected="false" aria-controls="panelSecurity" onclick="showTab('security')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                    <button type="button" class="nav-link seg-btn" id="tabSecurity" role="tab" aria-selected="false"
+                        aria-controls="panelSecurity" onclick="showTab('security')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         </svg>
                         <span>Security</span>
@@ -66,65 +85,106 @@
                         <p class="sub">Create and manage instructor accounts.</p>
                     </div>
                     <div class="list-tools">
-                        <input type="search" id="teacherSearch" placeholder="Search teachers" aria-label="Search teachers" class="form-control" oninput="filterTeachers()">
-                        <button type="button" class="btn btn-primary" onclick="toggleAddTeacher()"><i data-lucide="plus" aria-hidden="true"></i> Add Teacher</button>
+                        <input type="search" id="teacherSearch" placeholder="Search teachers"
+                            aria-label="Search teachers" class="form-control" oninput="filterTeachers()">
+                        <button type="button" class="btn btn-primary" onclick="toggleAddTeacher()"><i data-lucide="plus"
+                                aria-hidden="true"></i> Add Teacher</button>
                     </div>
                 </div>
 
                 <div id="addTeacherBlock" class="add-record-form" hidden>
-                    <div class="form-field"><label for="name">Full name</label><input id="name" placeholder="Dr. John Smith" class="form-control"></div>
-                    <div class="form-field"><label for="username">Username</label><input id="username" placeholder="john_smith" class="form-control"></div>
-                    <div class="form-field"><label for="email">Email (Optional)</label><input id="email" type="email" placeholder="john@university.edu" class="form-control"></div>
-                    <div class="form-field"><label for="password">Password</label><input id="password" type="password" placeholder="••••••••" class="form-control"></div>
+                    <div class="form-field"><label for="name">Full name</label><input id="name"
+                            placeholder="Dr. John Smith" class="form-control"></div>
+                    <div class="form-field"><label for="username">Username</label><input id="username"
+                            placeholder="john_smith" class="form-control"></div>
+                    <div class="form-field"><label for="email">Email (Optional)</label><input id="email" type="email"
+                            placeholder="john@university.edu" class="form-control"></div>
+                    <div class="form-field"><label for="password">Password</label><input id="password" type="password"
+                            placeholder="••••••••" class="form-control"></div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" onclick="toggleAddTeacher()">Cancel</button>
                         <button type="button" class="btn btn-primary" onclick="addTeacher()">Save Teacher</button>
                     </div>
                 </div>
 
-                <div class="list-heading"><span>Teacher accounts</span><span id="teacherCount" class="record-count">0</span></div>
+                <div class="list-heading"><span>Teacher accounts</span><span id="teacherCount"
+                        class="record-count">0</span></div>
                 <div id="list"></div>
             </div>
 
             <!-- Students Panel -->
-            <div class="card admin-panel is-hidden" id="panelStudents" role="tabpanel" aria-labelledby="tabStudents" hidden>
+            <div class="card admin-panel is-hidden" id="panelStudents" role="tabpanel" aria-labelledby="tabStudents"
+                hidden>
                 <div class="list-header-row">
                     <div class="panel-heading">
                         <h2>Registered Students</h2>
                         <p class="sub">Review student profiles and enrollment details.</p>
                     </div>
                     <div class="list-tools">
-                        <input type="search" id="studentSearch" placeholder="Search students" aria-label="Search students" class="form-control" oninput="filterStudents()">
-                        <button type="button" class="btn btn-primary" onclick="toggleAddStudent()"><i data-lucide="plus" aria-hidden="true"></i> Add Student</button>
+                        <input type="search" id="studentSearch" placeholder="Search students"
+                            aria-label="Search students" class="form-control" oninput="filterStudents()">
+                        <button type="button" class="btn btn-primary" onclick="toggleAddStudent()"><i data-lucide="plus"
+                                aria-hidden="true"></i> Add Student</button>
                     </div>
                 </div>
 
                 <div id="addStudentBlock" class="add-record-form" hidden>
-                    <div class="form-field"><label for="studentName">Full name</label><input id="studentName" placeholder="Student Name" class="form-control"></div>
-                    <div class="form-field"><label for="studentEnrollment">Enrollment ID</label><input id="studentEnrollment" placeholder="ADTU/1/2023-26/BCAO/012" class="form-control"></div>
-                    <div class="form-field"><label for="studentSemester">Semester</label><input id="studentSemester" placeholder="1st Sem" class="form-control"></div>
-                    <div class="form-field"><label for="studentSection">Section</label><input id="studentSection" placeholder="A" class="form-control"></div>
-                    <div class="form-field"><label for="studentEmail">Email</label><input id="studentEmail" type="email" placeholder="student@university.edu" class="form-control"></div>
-                    <div class="form-field"><label for="studentPassword">Password</label><input id="studentPassword" type="password" placeholder="••••••••" class="form-control"></div>
+                    <div class="form-field"><label for="studentName">Full name</label><input id="studentName"
+                            placeholder="Student Name" class="form-control"></div>
+                    <div class="form-field"><label for="studentEnrollment">Enrollment ID</label><input
+                            id="studentEnrollment" placeholder="ADTU/1/2023-26/BCAO/012" class="form-control"></div>
+                    <div class="form-field"><label for="studentSemester">Semester</label><input id="studentSemester"
+                            placeholder="1st Sem" class="form-control"></div>
+                    <div class="form-field"><label for="studentSection">Section</label><input id="studentSection"
+                            placeholder="A" class="form-control"></div>
+                    <div class="form-field"><label for="studentEmail">Email</label><input id="studentEmail" type="email"
+                            placeholder="student@university.edu" class="form-control"></div>
+                    <div class="form-field"><label for="studentPassword">Password</label><input id="studentPassword"
+                            type="password" placeholder="••••••••" class="form-control"></div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" onclick="toggleAddStudent()">Cancel</button>
                         <button type="button" class="btn btn-primary" onclick="addStudent()">Save Student</button>
                     </div>
                 </div>
 
-                <div class="list-heading"><span>Student accounts</span><span id="studentCount" class="record-count">0</span></div>
+                <div class="list-heading"><span>Student accounts</span><span id="studentCount"
+                        class="record-count">0</span></div>
                 <div id="studentList"></div>
             </div>
 
             <!-- Security Panel -->
-            <div class="card admin-panel security-panel is-hidden" id="panelSecurity" role="tabpanel" aria-labelledby="tabSecurity" hidden>
-                <h2>Admin Security</h2>
-                <p class="sub">Update the password for this administrator account.</p>
+            <div class="card admin-panel security-panel is-hidden" id="panelSecurity" role="tabpanel"
+                aria-labelledby="tabSecurity" hidden>
+                <div class="panel-heading" style="margin-bottom: 24px;">
+                    <h2>Admin Security</h2>
+                    <p class="sub">Update the password for this administrator account.</p>
+                </div>
 
                 <div class="security-form">
-                    <label for="currPass">Current Password</label><input id="currPass" type="password" autocomplete="current-password" class="form-control">
-                    <label for="newPass">New Password</label><input id="newPass" type="password" autocomplete="new-password" class="form-control">
-                    <label for="confPass">Confirm New Password</label><input id="confPass" type="password" autocomplete="new-password" class="form-control">
+                    <div class="floating-field password-wrap">
+                        <input id="currPass" type="password" autocomplete="current-password" class="form-control" placeholder=" ">
+                        <label for="currPass">Current Password</label>
+                        <button type="button" class="password-toggle" data-password-toggle aria-label="Show password" onclick="togglePassVisibility(this)">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg class="eye-slashed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="display: none;"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                        </button>
+                    </div>
+                    <div class="floating-field password-wrap">
+                        <input id="newPass" type="password" autocomplete="new-password" class="form-control" placeholder=" ">
+                        <label for="newPass">New Password</label>
+                        <button type="button" class="password-toggle" data-password-toggle aria-label="Show password" onclick="togglePassVisibility(this)">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg class="eye-slashed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="display: none;"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                        </button>
+                    </div>
+                    <div class="floating-field password-wrap">
+                        <input id="confPass" type="password" autocomplete="new-password" class="form-control" placeholder=" ">
+                        <label for="confPass">Confirm New Password</label>
+                        <button type="button" class="password-toggle" data-password-toggle aria-label="Show password" onclick="togglePassVisibility(this)">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg class="eye-slashed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="display: none;"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                        </button>
+                    </div>
                     <button type="button" class="btn btn-primary" onclick="changeAdminPassword()">Update Password</button>
                 </div>
                 <p id="secMsg" class="status-message"></p>
@@ -138,4 +198,6 @@
         lucide.createIcons();
     </script>
 
-</body></html>
+</body>
+
+</html>
