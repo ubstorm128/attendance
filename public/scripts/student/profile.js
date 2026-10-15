@@ -211,14 +211,15 @@ if (switchProfileBtn) {
 
             // 2. Overall Attendance & Red Flag Notice
             const ov = data.overall || { totalHeld: 0, totalAttended: 0, percentage: 0, isRedFlag: false, classesToRecover: 0 };
-            overallPercentageText.textContent = `${ov.percentage}%`;
+            const hasHeldClasses = ov.totalHeld > 0;
+            overallPercentageText.textContent = hasHeldClasses ? `${ov.percentage}%` : '--%';
             overallRatioText.textContent = `${ov.totalAttended} of ${ov.totalHeld} session${ov.totalHeld === 1 ? '' : 's'} attended`;
 
             metricTotalClasses.textContent = ov.totalHeld;
             metricAttended.textContent = ov.totalAttended;
             metricMissed.textContent = Math.max(0, ov.totalHeld - ov.totalAttended);
 
-            if (ov.isRedFlag) {
+            if (hasHeldClasses && ov.isRedFlag) {
                 overallPercentageText.classList.remove('good');
                 overallPercentageText.classList.add('bad');
                 overallStandingPill.className = 'standing-pill bad';
@@ -239,11 +240,16 @@ if (switchProfileBtn) {
                         ? 'Attend these classes without absence to reach 75%.'
                         : 'Your overall attendance is below the 75% requirement.';
                 }
-            } else {
+            } else if (hasHeldClasses) {
                 overallPercentageText.classList.remove('bad');
                 overallPercentageText.classList.add('good');
                 overallStandingPill.className = 'standing-pill good';
                 overallStandingPill.innerHTML = '<i class="small-control-icon" data-lucide="check-circle"></i> In Good Standing (≥ 75%)';
+                overallRedFlagBox.hidden = true;
+            } else {
+                overallPercentageText.classList.remove('good', 'bad');
+                overallStandingPill.className = 'standing-pill';
+                overallStandingPill.innerHTML = '<i class="small-control-icon" data-lucide="circle-help"></i> No classes yet';
                 overallRedFlagBox.hidden = true;
             }
 

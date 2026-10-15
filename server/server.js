@@ -867,7 +867,7 @@ const server = http.createServer(async (req, res) => {
             const overallAbsent = Math.max(0, totalHeldOverall - totalAttendedOverall);
             const overallPercentage = totalHeldOverall > 0
                 ? Math.round((totalAttendedOverall / totalHeldOverall) * 100)
-                : 100;
+                : 0;
             const isOverallRedFlag = totalHeldOverall > 0 && overallPercentage < 75;
             const overallClassesToRecover = isOverallRedFlag
                 ? Math.max(1, Math.ceil((0.75 * totalHeldOverall - totalAttendedOverall) / 0.25))
