@@ -432,30 +432,13 @@
             margin-left: 6px;
         }
 
-        .section-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 3px 8px;
-            border-radius: var(--radius-pill);
-            font-size: 11px;
-            font-weight: 600;
-            background: rgba(118, 118, 128, 0.12);
+        .subject-card-classification {
+            min-width: 0;
             color: var(--ink-2);
-            letter-spacing: 0.02em;
-            margin-left: 6px;
-        }
-
-        .semester-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 3px 8px;
-            border-radius: var(--radius-pill);
-            font-size: 11px;
-            font-weight: 600;
-            background: rgba(118, 118, 128, 0.12);
-            color: var(--ink-2);
-            letter-spacing: 0.02em;
-            margin-left: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
         }
 
         .modal-card.wide {
@@ -3990,6 +3973,15 @@
         .teacher-info { display: flex; flex-direction: column; justify-content: center; }
         .teacher-name-badge { font-size: 13px; font-weight: 600; color: #1E293B; line-height: 1.2; }
         .teacher-role { font-size: 11px; font-weight: 500; color: #64748B; line-height: 1.2; }
+        .teacher-notifications-wrap { position: relative; }
+        .teacher-notifications-toggle { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E2E8F0; color: #64748B; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .teacher-notifications-toggle:hover,
+        .teacher-notifications-toggle[aria-expanded="true"] { background: #F1F5F9; color: #1E293B; border-color: #CBD5E1; }
+        .teacher-notifications-toggle svg { flex: none; }
+        .teacher-notifications-panel { position: absolute; top: calc(100% + 12px); right: 0; z-index: 150; width: min(320px, calc(100vw - 32px)); padding: 18px; border: 1px solid #E2E8F0; border-radius: 14px; background: #FFFFFF; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16); color: #1E293B; }
+        .teacher-notifications-panel[hidden] { display: none; }
+        .teacher-notifications-panel h2 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+        .teacher-notifications-panel p { margin: 0; color: #64748B; font-size: 13px; line-height: 1.5; }
         .logout-icon-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E2E8F0; color: #64748B; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .logout-icon-btn:hover { background: #FEF2F2; color: #EF4444; border-color: #FECACA; }
         .logout-icon-btn svg { flex: none; }
@@ -4004,28 +3996,31 @@
                 width: 100%;
                 flex-basis: 100%;
                 background: transparent;
-                flex-direction: column;
+                flex-direction: row;
                 align-items: center;
-                gap: 16px;
+                justify-content: space-between;
+                gap: 10px;
                 border: none;
                 box-shadow: none;
                 max-height: 0;
                 overflow: hidden;
-                padding-top: 0;
-                padding-bottom: 0;
+                padding: 0;
                 opacity: 0;
-                transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
+                transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease;
             }
             .nav-right.active {
-                max-height: 200px;
-                opacity: 1;
-                margin-top: 12px;
+                max-height: 64px;
+                margin-top: 8px;
                 padding-top: 8px;
-                padding-bottom: 4px;
+                border-top: 1px solid rgba(30, 41, 59, 0.12);
+                opacity: 1;
             }
-            .teacher-profile-chip { width: 100%; justify-content: center; }
-            .logout-icon-btn { width: 100%; border-radius: 12px; padding: 10px; height: auto; justify-content: center; }
-            .logout-icon-btn::after { content: 'Sign Out'; margin-left: 8px; font-weight: 500; }
+            .teacher-profile-chip { width: auto; min-width: 0; justify-content: flex-start; }
+            .teacher-role { display: none; }
+            .teacher-notifications-wrap { width: auto; flex: none; }
+            .teacher-notifications-toggle { width: 40px; height: 40px; }
+            .teacher-notifications-panel { position: absolute; width: min(320px, calc(100vw - 32px)); margin-top: 0; }
+            .logout-icon-btn { width: 40px; height: 40px; padding: 0; justify-content: center; }
         }
 
 .month-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; margin-top: 16px; margin-bottom: 16px; flex-grow: 1; }
@@ -4244,5 +4239,3 @@
 .btn-coordinator-action:active {
     transform: scale(0.97);
 }
-
-

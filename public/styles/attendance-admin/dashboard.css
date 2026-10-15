@@ -482,6 +482,25 @@
     color: var(--success-text);
 }
 
+@media (min-width: 721px) {
+    .admin-dashboard .security-panel {
+        max-width: 640px;
+        margin-inline: auto;
+    }
+
+    .admin-dashboard .security-panel .panel-heading {
+        text-align: center;
+    }
+
+    .admin-dashboard .security-form {
+        margin-inline: auto;
+    }
+
+    .admin-dashboard .security-panel .status-message {
+        text-align: center;
+    }
+}
+
 @media (max-width: 720px) {
     .admin-dashboard .global-navbar {
         top: 8px;

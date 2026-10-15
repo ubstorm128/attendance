@@ -1,16 +1,49 @@
         function toggleMobileMenu() {
             const navRight = document.getElementById('navRight');
+            const menuButton = document.querySelector('.mobile-menu-btn');
             const hamburger = document.getElementById('hamburgerIcon');
             const close = document.getElementById('closeMenuIcon');
             
             if (navRight) {
                 const isActive = navRight.classList.toggle('active');
+                if (menuButton) menuButton.setAttribute('aria-expanded', String(isActive));
+                if (!isActive) setTeacherNotificationsOpen(false);
                 if (hamburger && close) {
                     hamburger.style.display = isActive ? 'none' : 'block';
                     close.style.display = isActive ? 'block' : 'none';
                 }
             }
         }
+
+        function setTeacherNotificationsOpen(isOpen) {
+            const toggle = document.getElementById('teacherNotificationsToggle');
+            const panel = document.getElementById('teacherNotificationsPanel');
+            if (!toggle || !panel) return;
+
+            panel.hidden = !isOpen;
+            toggle.setAttribute('aria-expanded', String(isOpen));
+        }
+
+        function toggleTeacherNotifications() {
+            const panel = document.getElementById('teacherNotificationsPanel');
+            if (panel) setTeacherNotificationsOpen(panel.hidden);
+        }
+
+        document.addEventListener('click', (event) => {
+            const wrap = document.getElementById('teacherNotificationsWrap');
+            if (wrap && !wrap.contains(event.target)) setTeacherNotificationsOpen(false);
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                const toggle = document.getElementById('teacherNotificationsToggle');
+                const panel = document.getElementById('teacherNotificationsPanel');
+                if (panel && !panel.hidden) {
+                    setTeacherNotificationsOpen(false);
+                    if (toggle) toggle.focus();
+                }
+            }
+        });
 
         function setupPasswordToggles() {
             const toggles = document.querySelectorAll('[data-password-toggle]');
@@ -292,15 +325,16 @@
             teacherSubjects.forEach(s => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                const subjectDetails = [
+                    s.department || 'GENERAL',
+                    s.section ? `Sec ${s.section}` : '',
+                    s.semester || '',
+                    s.code || ''
+                ].filter(Boolean).map(esc).join('/');
                 card.innerHTML = `
                     <div>
                         <div class="subject-card-header">
-                            <div>
-                                <span class="dept-pill">${esc(s.department || 'GENERAL')}</span>
-                                ${s.section ? `<span class="section-pill">Sec ${esc(s.section)}</span>` : ''}
-                                ${s.semester ? `<span class="semester-pill">${esc(s.semester)}</span>` : ''}
-                                <span class="code-tag">${esc(s.code || '')}</span>
-                            </div>
+                            <span class="subject-card-classification">${subjectDetails}</span>
                             <div class="subject-card-tools">
                                 <button type="button" class="card-action-btn" title="Edit Subject" onclick="event.stopPropagation(); openEditSubjectModal('${esc(s.id)}')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>

@@ -793,7 +793,7 @@ if (switchProfileBtn) {
                                 <button type="button" class="icon-btn" title="Edit Subject" onclick="openEditSubjectModal('${escapeHtml(s.id)}')" style="padding: 6px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); background: transparent; cursor: pointer; color: var(--ink-2);">
                                     <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
                                 </button>
-                                <button type="button" class="icon-btn" title="Delete Subject" onclick="deleteSubject('${escapeHtml(s.id)}')" style="padding: 6px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.2); background: transparent; cursor: pointer; color: var(--bad);">
+                                <button type="button" class="icon-btn" title="Delete Subject" onclick="deleteSubject('${escapeHtml(s.id)}')" style="padding: 6px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.2); background: transparent; cursor: pointer; color: var(--danger);">
                                     <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                                 </button>
                             </div>
