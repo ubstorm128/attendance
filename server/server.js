@@ -112,6 +112,11 @@ async function initDb() {
             ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
             ALTER TABLE attendance_admins ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
 
+            // Clear any legacy base64 avatars from Supabase database (avatars are stored locally on client)
+            try {
+                await pool.query("UPDATE students SET avatar = '' WHERE avatar != '' AND avatar IS NOT NULL;");
+            } catch (_) {}
+
             CREATE TABLE IF NOT EXISTS student_subjects (
                 enrollment TEXT REFERENCES students(enrollment) ON DELETE CASCADE ON UPDATE CASCADE,
                 subject_id TEXT REFERENCES subjects(id) ON DELETE CASCADE,
@@ -940,7 +945,7 @@ const server = http.createServer(async (req, res) => {
                     enrollment:     currentStudent.enrollment,
                     section:        currentStudent.section,
                     semester:       currentStudent.semester || '',
-                    avatar:         currentStudent.avatar || '',
+                    avatar:         '',
                     about:          currentStudent.about  || '',
                     is_coordinator: Boolean(currentStudent.is_coordinator)
                 },
@@ -949,7 +954,7 @@ const server = http.createServer(async (req, res) => {
                     enrollment:     currentStudent.enrollment,
                     section:        currentStudent.section,
                     semester:       currentStudent.semester || '',
-                    avatar:         currentStudent.avatar || '',
+                    avatar:         '',
                     about:          currentStudent.about  || '',
                     is_coordinator: Boolean(currentStudent.is_coordinator)
                 },
@@ -967,9 +972,10 @@ const server = http.createServer(async (req, res) => {
             });
         }
 
-        // --- student: update profile (avatar, about, semester) ---
+        // --- student: update profile (about, semester, name) ---
+        // (Avatars are stored locally on client and kept out of Supabase)
         if (req.method === 'POST' && pathname === '/api/student/profile') {
-            const { enrollment, name, avatar, about, semester } = await readBody(req);
+            const { enrollment, name, about, semester } = await readBody(req);
             const normEnrollment = (enrollment || '').trim().toUpperCase();
             if (!normEnrollment) return send(res, 400, { error: 'enrollment is required' });
 
@@ -981,7 +987,7 @@ const server = http.createServer(async (req, res) => {
             const current = stCheck.rows[0];
 
             const newName = name && name.trim() ? name.trim() : current.name;
-            const newAvatar = avatar !== undefined ? avatar : (current.avatar || '');
+            const newAvatar = ''; // Avatars are kept off Supabase to conserve database storage
             const newAbout = about !== undefined ? about : (current.about || '');
             const newSemester = semester !== undefined ? (semester || '').trim() : (current.semester || '');
 
@@ -998,7 +1004,7 @@ const server = http.createServer(async (req, res) => {
                     enrollment: row.enrollment,
                     section: row.section,
                     semester: row.semester || '',
-                    avatar: row.avatar,
+                    avatar: '',
                     about: row.about
                 }
             });

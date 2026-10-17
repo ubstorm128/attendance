@@ -104,12 +104,14 @@ async function loginStudent() {
         }
         
         localStorage.setItem('student_token', data.token);
+        const savedAvatar = localStorage.getItem('student_avatar_' + (data.enrollment || '')) || '';
         const sData = {
             enrollment: data.enrollment,
             name: data.name,
             section: data.section || '',
             semester: data.semester || '',
-            is_coordinator: Boolean(data.is_coordinator)
+            is_coordinator: Boolean(data.is_coordinator),
+            avatar: savedAvatar
         };
         localStorage.setItem('student_data', JSON.stringify(sData));
         localStorage.setItem('profile', JSON.stringify(sData));

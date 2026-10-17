@@ -76,8 +76,69 @@ function updateCoordinatorButtons(isCoord) {
     }
 }
 
+        // ── Local Avatar Management (Saved Locally, Not In Supabase) ──────────
+        function getLocalAvatar(enrollment) {
+            const enroll = enrollment || (profile && profile.enrollment);
+            if (!enroll) return (profile && profile.avatar) || '';
+            return localStorage.getItem('student_avatar_' + enroll) || (profile && profile.avatar) || '';
+        }
+
+        function setLocalAvatar(enrollment, base64Data) {
+            const enroll = enrollment || (profile && profile.enrollment);
+            if (enroll) {
+                if (base64Data) {
+                    localStorage.setItem('student_avatar_' + enroll, base64Data);
+                } else {
+                    localStorage.removeItem('student_avatar_' + enroll);
+                }
+            }
+            if (profile) {
+                profile.avatar = base64Data || '';
+                localStorage.setItem('profile', JSON.stringify(profile));
+                localStorage.setItem('student_data', JSON.stringify(profile));
+            }
+        }
+
+        function renderAvatarUI() {
+            const localAvatar = getLocalAvatar();
+            const parts = (profile && profile.name ? profile.name : '').trim().split(/\s+/);
+            const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
+
+            if (localAvatar) {
+                if (profileAvatarImg) {
+                    profileAvatarImg.src = localAvatar;
+                    profileAvatarImg.hidden = false;
+                }
+                if (profileAvatarInitials) {
+                    profileAvatarInitials.hidden = true;
+                }
+                if (removeAvatarBtn) {
+                    removeAvatarBtn.hidden = false;
+                }
+                if (chipAvatar) {
+                    chipAvatar.innerHTML = `<img class="avatar-image" src="${escapeHtml(localAvatar)}" alt="Avatar">`;
+                }
+            } else {
+                if (profileAvatarImg) {
+                    profileAvatarImg.src = '';
+                    profileAvatarImg.hidden = true;
+                }
+                if (profileAvatarInitials) {
+                    profileAvatarInitials.textContent = initials.toUpperCase();
+                    profileAvatarInitials.hidden = false;
+                }
+                if (removeAvatarBtn) {
+                    removeAvatarBtn.hidden = true;
+                }
+                if (chipAvatar) {
+                    chipAvatar.textContent = initials.toUpperCase();
+                }
+            }
+        }
+
 async function initPortal() {
     renderProfileChip();
+    renderAvatarUI();
     const isCoord = Boolean(profile && profile.is_coordinator);
     updateCoordinatorButtons(isCoord);
     await loadStudentAttendanceAndProfile();
@@ -112,8 +173,9 @@ if (switchProfileBtn) {
             const parts = (profile.name || '').trim().split(/\s+/);
             const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
             
-            if (profile.avatar) {
-                if (chipAvatar) chipAvatar.innerHTML = `<img class="avatar-image" src="${escapeHtml(profile.avatar)}" alt="Avatar">`;
+            const localAvatar = getLocalAvatar();
+            if (localAvatar) {
+                if (chipAvatar) chipAvatar.innerHTML = `<img class="avatar-image" src="${escapeHtml(localAvatar)}" alt="Avatar">`;
             } else {
                 if (chipAvatar) chipAvatar.textContent = initials.toUpperCase();
             }
@@ -176,29 +238,17 @@ if (switchProfileBtn) {
 
             if (p.name && profile) {
                 profile.name = p.name;
-                if (p.avatar !== undefined) profile.avatar = p.avatar;
                 if (p.section !== undefined) profile.section = p.section;
                 if (p.semester !== undefined) profile.semester = p.semester;
+                // Preserve local avatar (never overwrite from Supabase server)
+                profile.avatar = getLocalAvatar(profile.enrollment);
                 localStorage.setItem('profile', JSON.stringify(profile));
                 localStorage.setItem('student_data', JSON.stringify(profile));
                 renderProfileChip();
             }
 
-            // Avatar Picture or Initials
-            if (p.avatar && p.avatar.trim()) {
-                profileAvatarImg.src = p.avatar;
-                profileAvatarImg.hidden = false;
-                profileAvatarInitials.hidden = true;
-                if (removeAvatarBtn) removeAvatarBtn.hidden = false;
-            } else {
-                const parts = (p.name || profile.name || '').trim().split(/\s+/);
-                const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : (parts[0] ? parts[0].slice(0, 2) : 'ST');
-                profileAvatarInitials.textContent = initials.toUpperCase();
-                profileAvatarInitials.hidden = false;
-                profileAvatarImg.hidden = true;
-                profileAvatarImg.src = '';
-                if (removeAvatarBtn) removeAvatarBtn.hidden = true;
-            }
+            // Avatar Picture or Initials (Loaded locally, not from Supabase)
+            renderAvatarUI();
 
             // About Me Bio
             if (p.about && p.about.trim()) {
@@ -276,8 +326,9 @@ if (switchProfileBtn) {
                     const nameParts = (item.name || '').trim().split(/\s+/);
                     const inits = nameParts.length > 1 ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]) : (nameParts[0] ? nameParts[0].slice(0, 2) : 'ST');
                     
-                    const avatarHtml = item.avatar 
-                        ? `<img src="${item.avatar}" alt="${escapeHtml(item.name)}">`
+                    const localAvatar = (isMe && getLocalAvatar()) || item.avatar;
+                    const avatarHtml = localAvatar 
+                        ? `<img src="${localAvatar}" alt="${escapeHtml(item.name)}">`
                         : inits.toUpperCase();
 
                     const attCount = item.totalAttended ?? item.attended ?? 0;
@@ -428,7 +479,7 @@ if (switchProfileBtn) {
             if (window.lucide) window.lucide.createIcons();
         }
 
-        // ── Profile Photo Upload System (Canvas Downscaled Base64) ───────────
+        // ── Profile Photo Upload System (Saved locally in localStorage, removed from Supabase) ───────────
         function triggerAvatarUpload() {
             if (avatarFileInput) avatarFileInput.click();
         }
@@ -462,18 +513,12 @@ if (switchProfileBtn) {
 
                     const base64Data = canvas.toDataURL('image/jpeg', 0.82);
 
-                    profileAvatarImg.src = base64Data;
-                    profileAvatarImg.hidden = false;
-                    profileAvatarInitials.hidden = true;
+                    // Saved locally only — removed from Supabase storage
+                    setLocalAvatar(profile.enrollment, base64Data);
+                    renderAvatarUI();
 
-                    chipAvatar.innerHTML = `<img class="avatar-image" src="${base64Data}" alt="Avatar">`;
-
-                    profile.avatar = base64Data;
-                    localStorage.setItem('profile', JSON.stringify(profile));
-
-                    if (removeAvatarBtn) removeAvatarBtn.hidden = false;
-
-                    saveAvatarToServer(base64Data);
+                    // Notify server to clear avatar in Supabase if any existed
+                    clearAvatarFromServer();
                 };
                 img.src = e.target.result;
             };
@@ -485,21 +530,17 @@ if (switchProfileBtn) {
             if (!profile || !profile.enrollment) return;
             if (!confirm('Remove profile picture and revert to initials?')) return;
 
-            profile.avatar = '';
-            localStorage.setItem('profile', JSON.stringify(profile));
+            // Remove from local storage
+            setLocalAvatar(profile.enrollment, '');
+            renderAvatarUI();
 
-            profileAvatarImg.src = '';
-            profileAvatarImg.hidden = true;
-            profileAvatarInitials.hidden = false;
+            if (avatarFileInput) avatarFileInput.value = '';
 
-            if (removeAvatarBtn) removeAvatarBtn.hidden = true;
-
-            renderProfileChip();
-
-            await saveAvatarToServer('');
+            // Ensure removed from Supabase
+            await clearAvatarFromServer();
         }
 
-        async function saveAvatarToServer(base64Data) {
+        async function clearAvatarFromServer() {
             if (!profile || !profile.enrollment) return;
             try {
                 await fetch('/api/student/profile', {
@@ -507,11 +548,11 @@ if (switchProfileBtn) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         enrollment: profile.enrollment,
-                        avatar: base64Data
+                        avatar: ''
                     })
                 });
             } catch (err) {
-                console.error('Error saving avatar to server:', err);
+                console.warn('Could not clear avatar from server:', err);
             }
         }
 

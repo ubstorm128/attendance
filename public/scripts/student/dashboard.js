@@ -471,7 +471,8 @@ let token = new URLSearchParams(location.search).get('token');
                 try {
                     const data = JSON.parse(studentDataStr);
                     if (data.enrollment) {
-                        profile = { name: data.name, enrollment: data.enrollment };
+                        const localAvatar = localStorage.getItem('student_avatar_' + data.enrollment) || data.avatar || '';
+                        profile = { name: data.name, enrollment: data.enrollment, avatar: localAvatar };
                         localStorage.setItem('profile', JSON.stringify(profile));
                         isSignedIn = true;
                     }
