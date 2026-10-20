@@ -37,8 +37,9 @@ function togglePassVisibility(btn) {
 window.togglePassVisibility = togglePassVisibility;
 
 function setupPasswordToggles() {
-    const toggles = document.querySelectorAll('[data-password-toggle]');
+    const toggles = document.querySelectorAll('[data-password-toggle]:not([data-toggle-bound])');
     toggles.forEach((toggle) => {
+        toggle.setAttribute('data-toggle-bound', 'true');
         toggle.addEventListener('click', () => togglePassVisibility(toggle));
     });
 }
@@ -174,6 +175,20 @@ async function addTeacher() {
             syncRecordActionDisclosure(row);
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+                    '"': '&quot;', "'": '&#39;'
+                }[m];
+            });
+        }
+
+        function jsArg(val) {
+            return escapeHtml(JSON.stringify(val == null ? '' : val));
+        }
+
         function renderTeachers(list) {
             const el = document.getElementById('list');
             el.innerHTML = list.length ? '' : '<p class="empty">No teachers found.</p>';
@@ -190,9 +205,9 @@ async function addTeacher() {
                             <i data-lucide="chevron-down" aria-hidden="true"></i>
                         </button>
                         <div class="action-btns" id="${actionId}">
-                    <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(t.name)}" onclick="resetTeacherPassword('${escapeHtml(t.email || '')}')" ${!t.email ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
-                    <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(t.name)}" onclick="openEditTeacherModal('${t.id}', '${escapeHtml(t.name)}', '${escapeHtml(t.username)}', '${escapeHtml(t.email || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
-                    <button class="btn btn-danger" type="button" title="Remove" aria-label="Remove ${escapeHtml(t.name)}" onclick="removeTeacher('${t.id}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
+                    <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(t.name)}" onclick="openResetPasswordModal('teacher', ${jsArg(String(t.id))}, ${jsArg(t.name)}, ${jsArg(t.email || '')})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="m2 21 9.6-9.6"/><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19"/><circle cx="15.5" cy="7.5" r="5.5"/></svg></button>
+                    <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(t.name)}" onclick="openEditTeacherModal(${jsArg(String(t.id))}, ${jsArg(t.name)}, ${jsArg(t.username)}, ${jsArg(t.email || '')})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button class="btn btn-danger" type="button" title="Remove" aria-label="Remove ${escapeHtml(t.name)}" onclick="removeTeacher(${jsArg(String(t.id))})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                 </div>`;
                         setupRecordActionDisclosure(div);
                 el.appendChild(div);
@@ -285,24 +300,160 @@ async function addTeacher() {
             });
         }
 
+        function openResetPasswordModal(type, targetId, name, email) {
+            const isTeacher = type === 'teacher';
+            const roleLabel = isTeacher ? 'Teacher' : 'Student';
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            overlay.addEventListener('click', (e) => { 
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                    setTimeout(() => document.body.removeChild(overlay), 200);
+                } 
+            });
+
+            overlay.innerHTML = `
+                <div class="modal-dialog">
+                    <h2 class="modal-title">Reset Password</h2>
+                    <p class="modal-desc">Set a new password for <strong>${escapeHtml(name)}</strong> (${roleLabel}).</p>
+                    
+                    <div class="form-field">
+                        <label for="adminNewUserPass">New Password</label>
+                        <div class="password-wrap" style="position:relative;">
+                            <input type="password" id="adminNewUserPass" class="form-control" placeholder="At least 6 characters" autocomplete="new-password">
+                            <button type="button" class="password-toggle" data-password-toggle aria-label="Show password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:6px; color:var(--ink-3);">
+                                <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                <svg class="eye-slashed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="display: none;"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-field" style="margin-top:12px;">
+                        <label for="adminConfUserPass">Confirm Password</label>
+                        <input type="password" id="adminConfUserPass" class="form-control" placeholder="Re-enter new password" autocomplete="new-password">
+                    </div>
+
+                    <p id="resetUserPassMsg" class="status-message is-error" style="display:none; margin-top:10px;"></p>
+                    <p id="resetUserPassSuccess" class="status-message is-success" style="display:none; margin-top:10px;"></p>
+
+                    <div class="modal-actions" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        ${email ? `<button type="button" class="btn btn-secondary" id="sendEmailResetBtn" style="font-size:12px;">Send Reset Email</button>` : '<span></span>'}
+                        <div style="display:flex; gap:8px; margin-left:auto;">
+                            <button type="button" class="btn btn-secondary" onclick="const ov = this.closest('.modal-overlay'); ov.classList.remove('active'); setTimeout(() => ov.remove(), 200);">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="saveNewUserPassBtn">Save Password</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('active'));
+
+            const passToggle = overlay.querySelector('[data-password-toggle]');
+            if (passToggle) {
+                passToggle.setAttribute('data-toggle-bound', 'true');
+                passToggle.addEventListener('click', () => togglePassVisibility(passToggle));
+            }
+
+            const saveBtn = overlay.querySelector('#saveNewUserPassBtn');
+            const errEl = overlay.querySelector('#resetUserPassMsg');
+            const succEl = overlay.querySelector('#resetUserPassSuccess');
+
+            saveBtn.addEventListener('click', async () => {
+                errEl.style.display = 'none';
+                succEl.style.display = 'none';
+                const pass = document.getElementById('adminNewUserPass').value;
+                const conf = document.getElementById('adminConfUserPass').value;
+
+                if (!pass || pass.length < 6) {
+                    errEl.textContent = 'Password must be at least 6 characters.';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                if (pass !== conf) {
+                    errEl.textContent = 'Passwords do not match.';
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+
+                try {
+                    const endpoint = isTeacher ? '/api/admin/teachers/reset-password' : '/api/admin/students/reset-password';
+                    const payload = isTeacher
+                        ? { id: targetId, newPassword: pass }
+                        : { enrollment: targetId, newPassword: pass };
+
+                    const r = await adminApiFetch(endpoint, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await r.json();
+
+                    if (r.ok) {
+                        succEl.textContent = 'Password successfully reset!';
+                        succEl.style.display = 'block';
+                        setTimeout(() => {
+                            overlay.classList.remove('active');
+                            setTimeout(() => overlay.remove(), 200);
+                        }, 1000);
+                    } else {
+                        errEl.textContent = data.error || 'Failed to update password.';
+                        errEl.style.display = 'block';
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Password';
+                    }
+                } catch (e) {
+                    errEl.textContent = 'Network error.';
+                    errEl.style.display = 'block';
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save Password';
+                }
+            });
+
+            const emailBtn = overlay.querySelector('#sendEmailResetBtn');
+            if (emailBtn) {
+                emailBtn.addEventListener('click', async () => {
+                    errEl.style.display = 'none';
+                    succEl.style.display = 'none';
+                    emailBtn.disabled = true;
+                    emailBtn.textContent = 'Sending...';
+
+                    try {
+                        const endpoint = isTeacher ? '/api/admin/teachers/reset-password' : '/api/admin/students/reset-password';
+                        const r = await adminApiFetch(endpoint, {
+                            method: 'POST',
+                            body: JSON.stringify({ email })
+                        });
+                        const data = await r.json();
+
+                        if (r.ok) {
+                            succEl.textContent = `Reset email sent to ${email}!`;
+                            succEl.style.display = 'block';
+                            emailBtn.textContent = 'Email Sent';
+                        } else {
+                            errEl.textContent = data.error || 'Failed to send reset email.';
+                            errEl.style.display = 'block';
+                            emailBtn.disabled = false;
+                            emailBtn.textContent = 'Send Reset Email';
+                        }
+                    } catch (e) {
+                        errEl.textContent = 'Network error.';
+                        errEl.style.display = 'block';
+                        emailBtn.disabled = false;
+                        emailBtn.textContent = 'Send Reset Email';
+                    }
+                });
+            }
+        }
+
         async function resetTeacherPassword(email) {
             if (!email) return alert('This teacher does not have an email registered.');
-            if (!confirm(`Send password reset email to ${email}?`)) return;
-            
-            try {
-                const r = await adminApiFetch('/api/admin/teachers/reset-password', {
-                    method: 'POST',
-                    body: JSON.stringify({ email })
-                });
-                const data = await r.json();
-                if (r.ok) {
-                    alert('Password reset email sent successfully via Supabase!');
-                } else {
-                    alert(data.error || 'Failed to send reset email.');
-                }
-            } catch (err) {
-                alert('Network error while trying to reset password.');
-            }
+            const t = (window.allTeachers || []).find(x => x.email === email);
+            if (!t) return alert('Teacher not found.');
+            openResetPasswordModal('teacher', String(t.id), t.name, email);
         }
 
         async function addStudent() {
@@ -376,7 +527,7 @@ async function addTeacher() {
                 ].filter(Boolean).join(' · ');
 
                 const coordBadge = isCoord
-                    ? `<span class="badge-coordinator" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#0071e3; background:rgba(0,113,227,0.12); border:1px solid rgba(0,113,227,0.25); border-radius:999px; padding:2px 8px; margin-left:6px; vertical-align:middle;"><i data-lucide="shield-check" style="width:12px; height:12px;"></i> Coordinator</span>`
+                    ? `<span class="badge-coordinator" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#0071e3; background:rgba(0,113,227,0.12); border:1px solid rgba(0,113,227,0.25); border-radius:999px; padding:2px 8px; margin-left:6px; vertical-align:middle;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg> Coordinator</span>`
                     : '';
 
                 div.innerHTML = `<div class="record-identity">
@@ -388,13 +539,13 @@ async function addTeacher() {
                     <i data-lucide="chevron-down" aria-hidden="true"></i>
                 </button>
                 <div class="action-btns" id="${actionId}">
-                    <button class="btn ${isCoord ? 'btn-primary' : 'btn-secondary'} btn-coordinator-toggle" type="button" title="${isCoord ? 'Revoke Coordinator Role' : 'Grant Coordinator Role'}" aria-label="${isCoord ? 'Revoke Coordinator' : 'Grant Coordinator'}" onclick="toggleCoordinatorRole('${escapeHtml(s.enrollment)}', ${!isCoord})">
-                        <i data-lucide="${isCoord ? 'shield-check' : 'shield'}" width="16" height="16"></i>
+                    <button class="btn ${isCoord ? 'btn-primary' : 'btn-secondary'} btn-coordinator-toggle" type="button" title="${isCoord ? 'Revoke Coordinator Role' : 'Grant Coordinator Role'}" aria-label="${isCoord ? 'Revoke Coordinator' : 'Grant Coordinator'}" onclick="toggleCoordinatorRole(${jsArg(s.enrollment)}, ${!isCoord})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                         <span>${isCoord ? 'Coordinator' : 'Make Coordinator'}</span>
                     </button>
-                    <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(s.name)}" onclick="resetStudentPassword('${escapeHtml(sEmail)}')" ${!sEmail ? 'disabled title="No email registered"' : ''}><i data-lucide="key" width="18" height="18"></i></button>
-                    <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(s.name)}" onclick="openEditStudentModal('${escapeHtml(s.enrollment)}', '${escapeHtml(s.name)}', '${escapeHtml(sEmail)}', '${escapeHtml(s.section || '')}', '${escapeHtml(s.semester || '')}')"><i data-lucide="edit" width="18" height="18"></i></button>
-                    <button class="btn btn-danger" type="button" title="Remove" aria-label="Remove ${escapeHtml(s.name)}" onclick="removeStudent('${escapeHtml(s.enrollment)}')"><i data-lucide="trash-2" width="18" height="18"></i></button>
+                    <button class="btn btn-secondary" type="button" title="Reset Password" aria-label="Reset password for ${escapeHtml(s.name)}" onclick="openResetPasswordModal('student', ${jsArg(s.enrollment)}, ${jsArg(s.name)}, ${jsArg(sEmail)})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="m2 21 9.6-9.6"/><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19"/><circle cx="15.5" cy="7.5" r="5.5"/></svg></button>
+                    <button class="btn btn-secondary" type="button" title="Edit" aria-label="Edit ${escapeHtml(s.name)}" onclick="openEditStudentModal(${jsArg(s.enrollment)}, ${jsArg(s.name)}, ${jsArg(sEmail)}, ${jsArg(s.section || '')}, ${jsArg(s.semester || '')})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button class="btn btn-danger" type="button" title="Remove" aria-label="Remove ${escapeHtml(s.name)}" onclick="removeStudent(${jsArg(s.enrollment)})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                 </div>`;
                 setupRecordActionDisclosure(div);
                 el.appendChild(div);
@@ -428,16 +579,6 @@ async function addTeacher() {
             if (!b.hidden) b.querySelector('input')?.focus();
         }
 
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/[&<>"']/g, function(m) {
-                return {
-                    '&': '&amp;', '<': '&lt;', '>': '&gt;',
-                    '"': '&quot;', "'": '&#39;'
-                }[m];
-            });
-        }
 
         function openEditStudentModal(enrollment, name, email, section = '', semester = '') {
             const overlay = document.createElement('div');
@@ -529,22 +670,9 @@ async function addTeacher() {
 
         async function resetStudentPassword(email) {
             if (!email) return alert('This student does not have an email registered.');
-            if (!confirm(`Send password reset email to ${email}?`)) return;
-            
-            try {
-                const r = await adminApiFetch('/api/admin/students/reset-password', {
-                    method: 'POST',
-                    body: JSON.stringify({ email })
-                });
-                const data = await r.json();
-                if (r.ok) {
-                    alert('Password reset email sent successfully via Supabase!');
-                } else {
-                    alert(data.error || 'Failed to send reset email.');
-                }
-            } catch (err) {
-                alert('Network error while trying to reset password.');
-            }
+            const s = (window.allStudents || []).find(x => x.email === email);
+            if (!s) return alert('Student not found.');
+            openResetPasswordModal('student', s.enrollment, s.name, email);
         }
 
         async function changeAdminPassword() {

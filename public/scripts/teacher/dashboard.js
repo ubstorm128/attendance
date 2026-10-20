@@ -330,7 +330,7 @@
                     s.section ? `Sec ${s.section}` : '',
                     s.semester || '',
                     s.code || ''
-                ].filter(Boolean).map(esc).join('/');
+                ].filter(Boolean).map(esc).join('/ ');
                 card.innerHTML = `
                     <div>
                         <div class="subject-card-header">

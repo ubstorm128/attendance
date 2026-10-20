@@ -112,11 +112,6 @@ async function initDb() {
             ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
             ALTER TABLE attendance_admins ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
 
-            // Clear any legacy base64 avatars from Supabase database (avatars are stored locally on client)
-            try {
-                await pool.query("UPDATE students SET avatar = '' WHERE avatar != '' AND avatar IS NOT NULL;");
-            } catch (_) {}
-
             CREATE TABLE IF NOT EXISTS student_subjects (
                 enrollment TEXT REFERENCES students(enrollment) ON DELETE CASCADE ON UPDATE CASCADE,
                 subject_id TEXT REFERENCES subjects(id) ON DELETE CASCADE,
@@ -2049,8 +2044,24 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'POST' && pathname === '/api/admin/teachers/reset-password') {
             if (!authenticateAdmin(req, res)) return;
-            const { email } = await readBody(req);
-            if (!email) return send(res, 400, { error: 'Email is required' });
+            const { id, email, newPassword } = await readBody(req);
+
+            if (newPassword) {
+                if (newPassword.length < 6) return send(res, 400, { error: 'Password must be at least 6 characters' });
+                const hashed = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+                if (id) {
+                    const result = await pool.query('UPDATE teachers SET password = $1 WHERE id = $2 RETURNING id', [hashed, id]);
+                    if (!result.rows.length) return send(res, 404, { error: 'Teacher not found' });
+                    return send(res, 200, { ok: true, message: 'Password updated successfully' });
+                } else if (email) {
+                    const result = await pool.query('UPDATE teachers SET password = $1 WHERE LOWER(email) = LOWER($2) RETURNING id', [hashed, email]);
+                    if (!result.rows.length) return send(res, 404, { error: 'Teacher with this email not found' });
+                    return send(res, 200, { ok: true, message: 'Password updated successfully' });
+                }
+                return send(res, 400, { error: 'Teacher ID or email is required' });
+            }
+
+            if (!email) return send(res, 400, { error: 'Email is required for email reset' });
             if (!supabase) return send(res, 500, { error: 'Supabase is not configured' });
             
             const proto = req.headers['x-forwarded-proto'] || (req.headers.host.includes('localhost') ? 'http' : 'https');
@@ -2146,8 +2157,25 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'POST' && pathname === '/api/admin/students/reset-password') {
             if (!authenticateAdmin(req, res)) return;
-            const { email } = await readBody(req);
-            if (!email) return send(res, 400, { error: 'Email is required' });
+            const { enrollment, email, newPassword } = await readBody(req);
+
+            if (newPassword) {
+                if (newPassword.length < 6) return send(res, 400, { error: 'Password must be at least 6 characters' });
+                const hashed = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+                if (enrollment) {
+                    const normEnrollment = enrollment.trim().toUpperCase();
+                    const result = await pool.query('UPDATE students SET password = $1 WHERE enrollment = $2 RETURNING enrollment', [hashed, normEnrollment]);
+                    if (!result.rows.length) return send(res, 404, { error: 'Student not found' });
+                    return send(res, 200, { ok: true, message: 'Password updated successfully' });
+                } else if (email) {
+                    const result = await pool.query('UPDATE students SET password = $1 WHERE LOWER(email) = LOWER($2) RETURNING enrollment', [hashed, email]);
+                    if (!result.rows.length) return send(res, 404, { error: 'Student with this email not found' });
+                    return send(res, 200, { ok: true, message: 'Password updated successfully' });
+                }
+                return send(res, 400, { error: 'Student enrollment or email is required' });
+            }
+
+            if (!email) return send(res, 400, { error: 'Email is required for email reset' });
             if (!supabase) return send(res, 500, { error: 'Supabase is not configured' });
             
             const proto = req.headers['x-forwarded-proto'] || (req.headers.host.includes('localhost') ? 'http' : 'https');

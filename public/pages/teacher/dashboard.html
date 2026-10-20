@@ -62,8 +62,21 @@
                     </button>
                     <section class="teacher-notifications-panel" id="teacherNotificationsPanel"
                         aria-label="Notifications" aria-live="polite" hidden>
-                        <h2>Notifications</h2>
-                        <p>Notifications are not available yet.</p>
+                        <div class="notifications-panel-header">
+                            <h2>Notifications</h2>
+                            <button type="button" class="notifications-panel-close" onclick="setTeacherNotificationsOpen(false)" aria-label="Close notifications" title="Close">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="notifications-empty">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="notifications-empty-icon">
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path>
+                            </svg>
+                            <p>Notifications are not available yet.</p>
+                        </div>
                     </section>
                 </div>
                 <button class="logout-icon-btn" onclick="logout()" title="Sign Out" aria-label="Sign out">
