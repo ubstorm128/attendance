@@ -1,0 +1,6 @@
+{"timestamp":"2026-11-09T17:48:08.394Z","level":"INFO","message":"Starting CodeRabbit CLI v0.9.0","namespace":"init"}
+{"timestamp":"2026-11-09T17:48:08.423Z","level":"WARN","message":"Failed to fetch public config for telemetry, telemetry disabled: getaddrinfo ENOTFOUND cli.coderabbit.ai","namespace":"telemetry","code":"ENOTFOUND","path":"https://cli.coderabbit.ai/public-configs.json","syscall":"getaddrinfo","hostname":"cli.coderabbit.ai","errno":4}
+{"timestamp":"2026-11-09T17:48:08.584Z","level":"INFO","message":"starting auto update","namespace":"update"}
+{"timestamp":"2026-11-09T17:48:08.584Z","level":"INFO","message":"skipping auto update. coderabbit cli is managed by npm","namespace":"update"}
+{"timestamp":"2026-11-09T17:48:08.585Z","level":"WARN","message":"User not logged in","namespace":"review"}
+{"timestamp":"2026-11-09T17:48:09.352Z","level":"WARN","message":"browser launcher failed","namespace":"login"}

@@ -856,14 +856,13 @@
         }
 
         #qrBox canvas,
-        #projectorQrBox canvas {
-            display: none !important;
-        }
-
         #qrBox img,
+        #projectorQrBox canvas,
         #projectorQrBox img {
             display: block;
             margin: 0 auto;
+            max-width: 100%;
+            height: auto;
         }
 
         .qr-meta {

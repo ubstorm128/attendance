@@ -1320,29 +1320,59 @@
                 return;
             }
 
-            const url = `${location.origin}/student.html?token=${qrToken}`;
-            new QRCode(box, {
-                text: url,
-                width: 200,
-                height: 200,
-                colorDark: '#1D1D1F',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
-            });
-            const boxCanvas = box.querySelector('canvas');
-            if (boxCanvas) boxCanvas.remove();
+            if (typeof QRCode === 'undefined') {
+                console.error('QRCode library is not loaded');
+                box.innerHTML = '<div class="qr-error" style="color: var(--danger, #dc2626); padding: 16px; font-size: 13px; text-align: center;">QR code library failed to load. Please check your connection and refresh.</div>';
+                if (projBox) {
+                    projBox.innerHTML = '<div class="qr-error" style="color: var(--danger, #dc2626); padding: 16px; font-size: 16px; text-align: center;">QR code library failed to load.</div>';
+                }
+                shell.classList.add('live');
+                placeholder.hidden = true;
+                live.hidden = false;
+                if (statusPill) {
+                    statusPill.textContent = 'Error';
+                    statusPill.classList.remove('is-idle');
+                    statusPill.classList.add('is-active');
+                }
+                return;
+            }
 
-            if (projBox) {
-                new QRCode(projBox, {
+            const url = `${location.origin}/student.html?token=${qrToken}`;
+            try {
+                new QRCode(box, {
                     text: url,
-                    width: 320,
-                    height: 320,
+                    width: 200,
+                    height: 200,
                     colorDark: '#1D1D1F',
                     colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.H
+                    correctLevel: QRCode.CorrectLevel.M
                 });
-                const projCanvas = projBox.querySelector('canvas');
-                if (projCanvas) projCanvas.remove();
+
+                if (projBox) {
+                    new QRCode(projBox, {
+                        text: url,
+                        width: 320,
+                        height: 320,
+                        colorDark: '#1D1D1F',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to generate QR code:', err);
+                box.innerHTML = '<div class="qr-error" style="color: var(--danger, #dc2626); padding: 16px; font-size: 13px; text-align: center;">Failed to render QR code.</div>';
+                if (projBox) {
+                    projBox.innerHTML = '<div class="qr-error" style="color: var(--danger, #dc2626); padding: 16px; font-size: 16px; text-align: center;">Failed to render QR code.</div>';
+                }
+                shell.classList.add('live');
+                placeholder.hidden = true;
+                live.hidden = false;
+                if (statusPill) {
+                    statusPill.textContent = 'Error';
+                    statusPill.classList.remove('is-idle');
+                    statusPill.classList.add('is-active');
+                }
+                return;
             }
 
             const subjectVal = (customSubjectTitle || document.getElementById('subject').value || (currentSelectedSubject ? currentSelectedSubject.name : '') || 'Class Session').trim();
